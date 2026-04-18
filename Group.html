@@ -5,20 +5,23 @@
   <title>440x956 框架</title>
   <style>
     body {
-  margin: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  background: #212121;
-} 
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #000;
+    }
 
     .frame {
-  width: 440px;
-  height: 956px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%,
+      width: 440px;
+      height: 956px;
+      background: #212121;
+      position: relative;
+      box-shadow: 0px 10px 30px rgba(0,0,0,0.5);
+      border-radius: 0px;
+      overflow: hidden;
+    }
 
     /* avatar */
     .avatar {
