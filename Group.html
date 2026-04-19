@@ -2,37 +2,28 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Group Ranking</title>
+  <title>Group</title>
   <style>
-    /* 基礎設定：確保背景與內容一致，消除黑邊感 */
-    html, body {
+    body {
       margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background: #212121; /* 與設計稿背景同色 */
       display: flex;
       justify-content: center;
-      align-items: flex-start;
-      overflow-x: hidden;
+      align-items: center;
+      height: 100vh;
+      background: #000;
     }
 
-    /* 核心縮放邏輯 */
     .frame {
       width: 440px;
       height: 956px;
       background: #212121;
       position: relative;
       box-shadow: 0px 10px 30px rgba(0,0,0,0.5);
-      flex-shrink: 0;
-      
-      /* 利用 scale 讓 440px 的設計自動縮放到符合手機螢幕寬度 (100vw) */
-      transform: scale(calc(100vw / 440));
-      transform-origin: top center;
+      border-radius: 0px;
+      overflow: hidden;
     }
 
-    /* 以下為你原始的 UI 樣式 */
+    /* avatar */
     .avatar {
       position: absolute;
       width: 60px;
@@ -46,55 +37,98 @@
       border-radius: 30px;
     }
 
+    /* top glass */
     .top-card {
       position: absolute;
       width: 440px;
       height: 145px;
       left: 0px;
       top: 0px;
+
       background: rgba(53,53,53,0.18);
       backdrop-filter: blur(2px);
       -webkit-backdrop-filter: blur(2px);
+
+      box-sizing: border-box;
+      background-clip: padding-box;
+
+      border: none;
       border-bottom: 1px solid rgba(255,255,255,0.28);
-      box-shadow: 0px 20px 30px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.10);
+
+      box-shadow:
+        0px 20px 30px rgba(0,0,0,0.25),
+        inset 0 1px 0 rgba(255,255,255,0.10);
     }
 
+    /* rect 13 */
     .rect-13 {
       position: absolute;
       width: 400px;
       height: 150px;
       left: 20px;
       top: 165px;
+
       background: rgba(53,53,53,0.18);
       backdrop-filter: blur(2px);
       -webkit-backdrop-filter: blur(2px);
+
+      box-sizing: border-box;
+      background-clip: padding-box;
+
       border: 1px solid rgba(255,255,255,0.22);
-      box-shadow: 0px 20px 30px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.10);
+
+      box-shadow:
+        0px 20px 30px rgba(0,0,0,0.25),
+        inset 0 1px 0 rgba(255,255,255,0.10);
+
       border-radius: 35px;
     }
 
+    /* rect 14 */
     .rect-14 {
       position: absolute;
       width: 150px;
       height: 76px;
       left: 260px;
       top: 219px;
+
       background: rgba(53,53,53,0.18);
       backdrop-filter: blur(2px);
       -webkit-backdrop-filter: blur(2px);
+
+      box-sizing: border-box;
+      background-clip: padding-box;
+
       border: 1px solid rgba(255,255,255,0.22);
+
+      box-shadow:
+        0px 20px 30px rgba(0,0,0,0.25),
+        inset 0 1px 0 rgba(255,255,255,0.10);
+
       border-radius: 10px;
     }
 
+    /* rect 2 main */
     .rect-2 {
       position: absolute;
       width: 400px;
       height: 406px;
       left: 20px;
       top: 340px;
+
       background: rgba(53,53,53,0.18);
       backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+
+      box-sizing: border-box;
+      background-clip: padding-box;
+
       border: 1px solid rgba(255,255,255,0.22);
+
+      box-shadow:
+        0px 20px 30px rgba(0,0,0,0.25),
+        inset 0 1px 0 rgba(255,255,255,0.10);
+
       border-radius: 35px;
       overflow: hidden;
     }
@@ -103,140 +137,726 @@
       position: absolute;
       width: 400px;
       height: 50px;
+      left: 0px;
+      top: 0px;
+
       background: rgba(53,53,53,0.18);
+      box-sizing: border-box;
       border-bottom: 1px solid #838383;
+      border-radius: 35px 35px 0px 0px;
     }
 
+    /* Rectangle 12 */
+    /* Rectangle 12 */
     .rect-12 {
       position: absolute;
       width: 440px;
       height: 120px;
       left: 0px;
       top: 836px;
+
       background: rgba(53,53,53,0.18);
       backdrop-filter: blur(2px);
-      border-top: 1px solid rgba(255,255,255,0.28);
-    }
+      -webkit-backdrop-filter: blur(2px);
 
-    /* 分隔線 */
-    .rect-line {
+      box-sizing: border-box;
+      background-clip: padding-box;
+
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.28);
+
+      box-shadow:
+        0px 10px 20px rgba(0,0,0,0.20),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+      /* Rectangle 6 */
+    .rect-6 {
       position: absolute;
       width: 400px;
       height: 1px;
       left: 20px;
+      top: 440px;
+
       background: #838383;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
 
-    /* 角色頭像清單樣式 */
-    .av-item {
+    /* Rectangle 7 */
+    .rect-7 {
+      position: absolute;
+      width: 400px;
+      height: 1px;
+      left: 20px;
+      top: 491px;
+
+      background: #838383;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Rectangle 8 */
+    .rect-8 {
+      position: absolute;
+      width: 400px;
+      height: 1px;
+      left: 20px;
+      top: 542px;
+
+      background: #838383;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Rectangle 9 */
+    .rect-9 {
+      position: absolute;
+      width: 400px;
+      height: 1px;
+      left: 20px;
+      top: 593px;
+
+      background: #838383;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Rectangle 10 */
+    .rect-10 {
+      position: absolute;
+      width: 400px;
+      height: 1px;
+      left: 20px;
+      top: 645px;
+
+      background: #838383;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Rectangle 11 */
+    .rect-11 {
+      position: absolute;
+      width: 400px;
+      height: 1px;
+      left: 20px;
+      top: 695px;
+
+      background: #838383;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+
+      /* S__14131240 1 */
+                                              .av7 {
       position: absolute;
       width: 35px;
       height: 35px;
       left: 30px;
+      top: 704px;
+      background: url('https://raw.githubusercontent.com/liug1217/Group/a1153fe131cd163256e6991cb4015299acb7a5e8/S__14131240.jpg');
       background-size: cover;
       background-position: center;
       border-radius: 17.5px;
       box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
     }
 
-    /* 字體與顏色 */
-    * {
-      font-family: 'Inter', 'Heiti TC', sans-serif;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      white-space: nowrap;
+    /* S__14131210 1 */
+                .av1 {
+      position: absolute;
+      width: 35px;
+      height: 35px;
+      left: 30px;
+      top: 398px;
+      background: url('https://raw.githubusercontent.com/liug1217/Group/a1153fe131cd163256e6991cb4015299acb7a5e8/S__14131210.jpg');
+      background-size: cover;
+      background-position: center;
+      border-radius: 17.5px;
+      box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
     }
 
-    .title-rank { position: absolute; left: 190px; top: 355px; font-size: 20px; }
-    .title-player { position: absolute; left: 80px; top: 358px; font-size: 15px; }
-    .title-score { position: absolute; left: 315px; top: 358px; font-size: 15px; }
-    .group-title { position: absolute; width: 440px; text-align: center; top: 122px; font-size: 12px; }
+    /* S__14131235 1 */
+    .av2 {
+      position: absolute;
+      width: 35px;
+      height: 35px;
+      left: 30px;
+      top: 449px;
+      background: url('https://raw.githubusercontent.com/liug1217/Group/a1153fe131cd163256e6991cb4015299acb7a5e8/S__14131235.jpg');
+      background-size: cover;
+      background-position: center;
+      border-radius: 17.5px;
+      box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    }
 
+    /* S__14131250 1 */
+    .av3 {
+      position: absolute;
+      width: 35px;
+      height: 35px;
+      left: 30px;
+      top: 500px;
+      background: url('https://raw.githubusercontent.com/liug1217/Group/a1153fe131cd163256e6991cb4015299acb7a5e8/S__14131250.jpg');
+      background-size: cover;
+      background-position: center;
+      border-radius: 17.5px;
+      box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    }
+
+    /* S__14131251 1 */
+    .av4 {
+      position: absolute;
+      width: 35px;
+      height: 35px;
+      left: 30px;
+      top: 551px;
+      background: url('https://raw.githubusercontent.com/liug1217/Group/a1153fe131cd163256e6991cb4015299acb7a5e8/S__14131251.jpg');
+      background-size: cover;
+      background-position: center;
+      border-radius: 17.5px;
+      box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    }
+
+    /* S__14131253 1 */
+    .av5 {
+      position: absolute;
+      width: 35px;
+      height: 35px;
+      left: 30px;
+      top: 602px;
+      background: url('https://raw.githubusercontent.com/liug1217/Group/a1153fe131cd163256e6991cb4015299acb7a5e8/S__14131253.jpg');
+      background-size: cover;
+      background-position: center;
+      border-radius: 17.5px;
+      box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    }
+
+    /* S__14131255 1 */
+    .av6 {
+      position: absolute;
+      width: 35px;
+      height: 35px;
+      left: 30px;
+      top: 654px;
+      background: url('https://raw.githubusercontent.com/liug1217/Group/a1153fe131cd163256e6991cb4015299acb7a5e8/S__14131255.jpg');
+      background-size: cover;
+      background-position: center;
+      border-radius: 17.5px;
+      box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    }
+
+    /* 標題：排名表 */
+            .title-rank {
+      position: absolute;
+      width: 60px;
+      height: 24px;
+      left: 190px;
+      top: 355px; /* 修正到 header 裡 */
+
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 400;
+      font-size: 20px;
+      line-height: 24px;
+
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* 標題：競爭者 */
+            .title-player {
+      position: absolute;
+      width: 60px;
+      height: 18px;
+      left: 80px;
+      top: 358px; /* 修正到 header 裡 */
+
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 400;
+      font-size: 15px;
+      line-height: 18px;
+
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* 標題：狙擊手 */
+            .title-score {
+      position: absolute;
+      width: 60px;
+      height: 18px;
+      left: 315px;
+      top: 358px; /* 修正到 header 裡 */
+
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 400;
+      font-size: 15px;
+      line-height: 18px;
+
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* ★Bi_藍冰團(Roblox) */
+    .group-title {
+      position: absolute;
+      width: 113px;
+      height: 15px;
+      left: 163px;
+      top: 122px;
+
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 400;
+      font-size: 12px;
+      line-height: 15px;
+
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    * {
+      font-family: 'SE Pro', 'Inter', sans-serif !important;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* 劉 O 佑 */
+    .profile-name {
+      position: absolute;
+      width: 40px;
+      height: 15px;
+      left: 150px;
+      top: 202px;
+
+      font-family: 'SE Pro', 'Inter', sans-serif;
+      font-style: normal;
+      font-weight: 400;
+      font-size: 12px;
+      line-height: 15px;
+
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Bi_liug1217 */
+    .profile-id {
+      position: absolute;
+      width: 78px;
+      height: 18px;
+      left: 150px;
+      top: 217px;
+
+      font-family: 'SE Pro', 'Inter', sans-serif;
+      font-style: normal;
+      font-weight: 400;
+      font-size: 15px;
+      line-height: 18px;
+
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Roblox競爭者等級 80 */
+    .profile-level {
+      position: absolute;
+      width: 140px;
+      height: 30px;
+      left: 150px;
+      top: 235px;
+
+      font-family: 'SE Pro', 'Inter', sans-serif;
+      font-style: normal;
+      font-weight: 400;
+      font-size: 12px;
+      line-height: 15px;
+
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* 劉 O 佑 */
+    .bi-name-1 {
+      position: absolute;
+      width: 40px;
+      height: 15px;
+      left: 150px;
+      top: 202px;
+
+      font-family: 'SE Pro', 'Inter', sans-serif;
+      font-style: normal;
+      font-weight: 400;
+      font-size: 12px;
+      line-height: 15px;
+
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Bi_liug1217 */
+    .bi-name-2 {
+      position: absolute;
+      width: 78px;
+      height: 18px;
+      left: 150px;
+      top: 217px;
+
+      font-family: 'SE Pro', 'Inter', sans-serif;
+      font-style: normal;
+      font-weight: 400;
+      font-size: 15px;
+      line-height: 18px;
+
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Roblox競爭者等級 80 */
+    .bi-name-3 {
+      position: absolute;
+      width: 120px;
+      height: 30px;
+      left: 150px;
+      top: 235px;
+
+      font-family: 'SE Pro', 'Inter', sans-serif;
+      font-style: normal;
+      font-weight: 400;
+      font-size: 12px;
+      line-height: 15px;
+
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Row 1 */
+    .p1_name {
+      position: absolute;
+      left: 80px;
+      top: 402px;
+      font-size: 15px;
+      color: #fff;
+      text-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    }
+    .p1_level {
+      position: absolute;
+      left: 80px;
+      top: 420px;
+      font-size: 12px;
+      color: #fff;
+      text-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    }
+
+    /* Row 2 */
+    .p2_name {
+      position: absolute;
+      left: 80px;
+      top: 453px;
+      font-size: 15px;
+      color: #fff;
+      text-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    }
+    .p2_level {
+      position: absolute;
+      left: 80px;
+      top: 471px;
+      font-size: 12px;
+      color: #fff;
+      text-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    }
+
+    /* Row 3 */
+    .p3_name {
+      position: absolute;
+      left: 80px;
+      top: 504px;
+      font-size: 15px;
+      color: #fff;
+      text-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    }
+    .p3_level {
+      position: absolute;
+      left: 80px;
+      top: 522px;
+      font-size: 12px;
+      color: #fff;
+      text-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    }
+
+    /* Row 4 */
+    .p4_name {
+      position: absolute;
+      left: 80px;
+      top: 555px;
+      font-size: 15px;
+      color: #fff;
+      text-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    }
+    .p4_level {
+      position: absolute;
+      left: 80px;
+      top: 573px;
+      font-size: 12px;
+      color: #fff;
+      text-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    }
+
+    /* Row 5 */
+    .p5_name {
+      position: absolute;
+      left: 80px;
+      top: 606px;
+      font-size: 15px;
+      color: #fff;
+      text-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    }
+    .p5_level {
+      position: absolute;
+      left: 80px;
+      top: 624px;
+      font-size: 12px;
+      color: #fff;
+      text-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    }
+
+    /* S__14131250 2 */
+    .av_big {
+      position: absolute;
+      width: 100px;
+      height: 100px;
+      left: 30px;
+      top: 190px;
+
+      background: url('S__14131250.jpg');
+      background-size: cover;
+      background-position: center;
+
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25), 0px 4px 4px rgba(0, 0, 0, 0.25);
+      border-radius: 50px;
+    }
+
+    /* S__14131250 2 */
     .big-avatar-2 {
       position: absolute;
       width: 100px;
       height: 100px;
       left: 30px;
       top: 190px;
+
       background: url('https://raw.githubusercontent.com/liug1217/Group/a1153fe131cd163256e6991cb4015299acb7a5e8/S__14131250.jpg');
       background-size: cover;
+      background-position: center;
+
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25), 0px 4px 4px rgba(0, 0, 0, 0.25);
       border-radius: 50px;
+
       z-index: 20;
     }
 
-    .u1_info { position: absolute; left: 150px; z-index: 20; }
-    .u1_name { top: 202px; font-size: 12px; }
-    .u1_id { top: 215px; font-size: 15px; }
-    .u1_level_label { top: 233px; font-size: 12px; }
-    .u1_level { top: 248px; font-size: 12px; }
+    /* 劉 O 佑 */
+    .u1_name {
+      position: absolute;
+      width: 40px;
+      height: 15px;
+      left: 150px;
+      top: 202px;
 
-    .player-text { position: absolute; left: 80px; }
-    .p-name { font-size: 15px; }
-    .p-level { font-size: 12px; margin-top: 18px; }
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 400;
+      font-size: 12px;
+      line-height: 15px;
 
-  </style>
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+
+      z-index: 20;
+    }
+
+    /* Bi_liug1217 */
+    .u1_id {
+      position: absolute;
+      width: 78px;
+      height: 18px;
+      left: 150px;
+      top: 215px;
+
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 400;
+      font-size: 15px;
+      line-height: 18px;
+
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+
+      z-index: 20;
+    }
+
+    /* Roblox競爭者等級 */
+    .u1_level_label {
+      position: absolute;
+      width: 120px;
+      height: 15px;
+      left: 150px;
+      top: 233px;
+
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 400;
+      font-size: 12px;
+      line-height: 15px;
+
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+
+      z-index: 20;
+    }
+
+    /* 80 */
+    .u1_level {
+      position: absolute;
+      width: 30px;
+      height: 15px;
+      left: 150px;
+      top: 248px;
+
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 400;
+      font-size: 12px;
+      line-height: 15px;
+
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+
+      z-index: 20;
+    }
+
+    /* 個人簡介 : */
+    .u1_bio_label {
+      position: absolute;
+      width: 55px;
+      height: 15px;
+      left: 260px;
+      top: 202px;
+
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 400;
+      font-size: 12px;
+      line-height: 15px;
+
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* 無 */
+    .u1_bio_value {
+      position: absolute;
+      width: 30px;
+      height: 36px;
+      left: 320px;
+      top: 241px;
+
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 400;
+      font-size: 30px;
+      line-height: 36px;
+
+      color: #FFFFFF;
+    }
+
+    /* Global font override */
+    * {
+      font-family: 'SE Pro', 'Inter', sans-serif !important;
+    }
+
+/* NO WRAP FIX */
+.rank-text, .name, .level, .bio, .u-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* FORCE NO WRAP FIX */
+.frame, .frame * {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  flex-wrap: nowrap !important;
+}
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.frame {
+  width: 440px;
+  height: 956px;
+  transform: translateX(-50%) scale(calc(100vw / 440));
+  transform-origin: center;
+}
+</style>
 </head>
 <body>
   <div class="frame">
     <div class="top-card"></div>
     <div class="avatar"></div>
+    <div class="big-avatar-2"></div>
+    <div class="u1_name">劉 O 佑</div>
+    <div class="u1_id">Bi_liug1217</div>
+    <div class="u1_level_label">Roblox競爭者等級</div>
+    <div class="u1_level">80</div>
+    <div class="group-title">★Bi_藍冰團(Roblox)</div>
+
     <div class="rect-13"></div>
     <div class="rect-14"></div>
-    <div class="rect-2"><div class="rect-4"></div></div>
-    <div class="rect-12"></div>
 
-    <div class="group-title">★Bi_藍冰團(Roblox)</div>
+    <div class="rect-2">
+      <div class="rect-4"></div>
+    </div>
+
     <div class="title-rank">排名表</div>
     <div class="title-player">競爭者</div>
     <div class="title-score">狙擊手</div>
 
-    <div class="big-avatar-2"></div>
-    <div class="u1_info u1_name">劉 O 佑</div>
-    <div class="u1_info u1_id">Bi_liug1217</div>
-    <div class="u1_info u1_level_label">Roblox競爭者等級</div>
-    <div class="u1_info u1_level">80</div>
-    <div style="position:absolute; left:260px; top:202px; font-size:12px;">個人簡介 :</div>
-    <div style="position:absolute; left:320px; top:241px; font-size:30px;">無</div>
+    <div class="rect-12"></div>
+    <div class="rect-6"></div>
+    <div class="rect-7"></div>
+    <div class="rect-8"></div>
+    <div class="rect-9"></div>
+    <div class="rect-10"></div>
+    <div class="rect-11"></div>
 
-    <div class="rect-line" style="top:440px;"></div>
-    <div class="rect-line" style="top:491px;"></div>
-    <div class="rect-line" style="top:542px;"></div>
-    <div class="rect-line" style="top:593px;"></div>
-    <div class="rect-line" style="top:645px;"></div>
-    <div class="rect-line" style="top:695px;"></div>
+    <div class="av1"></div>
+    <div class="av2"></div>
+    <div class="av3"></div>
+    <div class="av4"></div>
+    <div class="av5"></div>
+    <div class="av6"></div>
+    <div class="av7"></div>
 
-    <div class="av-item" style="top:398px; background-image: url('https://raw.githubusercontent.com/liug1217/Group/a1153fe131cd163256e6991cb4015299acb7a5e8/S__14131210.jpg');"></div>
-    <div class="player-text" style="top:398px;">
-      <div class="p-name">陳柏安</div>
-      <div class="p-level">Roblox競爭者等級 : 207</div>
-    </div>
+    <!-- 排行榜文字（已對齊 avatar top） -->
+    <div class="p1_name" style="top:398px;">陳柏安</div>
+    <div class="p1_level" style="top:416px;">Roblox競爭者等級 : 207</div>
 
-    <div class="av-item" style="top:449px; background-image: url('https://raw.githubusercontent.com/liug1217/Group/a1153fe131cd163256e6991cb4015299acb7a5e8/S__14131235.jpg');"></div>
-    <div class="player-text" style="top:449px;">
-      <div class="p-name">張 O 寧 Bi_VIP1124</div>
-      <div class="p-level">Roblox競爭者等級 : 159</div>
-    </div>
+    <div class="p2_name" style="top:449px;">張 O 寧 Bi_VIP1124</div>
+    <div class="p2_level" style="top:467px;">Roblox競爭者等級 : 159</div>
 
-    <div class="av-item" style="top:500px; background-image: url('https://raw.githubusercontent.com/liug1217/Group/a1153fe131cd163256e6991cb4015299acb7a5e8/S__14131250.jpg');"></div>
-    <div class="player-text" style="top:500px;">
-      <div class="p-name">劉 O 佑 Bi_liug1217</div>
-      <div class="p-level">Roblox競爭者等級 : 80</div>
-    </div>
+    <div class="p3_name" style="top:500px;">劉 O 佑 Bi_liug1217</div>
+    <div class="p3_level" style="top:518px;">Roblox競爭者等級 : 80</div>
 
-    <div class="av-item" style="top:551px; background-image: url('https://raw.githubusercontent.com/liug1217/Group/a1153fe131cd163256e6991cb4015299acb7a5e8/S__14131251.jpg');"></div>
-    <div class="player-text" style="top:551px;">
-      <div class="p-name">劉思妤 Bi_Robbyg309bbb</div>
-      <div class="p-level">Roblox競爭者等級 : 128</div>
-    </div>
+    <div class="p4_name" style="top:551px;">劉思妤 Bi_Robbyg309bbb</div>
+    <div class="p4_level" style="top:569px;">Roblox競爭者等級 : 128</div>
 
-    <div class="av-item" style="top:602px; background-image: url('https://raw.githubusercontent.com/liug1217/Group/a1153fe131cd163256e6991cb4015299acb7a5e8/S__14131253.jpg');"></div>
-    <div class="player-text" style="top:602px;">
-      <div class="p-name">帆</div>
-      <div class="p-level">Roblox競爭者等級 : </div>
-    </div>
-    
-    <div class="av-item" style="top:654px; background-image: url('https://raw.githubusercontent.com/liug1217/Group/a1153fe131cd163256e6991cb4015299acb7a5e8/S__14131255.jpg');"></div>
-    <div class="av-item" style="top:704px; background-image: url('https://raw.githubusercontent.com/liug1217/Group/a1153fe131cd163256e6991cb4015299acb7a5e8/S__14131240.jpg');"></div>
+    <div class="p5_name" style="top:602px;">帆</div>
+    <div class="p5_level" style="top:620px;">Roblox競爭者等級 : </div>
+    <div class="u1_bio_label">個人簡介 :</div>
+    <div class="u1_bio_value">無</div>
   </div>
 </body>
 </html>
