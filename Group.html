@@ -14,14 +14,14 @@
     }
 
     .frame {
-      width: 100vw;
-      height: 100vh;
-      background: #212121;
-      position: relative;
-      box-shadow: 0px 10px 30px rgba(0,0,0,0.5);
-      border-radius: 0px;
-      overflow: hidden;
-    }
+  width: 440px;
+  height: 956px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(calc(min(100vw / 440, 100vh / 956)));
+  transform-origin: center;
+}
 
     /* avatar */
     .avatar {
@@ -794,7 +794,12 @@ html, body {
   align-items: center;
 }
 
-
+.frame {
+  width: 440px;
+  height: 956px;
+  transform: scale(calc(min(100vw / 440, 100vh / 956)));
+  transform-origin: center;
+}
 </style>
 </head>
 <body>
