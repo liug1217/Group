@@ -14,11 +14,11 @@
 } 
 
     .frame {
-  width: 440px;
-  height: 956px;
-  position: relative;
-  transform: scale(calc(min(100vw / 440, 100vh / 956)));
-  transform-origin: center;
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
 }
 
     /* avatar */
