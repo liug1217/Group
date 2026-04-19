@@ -18,7 +18,7 @@
       align-items: center;
     }
 
-    /* 自動適配縮放（避免手機放大/縮小問題） */
+    /* 設計稿縮放（無安全區模式） */
     .scale-wrapper {
       transform-origin: center;
       transform: scale(calc(min(100vw / 440, 100vh / 956)));
@@ -81,7 +81,7 @@
       border-radius: 35px 35px 0px 0px;
     }
 
-    /* Rectangle 12（底欄 - 無陰影更合理） */
+    /* Rectangle 12（底欄無安全區干擾） */
     .rect12 {
       position: absolute;
       width: 440px;
