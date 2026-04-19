@@ -2,6 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>440x956 框架</title>
   <style>
     body {
@@ -9,18 +10,13 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #000;
+  background: #212121; /* 改成灰色背景 */
 } 
 
     .frame {
-  width: 440px;
-  height: 956px;
-  background: #212121;
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform: scale(calc(min(100vw / 440, 100vh / 956)));
-  transform-origin: top left;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
 }
 
     /* avatar */
@@ -788,17 +784,16 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #000;
+  background: #212121;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .frame {
   width: 440px;
   height: 956px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform: scale(calc(max(100vw / 440, 100vh / 956)));
-  transform-origin: top left;
+  position: relative;
 }
 </style>
 </head>
