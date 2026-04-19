@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>Group</title>
+  <title>440x956 框架</title>
   <style>
     body {
       margin: 0;
@@ -14,16 +14,14 @@
     }
 
     .frame {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-
-  width: 440px;
-  height: 956px;
-
-  transform: translate(-50%, -50%) scale(calc(max(100vw / 440, 100vh / 956)));
-  transform-origin: center;
-}
+      width: 440px;
+      height: 956px;
+      background: #212121;
+      position: relative;
+      box-shadow: 0px 10px 30px rgba(0,0,0,0.5);
+      border-radius: 0px;
+      overflow: hidden;
+    }
 
     /* avatar */
     .avatar {
@@ -790,13 +788,16 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #212121;
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .frame {
   width: 440px;
   height: 956px;
-  transform: translateX(-50%) scale(calc(100vw / 440));
+  transform: scale(calc(min(100vw / 440, 100vh / 956)));
   transform-origin: center;
 }
 </style>
