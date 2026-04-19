@@ -789,16 +789,16 @@ html, body {
   height: 100%;
   overflow: hidden;
   background: #000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 .frame {
   width: 440px;
   height: 956px;
-  transform: scale(calc(min(100vw / 440, 100vh / 956)));
-  transform-origin: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: scale(calc(max(100vw / 440, 100vh / 956)));
+  transform-origin: top left;
 }
 </style>
 </head>
