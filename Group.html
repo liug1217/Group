@@ -14,9 +14,11 @@
 } 
 
     .frame {
-  width: 100vw;
-  height: 100vh;
+  width: 440px;
+  height: 956px;
   position: relative;
+  transform: scale(calc(min(100vw / 440, 100vh / 956)));
+  transform-origin: center;
 }
 
     /* avatar */
@@ -794,6 +796,8 @@ html, body {
   width: 440px;
   height: 956px;
   position: relative;
+  transform: scale(calc(min(100vw / 440, 100vh / 956)));
+  transform-origin: center;
 }
 </style>
 </head>
