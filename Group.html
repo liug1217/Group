@@ -775,6 +775,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* FORCE NO WRAP FIX */
+.frame, .frame * {
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  flex-wrap: nowrap !important;
+}
 </style>
 </head>
 <body>
