@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>手機APP框架</title>
 
   <style>
@@ -16,6 +16,13 @@
       display: flex;
       justify-content: center;
       align-items: center;
+    }
+
+    /* 強制忽略安全區（不要任何 inset） */
+    body, .app {
+      padding: 0 !important;
+      margin: 0 !important;
+    }
     }
 
     /* 自動適配縮放（避免手機放大/縮小問題） */
