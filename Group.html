@@ -2,8 +2,8 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <!-- 關鍵：不要 viewport-fit=cover 才不會出現安全區留白 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <!-- 已完全移除安全區 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>手機APP框架</title>
 
   <style>
@@ -14,19 +14,28 @@
       height: 100%;
       background: #212121;
       overflow: hidden;
-    }
-
-    /* 不要置中，直接貼滿畫面 */
-    .scale-wrapper {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      transform-origin: top center; /* 關鍵：從頂部開始縮放 */
+    }
+
+    /* 強制覆蓋所有 safe-area */
+    html, body, .app {
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* 關鍵：覆蓋 iOS 安全區 inset */
+    body {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+
+    /* 自動適配縮放 */
+    .scale-wrapper {
+      transform-origin: center;
       transform: scale(calc(min(100vw / 440, 100vh / 956)));
     }
 
