@@ -16,7 +16,7 @@
       overflow: hidden;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-start; /* 改成貼頂，避免看起來像有安全區 */
     }
 
     /* 強制覆蓋所有 safe-area */
@@ -35,8 +35,9 @@
 
     /* 自動適配縮放 */
     .scale-wrapper {
-      transform-origin: center;
+      transform-origin: top center; /* 從頂部縮放 */
       transform: scale(calc(min(100vw / 440, 100vh / 956)));
+      margin-top: 0;
     }
 
     .app {
