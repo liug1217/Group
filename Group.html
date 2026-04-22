@@ -3,35 +3,59 @@
 <head>
   <meta charset="UTF-8" />
 
-  <!-- iOS PWA 全螢幕設定 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#212121">
+  <!-- iOS 全螢幕 + PWA 必備設定 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#212121" />
 
   <title>手機APP框架</title>
 
   <style>
+    :root {
+      --bg: #212121;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
-      height: 100svh;
-      background: #212121;
+      background: var(--bg);
       overflow: hidden;
+    }
+
+    body {
       display: flex;
       justify-content: center;
       align-items: center;
+      background: var(--bg);
     }
 
-    /* PWA 全螢幕容器 */
+    /* iOS 滾動與背景延伸修正 */
+    html {
+      background: var(--bg);
+    }
+
+    /* 自動縮放框架 */
+    .scale-wrapper {
+      transform-origin: center;
+      transform: scale(calc(min(100vw / 440, 100svh / 956)));
+    }
+
     .app {
       width: 440px;
       height: 956px;
-      background: #212121;
+      background: var(--bg);
       position: relative;
       overflow: hidden;
+
+      /* 安全區（正式 App 模式） */
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+      box-sizing: border-box;
     }
 
     /* Rectangle 1 */
@@ -39,8 +63,8 @@
       position: absolute;
       width: 440px;
       height: 145px;
-      left: 0px;
-      top: 0px;
+      left: 0;
+      top: 0;
       background: rgba(53, 53, 53, 0.2);
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
@@ -76,11 +100,11 @@
       height: 50px;
       left: 20px;
       top: 340px;
-      box-sizing: border-box;
       background: rgba(53, 53, 53, 0.2);
       border-bottom: 1px solid #838383;
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 35px 35px 0px 0px;
+      border-radius: 35px 35px 0 0;
+      box-sizing: border-box;
     }
 
     /* Rectangle 12 */
@@ -88,7 +112,7 @@
       position: absolute;
       width: 440px;
       height: 120px;
-      left: 0px;
+      left: 0;
       top: 836px;
       background: rgba(53, 53, 53, 0.2);
       box-shadow: none;
@@ -106,40 +130,43 @@
       border-radius: 10px;
     }
 
-    /* iOS 加入主畫面提示浮窗 */
-    .ios-hint {
-      position: absolute;
-      top: 20px;
+    /* iOS 引導浮窗 */
+    .install-hint {
+      position: fixed;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.75);
       color: white;
-      padding: 10px 14px;
+      padding: 12px 16px;
       border-radius: 12px;
-      font-size: 12px;
+      font-size: 14px;
       display: none;
+      z-index: 9999;
     }
-
   </style>
 </head>
 <body>
 
-<div class="app">
-  <div class="rect1"></div>
-  <div class="rect13"></div>
-  <div class="rect2"></div>
-  <div class="rect4"></div>
-  <div class="rect12"></div>
-  <div class="rect14"></div>
-
-  <div class="ios-hint" id="iosHint">
-    點擊「分享」→「加入主畫面」以獲得最佳體驗
+<div class="scale-wrapper">
+  <div class="app">
+    <div class="rect1"></div>
+    <div class="rect13"></div>
+    <div class="rect2"></div>
+    <div class="rect4"></div>
+    <div class="rect12"></div>
+    <div class="rect14"></div>
   </div>
+</div>
+
+<!-- iOS 安裝提示 -->
+<div class="install-hint" id="installHint">
+  點擊「分享」→「加入主畫面」以獲得最佳體驗
 </div>
 
 <script>
   function isIOS() {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent);
+    return /iPhone|iPad|iPod/i.test(navigator.userAgent);
   }
 
   function isStandalone() {
@@ -147,7 +174,7 @@
   }
 
   if (isIOS() && !isStandalone()) {
-    document.getElementById('iosHint').style.display = 'block';
+    document.getElementById('installHint').style.display = 'block';
   }
 </script>
 
