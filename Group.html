@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
 
   <!-- iOS / PWA 全螢幕 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#212121" />
@@ -129,11 +129,7 @@
     /* =========================
        只有加入主畫面才套用 safe-area
     ========================= */
-    @media (display-mode: standalone) {
-      .footer-nav {
-        height: calc(120px + env(safe-area-inset-bottom));
-        padding-bottom: env(safe-area-inset-bottom);
-      }
+    
     }
 
   </style>
