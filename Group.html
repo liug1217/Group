@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <!-- 強制無安全區 + 不自動縮放 -->
+  <!-- 已完全移除安全區 -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>手機APP框架</title>
 
@@ -11,27 +11,32 @@
       margin: 0;
       padding: 0;
       width: 100%;
-      height: 100vh; /* 關鍵 */
+      height: 100%;
       background: #212121;
       overflow: hidden;
-      position: fixed; /* 🔥 防止 iOS 自動位移 */
-      top: 0;
-      left: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
-    /* 完全清掉所有可能安全區 */
-    * {
-      margin: 0;
-      padding: 0;
+    /* 強制覆蓋所有 safe-area */
+    html, body, .app {
+      padding: 0 !important;
+      margin: 0 !important;
     }
 
-    /* 縮放容器（改成絕對定位） */
+    /* 關鍵：覆蓋 iOS 安全區 inset */
+    body {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+    }
+
+    /* 自動適配縮放 */
     .scale-wrapper {
-      position: absolute;
-      top: 50%;
-      left: 50%;
       transform-origin: center;
-      transform: translate(-50%, -50%) scale(calc(min(100vw / 440, 100vh / 956)));
+      transform: scale(calc(min(100vw / 440, 100vh / 956)));
     }
 
     .app {
