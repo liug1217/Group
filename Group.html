@@ -8,22 +8,20 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#212121" />
 
-  <title>手機APP框架 - 完美全螢幕優化版</title>
+  <title>手機APP框架 - 最終修正版</title>
 
   <style>
     /* =========================
-       基礎布局（消滅空白的終極核心）
+       1. 基礎布局：確保所有縫隙都是黑色
     ========================= */
-
     html {
       margin: 0;
       padding: 0;
-      /* 關鍵：背景色必須與 App 一致，確保 Safari 網址列背景不留白 */
-      background-color: #212121;
+      background-color: #212121; /* 這是消滅白邊的最強防線 */
       height: 100svh;
       width: 100%;
       overflow: hidden;
-      position: fixed; /* 防止橡皮筋回彈 */
+      position: fixed; 
     }
 
     body {
@@ -31,7 +29,7 @@
       padding: 0;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: center; /* 讓 App 在畫面中央縮放 */
       flex-direction: column;
       height: 100svh;
       width: 100%;
@@ -40,15 +38,18 @@
       overflow: hidden;
     }
 
-    /* 主容器縮放邏輯：
-       使用 100svh 計算縮放，確保在瀏覽器網址列出現時，App 會自動縮放以適配空間
-    */
+    /* =========================
+       2. 縮放容器：精確適配所有螢幕
+    ========================= */
     .scale-wrapper {
-      transform-origin: center;
-      transform: scale(calc(min(100vw / 440, 100svh / 956)));
       display: flex;
       justify-content: center;
       align-items: center;
+      width: 100%;
+      height: 100%;
+      /* 根據 100svh 動態縮放，防止網址列出現時內容溢出 */
+      transform: scale(calc(min(100vw / 440, 100svh / 956)));
+      transform-origin: center center;
     }
 
     .app {
@@ -61,8 +62,7 @@
     }
 
     /* =========================
-       Header（Rect 1）
-       在 PWA 模式下自動避開瀏海
+       3. Header（頂部元件）
     ========================= */
     .header {
       position: absolute;
@@ -75,16 +75,16 @@
       z-index: 10;
     }
 
-    /* 只有在主畫面模式時，才微調 Header 高度，防止內容被瀏海遮擋 */
+    /* 主畫面模式下，微調頂部高度避開時間/電量 */
     @media (display-mode: standalone) {
       .header {
-        height: 165px; /* 增加 20px 空間 */
-        padding-top: env(safe-area-inset-top);
+        height: 165px;
+        padding-top: 20px;
       }
     }
 
     /* =========================
-       UI 區塊（保留你提供的所有元件）
+       4. UI 內容區塊（完整保留你的組件）
     ========================= */
     .rect13 {
       position: absolute;
@@ -116,7 +116,6 @@
       top: 340px;
       background: rgba(53, 53, 53, 0.2);
       border-bottom: 1px solid #838383;
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
       border-radius: 35px 35px 0 0;
       box-sizing: border-box;
     }
@@ -128,29 +127,32 @@
       left: 260px;
       top: 219px;
       background: rgba(99, 99, 99, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
       border-radius: 10px;
     }
 
     /* =========================
-       Footer（Rect 12）
-       修正重點：移除 env() 以避免瀏覽器模式下的雙重間距
+       5. Footer（解決你圖中紅框空白的關鍵）
     ========================= */
     .footer-nav {
       position: absolute;
       width: 440px;
       height: 120px;
       left: 0;
-      top: 836px; /* 貼齊底部 */
-      background: rgba(53, 53, 53, 0.2);
-      box-shadow: none;
+      /* 重要：改用 bottom: 0，確保它永遠鎖死在容器最底端 */
+      bottom: 0; 
+      background: rgba(53, 53, 53, 0.4);
+      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
     }
 
-    /* 只有在主畫面模式下才針對底部 Home 條進行補償 */
+    /* 當在主畫面模式時，增加底部高度來填補 Home 條空間 */
     @media (display-mode: standalone) {
+      .app {
+        /* 在主畫面稍微拉高畫布，消除物理縫隙 */
+        height: 1000px; 
+      }
       .footer-nav {
-        height: calc(120px + env(safe-area-inset-bottom));
-        padding-bottom: env(safe-area-inset-bottom);
+        height: 164px; /* 增加的高度會填滿安全區 */
+        padding-bottom: 30px; /* 讓內容稍微往上提一點，視覺更平衡 */
       }
     }
 
@@ -161,10 +163,12 @@
 <div class="scale-wrapper">
   <div class="app">
     <div class="header"></div>
+    
     <div class="rect13"></div>
+    <div class="rect14"></div>
     <div class="rect2"></div>
     <div class="rect4"></div>
-    <div class="rect14"></div>
+    
     <div class="footer-nav"></div>
   </div>
 </div>
