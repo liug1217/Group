@@ -8,22 +8,22 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#212121" />
 
-  <title>手機APP框架 - 完美全螢幕版</title>
+  <title>手機APP框架 - 完美全螢幕優化版</title>
 
   <style>
     /* =========================
-       第一步：背景填充（消除空白的核心）
+       基礎布局（消滅空白的終極核心）
     ========================= */
+
     html {
       margin: 0;
       padding: 0;
-      /* 關鍵：背景色必須與 App 一致，這樣安全區就不會是白的 */
-      background-color: #212121; 
-      height: 100%;
+      /* 關鍵：背景色必須與 App 一致，確保 Safari 網址列背景不留白 */
+      background-color: #212121;
+      height: 100svh;
       width: 100%;
       overflow: hidden;
-      /* 防止 iOS 橡皮筋回彈露出底色 */
-      position: fixed; 
+      position: fixed; /* 防止橡皮筋回彈 */
     }
 
     body {
@@ -32,41 +32,37 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      /* 使用 svh 確保縮放容器始終在網址列縮放後的正中央 */
-      height: 100svh; 
-      width: 100vw;
+      flex-direction: column;
+      height: 100svh;
+      width: 100%;
       background-color: #212121;
+      overscroll-behavior-y: none;
       overflow: hidden;
-      overscroll-behavior: none;
     }
 
-    /* =========================
-       第二步：精確縮放容器
-    ========================= */
+    /* 主容器縮放邏輯：
+       使用 100svh 計算縮放，確保在瀏覽器網址列出現時，App 會自動縮放以適配空間
+    */
     .scale-wrapper {
+      transform-origin: center;
+      transform: scale(calc(min(100vw / 440, 100svh / 956)));
       display: flex;
       justify-content: center;
       align-items: center;
-      width: 100%;
-      height: 100%;
-      /* 這裡是為了確保內容始終保持比例並置中 */
     }
 
     .app {
-      /* 你的原始畫布尺寸 */
       width: 440px;
       height: 956px;
       background: #212121;
       position: relative;
       overflow: hidden;
       flex-shrink: 0;
-      
-      /* 縮放邏輯：自動計算寬高比，不依賴 env() */
-      transform: scale(calc(min(100vw / 440, 100svh / 956)));
     }
 
     /* =========================
-       第三步：組件樣式（移除所有內部 env 衝突）
+       Header（Rect 1）
+       在 PWA 模式下自動避開瀏海
     ========================= */
     .header {
       position: absolute;
@@ -74,37 +70,30 @@
       height: 145px;
       left: 0;
       top: 0;
-      background: rgba(53, 53, 53, 0.4);
+      background: rgba(53, 53, 53, 0.2);
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
       z-index: 10;
     }
 
-    /* 針對 PWA 模式（加入主畫面）手動增加頂部間距，避開瀏海 */
+    /* 只有在主畫面模式時，才微調 Header 高度，防止內容被瀏海遮擋 */
     @media (display-mode: standalone) {
       .header {
-        /* 在 PWA 模式下稍微向下推，模擬安全區空間 */
-        height: 165px;
-        padding-top: 20px;
+        height: 165px; /* 增加 20px 空間 */
+        padding-top: env(safe-area-inset-top);
       }
     }
 
-    .footer-nav {
-      position: absolute;
-      width: 440px;
-      height: 120px;
-      left: 0;
-      bottom: 0; /* 改用 bottom: 0 確保貼齊底部 */
-      background: rgba(53, 53, 53, 0.4);
-    }
-
-    /* 內容區塊 */
+    /* =========================
+       UI 區塊（保留你提供的所有元件）
+    ========================= */
     .rect13 {
       position: absolute;
       width: 400px;
       height: 150px;
       left: 20px;
-      top: 175px;
+      top: 165px;
       background: rgba(65, 65, 65, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
       border-radius: 35px;
     }
 
@@ -113,51 +102,72 @@
       width: 400px;
       height: 406px;
       left: 20px;
-      top: 350px;
+      top: 340px;
       background: rgba(65, 65, 65, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
       border-radius: 35px;
     }
 
-    /* 提示視窗樣式 */
-    #ios-prompt {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: white;
-      padding: 15px;
-      border-radius: 12px;
-      z-index: 9999;
-      display: none;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-      font-family: sans-serif;
-      text-align: center;
+    .rect4 {
+      position: absolute;
+      width: 400px;
+      height: 50px;
+      left: 20px;
+      top: 340px;
+      background: rgba(53, 53, 53, 0.2);
+      border-bottom: 1px solid #838383;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      border-radius: 35px 35px 0 0;
+      box-sizing: border-box;
     }
+
+    .rect14 {
+      position: absolute;
+      width: 150px;
+      height: 76px;
+      left: 260px;
+      top: 219px;
+      background: rgba(99, 99, 99, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+    }
+
+    /* =========================
+       Footer（Rect 12）
+       修正重點：移除 env() 以避免瀏覽器模式下的雙重間距
+    ========================= */
+    .footer-nav {
+      position: absolute;
+      width: 440px;
+      height: 120px;
+      left: 0;
+      top: 836px; /* 貼齊底部 */
+      background: rgba(53, 53, 53, 0.2);
+      box-shadow: none;
+    }
+
+    /* 只有在主畫面模式下才針對底部 Home 條進行補償 */
+    @media (display-mode: standalone) {
+      .footer-nav {
+        height: calc(120px + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+    }
+
   </style>
 </head>
 <body>
 
-  <div id="ios-prompt">
-    點擊「分享」按鈕並選擇「加入主畫面」以獲得全螢幕體驗 🚀
+<div class="scale-wrapper">
+  <div class="app">
+    <div class="header"></div>
+    <div class="rect13"></div>
+    <div class="rect2"></div>
+    <div class="rect4"></div>
+    <div class="rect14"></div>
+    <div class="footer-nav"></div>
   </div>
+</div>
 
-  <div class="scale-wrapper">
-    <div class="app">
-      <div class="header"></div>
-      <div class="rect13"></div>
-      <div class="rect2"></div>
-      <div class="footer-nav"></div>
-    </div>
-  </div>
-
-  <script>
-    // 偵測是否為 iOS Safari 且尚未加入主畫面
-    const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
-    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
-
-    if (isIos && !isStandalone) {
-      document.getElementById('ios-prompt').style.display = 'block';
-    }
-  </script>
 </body>
 </html>
