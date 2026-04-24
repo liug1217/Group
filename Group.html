@@ -1,164 +1,33 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html>
 <head>
-  <meta charset="UTF-8" />
+    <style>
+        body {
+            /* 讓框架在頁面中央顯示 */
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #000000;
+        }
 
-  <!-- iOS PWA 全螢幕設定 -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="我的APP">
-
-  <style>
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      height: 100svh;
-      background: #212121;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    /* 如果你的內容需要捲動，請單獨開一個區塊 */
-    .scroll-content {
-      height: 100%;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    /* PWA 全螢幕容器 */
-    .app {
-      width: 440px;
-      height: 956px;
-      background: #212121;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* Rectangle 1 */
-    .rect1 {
-      position: absolute;
-      width: 440px;
-      height: 145px;
-      left: 0px;
-      top: 0px;
-      background: rgba(53, 53, 53, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-
-    /* Rectangle 13 */
-    .rect13 {
-      position: absolute;
-      width: 400px;
-      height: 150px;
-      left: 20px;
-      top: 165px;
-      background: rgba(65, 65, 65, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 35px;
-    }
-
-    /* Rectangle 2 */
-    .rect2 {
-      position: absolute;
-      width: 400px;
-      height: 406px;
-      left: 20px;
-      top: 340px;
-      background: rgba(65, 65, 65, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 35px;
-    }
-
-    /* Rectangle 4 */
-    .rect4 {
-      position: absolute;
-      width: 400px;
-      height: 50px;
-      left: 20px;
-      top: 340px;
-      box-sizing: border-box;
-      background: rgba(53, 53, 53, 0.2);
-      border-bottom: 1px solid #838383;
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 35px 35px 0px 0px;
-    }
-
-    /* Rectangle 12 */
-    .rect12 {
-      position: absolute;
-      width: 440px;
-      height: 120px;
-      left: 0px;
-      top: 836px;
-      background: rgba(53, 53, 53, 0.2);
-      box-shadow: none;
-    }
-
-    /* Rectangle 14 */
-    .rect14 {
-      position: absolute;
-      width: 150px;
-      height: 76px;
-      left: 260px;
-      top: 219px;
-      background: rgba(99, 99, 99, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 10px;
-    }
-
-    /* iOS 加入主畫面提示浮窗 */
-    .ios-hint {
-      position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.7);
-      color: white;
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-size: 12px;
-      display: none;
-    }
-
-  </style>
+        .frame {
+            /* 核心規格 */
+            width: 440px;
+            height: 956px;
+            background-color: #212121;
+            
+            /* 基礎設定 */
+            box-sizing: border-box;
+            overflow: hidden;
+            position: relative;
+        }
+    </style>
 </head>
 <body>
 
-<div class="app">
-  <div class="rect1"></div>
-  <div class="rect13"></div>
-  <div class="rect2"></div>
-  <div class="rect4"></div>
-  <div class="rect12"></div>
-  <div class="rect14"></div>
-
-  <div class="ios-hint" id="iosHint">
-    點擊「分享」→「加入主畫面」以獲得最佳體驗
-  </div>
-</div>
-
-<script>
-// 檢查是否已經是從主畫面打開 (Standalone 模式)
-const isStandalone = window.navigator.standalone === true 
-                  || window.matchMedia('(display-mode: standalone)').matches;
-
-// 檢查是否為 iOS 裝置
-const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
-
-// 如果不是從主畫面開啟，且是 iOS 裝置
-if (isIos && !isStandalone) {
-    // 顯示你的「引導安裝提示」區塊
-    document.getElementById('iosHint').style.display = 'block';
-} else {
-    document.getElementById('iosHint').style.display = 'none';
-}
-</script>
+    <div class="frame"></div>
 
 </body>
 </html>
