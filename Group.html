@@ -1,26 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>App Frame</title>
     <style>
-        body {
-            /* 讓框架在頁面中央顯示 */
+        /* 移除瀏覽器預設的邊距 */
+        html, body {
             margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #000000;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #212121; /* 底色直接設為你的目標顏色 */
+            overflow: hidden; /* 防止出現捲軸 */
         }
 
         .frame {
-            /* 核心規格 */
-            width: 440px;
-            height: 956px;
+            /* 針對開發環境，我們設定最大尺寸；但在手機上它會自動填滿 */
+            width: 100vw; 
+            height: 100vh;
+            max-width: 440px;
+            max-height: 956px;
             background-color: #212121;
             
-            /* 基礎設定 */
-            box-sizing: border-box;
-            overflow: hidden;
+            /* 如果在寬螢幕看，依然保持置中 */
+            margin: 0 auto;
             position: relative;
         }
     </style>
