@@ -21,6 +21,9 @@
             background-color: #212121;
             margin: 0 auto;
             position: relative;
+            
+            /* 確保框架本身也是頂天立地 */
+            top: 0;
         }
 
         /* Rectangle 1 */
@@ -29,15 +32,15 @@
             width: 440px;
             height: 145px;
             left: 0px;
-            /* 強制貼齊最頂端，無視安全區域 */
+            
+            /* 強制置頂，無視任何預留空間 */
             top: 0px; 
 
             background: rgba(53, 53, 53, 0.2);
             box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
             
-            /* 如果你發現內容被時間擋住，才需要用 padding 撐開，
-               但既然你要物件往上移，這裡我們保持 0 */
-            padding-top: 0;
+            /* 如果你發現還是有微小差距，可以強制設定負值補償（通常不建議，除非特殊需求） */
+            /* margin-top: -env(safe-area-inset-top); */
         }
     </style>
 </head>
