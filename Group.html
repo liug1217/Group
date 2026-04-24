@@ -26,7 +26,8 @@
             position: relative;
         }
 
-        /* Rectangle 1 - 回復固定寬度並置中 */
+        /* --- 原有元件 --- */
+
         .rectangle-1 {
             position: absolute;
             width: 440px; 
@@ -34,13 +35,11 @@
             left: 50%;
             transform: translateX(-50%);
             top: 0px;
-
             background: rgba(53, 53, 53, 0.2);
             box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
             z-index: 1;
         }
 
-        /* S__3588120 1 - 大頭貼圖片 置中 */
         .s-3588120-1 {
             position: absolute;
             width: 60px;
@@ -48,17 +47,14 @@
             left: 50%;
             transform: translateX(-50%);
             top: 60px;
-
             background: url('https://raw.githubusercontent.com/liug1217/Group/682c1e79d519a3ce8ea245a2b0f9120ddce9fe28/S__3588120.jpg');
             background-size: cover;
             background-position: center;
-            
             filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25));
             border-radius: 30px;
             z-index: 2;
         }
 
-        /* Rectangle 13 - 內容卡片 置中 */
         .rectangle-13 {
             position: absolute;
             width: 400px;
@@ -66,11 +62,55 @@
             left: 50%;
             transform: translateX(-50%);
             top: 165px;
-
             background: rgba(65, 65, 65, 0.2);
             box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
             border-radius: 35px;
             z-index: 2;
+        }
+
+        /* --- 新加入元件 --- */
+
+        /* Rectangle 2 - 主容器 */
+        .rectangle-2 {
+            position: absolute;
+            width: 400px;
+            height: 406px;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 340px;
+            background: rgba(65, 65, 65, 0.2);
+            box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+            border-radius: 35px;
+            z-index: 2;
+        }
+
+        /* Rectangle 4 - 容器頂部標籤 */
+        .rectangle-4 {
+            box-sizing: border-box;
+            position: absolute;
+            width: 400px;
+            height: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 340px; /* 與 Rectangle 2 頂部重合 */
+            background: rgba(53, 53, 53, 0.2);
+            border-bottom: 1px solid #838383;
+            box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+            border-radius: 35px 35px 0px 0px;
+            z-index: 3; /* 確保在容器之上 */
+        }
+
+        /* Rectangle 12 - 底部導覽列背景 */
+        .rectangle-12 {
+            position: absolute;
+            width: 440px;
+            height: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 836px;
+            background: rgba(53, 53, 53, 0.2);
+            box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+            z-index: 1;
         }
     </style>
 </head>
@@ -80,6 +120,10 @@
         <div class="rectangle-1"></div>
         <div class="s-3588120-1"></div>
         <div class="rectangle-13"></div>
+        
+        <div class="rectangle-2"></div>
+        <div class="rectangle-4"></div>
+        <div class="rectangle-12"></div>
     </div>
 
 </body>
