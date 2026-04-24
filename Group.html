@@ -3,89 +3,55 @@
 <head>
   <meta charset="UTF-8" />
 
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, initial-scale=1.0, maximum-scale=1, user-scalable=no" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="theme-color" content="#212121" />
-
-  <title>手機APP框架 - 最終修正版</title>
+  <!-- iOS PWA 全螢幕設定 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="我的APP">
 
   <style>
-    /* =========================
-       1. 基礎布局：確保所有縫隙都是黑色
-    ========================= */
-    html {
+
+    html, body {
       margin: 0;
       padding: 0;
-      background-color: #212121; /* 這是消滅白邊的最強防線 */
-      height: 100svh;
       width: 100%;
-      overflow: hidden;
-      position: fixed; 
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center; /* 讓 App 在畫面中央縮放 */
-      flex-direction: column;
+      height: 100%;
       height: 100svh;
-      width: 100%;
-      background-color: #212121;
-      overscroll-behavior-y: none;
+      background: #212121;
       overflow: hidden;
-    }
-
-    /* =========================
-       2. 縮放容器：精確適配所有螢幕
-    ========================= */
-    .scale-wrapper {
       display: flex;
       justify-content: center;
       align-items: center;
-      width: 100%;
-      height: 100%;
-      /* 根據 100svh 動態縮放，防止網址列出現時內容溢出 */
-      transform: scale(calc(min(100vw / 440, 100svh / 956)));
-      transform-origin: center center;
     }
 
+    /* 如果你的內容需要捲動，請單獨開一個區塊 */
+    .scroll-content {
+      height: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* PWA 全螢幕容器 */
     .app {
       width: 440px;
       height: 956px;
       background: #212121;
       position: relative;
       overflow: hidden;
-      flex-shrink: 0;
     }
 
-    /* =========================
-       3. Header（頂部元件）
-    ========================= */
-    .header {
+    /* Rectangle 1 */
+    .rect1 {
       position: absolute;
       width: 440px;
       height: 145px;
-      left: 0;
-      top: 0;
+      left: 0px;
+      top: 0px;
       background: rgba(53, 53, 53, 0.2);
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      z-index: 10;
     }
 
-    /* 主畫面模式下，微調頂部高度避開時間/電量 */
-    @media (display-mode: standalone) {
-      .header {
-        height: 165px;
-        padding-top: 20px;
-      }
-    }
-
-    /* =========================
-       4. UI 內容區塊（完整保留你的組件）
-    ========================= */
+    /* Rectangle 13 */
     .rect13 {
       position: absolute;
       width: 400px;
@@ -97,6 +63,7 @@
       border-radius: 35px;
     }
 
+    /* Rectangle 2 */
     .rect2 {
       position: absolute;
       width: 400px;
@@ -108,18 +75,32 @@
       border-radius: 35px;
     }
 
+    /* Rectangle 4 */
     .rect4 {
       position: absolute;
       width: 400px;
       height: 50px;
       left: 20px;
       top: 340px;
+      box-sizing: border-box;
       background: rgba(53, 53, 53, 0.2);
       border-bottom: 1px solid #838383;
-      border-radius: 35px 35px 0 0;
-      box-sizing: border-box;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      border-radius: 35px 35px 0px 0px;
     }
 
+    /* Rectangle 12 */
+    .rect12 {
+      position: absolute;
+      width: 440px;
+      height: 120px;
+      left: 0px;
+      top: 836px;
+      background: rgba(53, 53, 53, 0.2);
+      box-shadow: none;
+    }
+
+    /* Rectangle 14 */
     .rect14 {
       position: absolute;
       width: 150px;
@@ -127,51 +108,57 @@
       left: 260px;
       top: 219px;
       background: rgba(99, 99, 99, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
       border-radius: 10px;
     }
 
-    /* =========================
-       5. Footer（解決你圖中紅框空白的關鍵）
-    ========================= */
-    .footer-nav {
+    /* iOS 加入主畫面提示浮窗 */
+    .ios-hint {
       position: absolute;
-      width: 440px;
-      height: 120px;
-      left: 0;
-      /* 重要：改用 bottom: 0，確保它永遠鎖死在容器最底端 */
-      bottom: 0; 
-      background: rgba(53, 53, 53, 0.4);
-      box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.3);
-    }
-
-    /* 當在主畫面模式時，增加底部高度來填補 Home 條空間 */
-    @media (display-mode: standalone) {
-      .app {
-        /* 在主畫面稍微拉高畫布，消除物理縫隙 */
-        height: 1000px; 
-      }
-      .footer-nav {
-        height: 164px; /* 增加的高度會填滿安全區 */
-        padding-bottom: 30px; /* 讓內容稍微往上提一點，視覺更平衡 */
-      }
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 12px;
+      display: none;
     }
 
   </style>
 </head>
 <body>
 
-<div class="scale-wrapper">
-  <div class="app">
-    <div class="header"></div>
-    
-    <div class="rect13"></div>
-    <div class="rect14"></div>
-    <div class="rect2"></div>
-    <div class="rect4"></div>
-    
-    <div class="footer-nav"></div>
+<div class="app">
+  <div class="rect1"></div>
+  <div class="rect13"></div>
+  <div class="rect2"></div>
+  <div class="rect4"></div>
+  <div class="rect12"></div>
+  <div class="rect14"></div>
+
+  <div class="ios-hint" id="iosHint">
+    點擊「分享」→「加入主畫面」以獲得最佳體驗
   </div>
 </div>
+
+<script>
+// 檢查是否已經是從主畫面打開 (Standalone 模式)
+const isStandalone = window.navigator.standalone === true 
+                  || window.matchMedia('(display-mode: standalone)').matches;
+
+// 檢查是否為 iOS 裝置
+const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
+
+// 如果不是從主畫面開啟，且是 iOS 裝置
+if (isIos && !isStandalone) {
+    // 顯示你的「引導安裝提示」區塊
+    document.getElementById('iosHint').style.display = 'block';
+} else {
+    document.getElementById('iosHint').style.display = 'none';
+}
+</script>
 
 </body>
 </html>
