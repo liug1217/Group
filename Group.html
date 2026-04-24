@@ -29,37 +29,34 @@
             position: relative;
         }
 
-        /* Rectangle 1 - 頂部半透明遮罩 */
+        /* Rectangle 1 */
         .rectangle-1 {
             position: absolute;
             width: 100%; 
-            /* 高度改為動態，確保包含安全區 */
-            height: calc(145px + env(safe-area-inset-top)); 
+            height: 145px;
             left: 0px;
             top: 0px;
-            background: rgba(53, 53, 53, 0.2);
+            background: rgba(53, 53, 53, 0.4);
             box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
             z-index: 1;
         }
 
-        /* S__3588120 1 - 大頭貼圖片 */
-        .avatar-img {
+        /* S__3588120 1 */
+        .s-3588120-1 {
             position: absolute;
             width: 60px;
             height: 60px;
-            /* 讓圖片水平居中 (440px 下的 190px) */
             left: 190px;
-            /* 考慮安全區的動態位置 */
-            top: calc(60px + env(safe-area-inset-top));
+            top: 60px;
 
-            /* 圖片路徑已更換為原始檔案連結 */
+            /* 使用 GitHub 原始圖片連結 */
             background: url('https://raw.githubusercontent.com/liug1217/Group/682c1e79d519a3ce8ea245a2b0f9120ddce9fe28/S__3588120.jpg');
             background-size: cover;
             background-position: center;
             
             filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25));
             border-radius: 30px;
-            z-index: 2; /* 確保在遮罩上方 */
+            z-index: 2; /* 確保圖片在矩形上方 */
         }
     </style>
 </head>
@@ -67,7 +64,7 @@
 
     <div class="frame">
         <div class="rectangle-1"></div>
-        <div class="avatar-img"></div>
+        <div class="s-3588120-1"></div>
     </div>
 
 </body>
