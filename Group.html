@@ -1,38 +1,104 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>App</title>
 
-<title>APP</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-<style>
-/* 整個畫面置中 */
-body {
-  margin: 0;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #000; /* 外面黑色 */
-}
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #212121;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
 
-/* 手機框架 */
-.app {
-  width: 440px;
-  height: 956px;
-  background: #212121;
-  position: relative;
-  overflow: hidden;
-}
-</style>
+    /* 🔥 改成「上下=和左右一樣的約束邏輯」→ 用 GRID */
+    .app {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    /* 上方 */
+    .rect1 {
+      height: 145px;
+      background: rgba(53, 53, 53, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* 中間區 */
+    .content {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow: auto;
+    }
+
+    /* 卡片 13 */
+    .rect13 {
+      height: 150px;
+      background: rgba(65, 65, 65, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      border-radius: 35px;
+    }
+
+    /* 卡片 2 */
+    .rect2 {
+      height: 406px;
+      background: rgba(65, 65, 65, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      border-radius: 35px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 卡片內 header */
+    .rect4 {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50px;
+      background: rgba(53, 53, 53, 0.2);
+      border-bottom: 1px solid #838383;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      border-radius: 35px 35px 0 0;
+    }
+
+    /* 下方 */
+    .rect12 {
+      height: 120px;
+      background: rgba(53, 53, 53, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+  </style>
 </head>
-
 <body>
 
-<div class="app">
-  <!-- 你的內容寫這裡 -->
-</div>
+  <div class="app">
+
+    <div class="rect1"></div>
+
+    <div class="content">
+      <div class="rect13"></div>
+      <div class="rect2">
+        <div class="rect4"></div>
+      </div>
+    </div>
+
+    <div class="rect12"></div>
+
+  </div>
 
 </body>
 </html>
