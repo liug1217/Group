@@ -1,97 +1,38 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>真正的登頂全螢幕</title>
-    <style>
-        /* 1. 徹底清除所有邊距與回彈 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        html, body {
-            width: 100%;
-            height: 100%;
-            background: #212121; /* 背景色直接設為 App 色 */
-            overflow: hidden;
-            position: fixed; /* 鎖死 Body 座標 */
-            top: 0;
-            left: 0;
-        }
+<title>APP</title>
 
-        /* 2. 核心 440x956 框架 */
-        #main-canvas {
-            width: 440px;
-            height: 956px;
-            background: #212121;
-            position: fixed; /* 改用 fixed 確保座標絕對化 */
-            top: 0; /* 鎖死頂部 */
-            left: 0; 
-            transform-origin: top left; /* 支點設在左上角，方便精確位移 */
-        }
+<style>
+/* 整個畫面置中 */
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000; /* 外面黑色 */
+}
 
-        /* --- Rectangle 12 --- */
-        .rect-12 {
-            position: absolute;
-            width: 440px;
-            height: 120px;
-            left: 0px;
-            top: 836px;
-            background: rgba(53, 53, 53, 0.2);
-            box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            z-index: 100;
-        }
-
-        /* 測試物件：一個貼頂的色塊 */
-        .test-top {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 440px;
-            height: 100px;
-            background: linear-gradient(180deg, red 0%, transparent 100%);
-            z-index: 999;
-            pointer-events: none;
-        }
-    </style>
+/* 手機框架 */
+.app {
+  width: 440px;
+  height: 956px;
+  background: #212121;
+  position: relative;
+  overflow: hidden;
+}
+</style>
 </head>
+
 <body>
 
-    <div id="main-canvas">
-        <div class="test-top"></div>
+<div class="app">
+  <!-- 你的內容寫這裡 -->
+</div>
 
-        <div class="rect-12"></div>
-    </div>
-
-    <script>
-        function rescale() {
-            const canvas = document.getElementById('main-canvas');
-            const screenWidth = window.innerWidth;
-            
-            // 1. 計算縮放倍率
-            const scale = screenWidth / 440;
-            
-            // 2. 為了讓框架在不同寬度的螢幕都能「水平置中」並「絕對貼頂」
-            // 我們手動計算左邊距： (螢幕寬度 - (設計寬度 * 倍率)) / 2
-            const leftOffset = (screenWidth - (440 * scale)) / 2;
-            
-            // 3. 強行賦予 transform：縮放 + 精確位移
-            // 這裡不使用 translateX(-50%) 是為了避免 Safari 在計算基準點時產生誤差
-            canvas.style.transform = `translate(${leftOffset}px, 0px) scale(${scale})`;
-        }
-
-        // 監聽所有可能導致 UI 位移的事件
-        window.addEventListener('resize', rescale);
-        window.addEventListener('orientationchange', rescale);
-        
-        // 確保 DOM 載入後立即執行
-        document.addEventListener('DOMContentLoaded', rescale);
-        rescale();
-    </script>
 </body>
 </html>
