@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>登頂全螢幕框架</title>
     <style>
-        /* 徹底重置瀏覽器預設值 */
+        /* 徹底重置瀏覽器預設值，消除頂部安全區感應 */
         * {
             margin: 0;
             padding: 0;
@@ -15,57 +15,76 @@
         html, body {
             width: 100%;
             height: 100%;
-            background: #000; /* 外部背景黑色 */
+            background: #000; 
             overflow: hidden;
-            /* 鎖定 body 不讓它有任何滾動或回彈感 */
-            position: fixed;
+            position: fixed; /* 鎖定 Body 物理座標 */
             top: 0;
             left: 0;
         }
 
+        /* 核心 440x956 框架 */
         #main-canvas {
             width: 440px;
             height: 956px;
             background: #212121;
-            position: absolute; /* 使用 absolute 配合 top: 0 登頂 */
-            top: 0;
+            position: absolute;
+            top: 0; /* 強行登頂 */
             left: 50%;
             transform-origin: top center;
-            /* 初始置中，JS 會接手縮放 */
             transform: translateX(-50%); 
+            overflow: hidden;
         }
 
-        /* 測試物件：如果這個方塊被瀏海切到，代表成功登頂 */
-        .test-top-bar {
+        /* --- 你要求的物件：Rectangle 12 --- */
+        .rect-12 {
+            position: absolute;
+            width: 440px;
+            height: 120px;
+            left: 0px;
+            top: 836px;
+
+            background: rgba(53, 53, 53, 0.2);
+            /* 加入毛玻璃效果，讓 App 質感更好 (可選) */
+            backdrop-filter: blur(10px); 
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+            border-top: 1px solid rgba(255, 255, 255, 0.1); /* 增加邊界感 */
+            z-index: 100;
+        }
+
+        /* 測試用：頂部標記 */
+        .top-test {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            height: 60px;
-            background: linear-gradient(to bottom, #ff0000, transparent);
+            height: 44px;
+            background: rgba(255, 0, 0, 0.3);
             color: white;
             text-align: center;
-            font-weight: bold;
-            z-index: 999;
+            line-height: 44px;
+            font-size: 12px;
         }
+
     </style>
 </head>
 <body>
 
     <div id="main-canvas">
-        <div class="test-top-bar">已強制登頂 (頂部 0px)</div>
-        
-        </div>
+        <div class="top-test">頂部物理 0px (瀏海區)</div>
+
+        <div class="rect-12"></div>
+    </div>
 
     <script>
         function rescale() {
             const canvas = document.getElementById('main-canvas');
             const screenWidth = window.innerWidth;
             
-            // 計算縮放倍率
+            // 計算縮放倍率：螢幕寬度 / 設計寬度 440
             const scale = screenWidth / 440;
             
-            // 縮放並維持水平置中
+            // 縮放並維持水平置中，且 top 鎖死在 0
             canvas.style.transform = `translateX(-50%) scale(${scale})`;
         }
 
