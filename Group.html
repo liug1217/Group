@@ -3,63 +3,81 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>App 空白模板</title>
+  <title>App Template with Safe Area</title>
   <style>
-    /* 1. 強制網頁填滿視窗，禁止捲動 */
+    :root {
+      /* 定義安全區域變數，讓 CSS 能讀取手機環境 */
+      --safe-top: env(safe-area-inset-top);
+      --safe-bottom: env(safe-area-inset-bottom);
+    }
+
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
-      background: #000; /* 外部背景設為黑色 */
+      background: #000; /* 外部背景設為黑色，對應瀏海區域 */
       overflow: hidden;
       display: flex;
-      justify-content: center; /* 水平置中 */
-      align-items: flex-start; /* 從頂部對齊 */
+      justify-content: center;
+      /* 不要用 align-items: center，因為我們要讓它從安全區下方開始 */
+      align-items: flex-start; 
     }
 
-    /* 2. 這是你的核心畫布 (440x956) */
+    /* 你的核心畫布 (440x956) */
     #main-canvas {
       width: 440px;
       height: 956px;
-      background: #212121; /* App 的主背景色 */
+      background: #212121;
       position: relative;
       flex-shrink: 0;
-      transform-origin: top center; /* 縮放支點設在頂部中間 */
+      transform-origin: top center;
       overflow: hidden;
+      
+      /* 關鍵：利用 margin-top 避開瀏海安全區 */
+      /* 這樣你裡面的 absolute 座標依然可以從 top: 0 開始寫，不會被擋住 */
+      margin-top: var(--safe-top);
     }
 
-    /* 之後你塞入的任何物件樣式 */
-    .sample-object {
-      position: absolute;
-      /* 只要使用 px 定位，縮放邏輯會幫你處理好一切 */
+    /* 如果之後有底部導覽列，可以用這個 padding 來避開底部的線 */
+    #main-canvas-content {
+      width: 100%;
+      height: 100%;
+      padding-bottom: var(--safe-bottom);
     }
   </style>
 </head>
 <body>
 
   <div id="main-canvas">
-    
+    <div id="main-canvas-content">
+      <div style="position: absolute; width: 100%; text-align: center; color: white; top: 20px;">
+        現在是安全區域內
+      </div>
     </div>
+  </div>
 
   <script>
     /**
      * 自動縮放邏輯
-     * 原理：計算「目前瀏覽器寬度」與「設計稿寬度(440)」的比例
-     * 讓整張畫布按比例放大/縮小，達成全螢幕滿版效果
      */
     function rescale() {
       const canvas = document.getElementById('main-canvas');
       if (!canvas) return;
       
       const screenWidth = window.innerWidth;
-      const scale = screenWidth / 440; // 計算縮放倍率
+      
+      // 以寬度為基準計算縮放
+      const scale = screenWidth / 440;
       
       canvas.style.transform = `scale(${scale})`;
+      
+      // 進階處理：如果縮放後的畫布高度加上安全區超過了螢幕高度
+      // 可以考慮加入高度限制邏輯，但通常 App 都是寬度優先
     }
 
-    // 初始化並監聽視窗縮放事件
     window.addEventListener('resize', rescale);
+    window.addEventListener('orientationchange', rescale); // 手機轉向時重新計算
     rescale();
   </script>
 </body>
