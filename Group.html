@@ -1,60 +1,77 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Full Screen Edge to Edge</title>
-  <style>
-    /* 1. 徹底清除所有邊距，確保框架能衝到最頂端 */
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background: #212121; /* 背景色設為與 App 一致，消除色差 */
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start; /* 從絕對頂部開始 */
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>登頂全螢幕框架</title>
+    <style>
+        /* 徹底重置瀏覽器預設值 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    /* 2. 核心畫布：直接貼頂 */
-    #main-canvas {
-      width: 440px;
-      height: 956px;
-      background: #212121;
-      position: relative;
-      flex-shrink: 0;
-      transform-origin: top center;
-      
-      /* 刪除 margin-top，讓框架往上衝到螢幕邊緣 */
-      margin-top: 0 !important; 
-      overflow: hidden;
-    }
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: #000; /* 外部背景黑色 */
+            overflow: hidden;
+            /* 鎖定 body 不讓它有任何滾動或回彈感 */
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
 
-    /* 如果你需要內容避開瀏海，就在內部物件加偏移，但框架本身已經到頂了 */
-  </style>
+        #main-canvas {
+            width: 440px;
+            height: 956px;
+            background: #212121;
+            position: absolute; /* 使用 absolute 配合 top: 0 登頂 */
+            top: 0;
+            left: 50%;
+            transform-origin: top center;
+            /* 初始置中，JS 會接手縮放 */
+            transform: translateX(-50%); 
+        }
+
+        /* 測試物件：如果這個方塊被瀏海切到，代表成功登頂 */
+        .test-top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(to bottom, #ff0000, transparent);
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            z-index: 999;
+        }
+    </style>
 </head>
 <body>
 
-  <div id="main-canvas">
-    <div style="position: absolute; width: 100%; height: 50px; background: red; top: 0; left: 0; color: white; text-align: center; line-height: 50px;">
-      這塊紅色會被瀏海擋住，代表框架已成功到頂
-    </div>
-  </div>
+    <div id="main-canvas">
+        <div class="test-top-bar">已強制登頂 (頂部 0px)</div>
+        
+        </div>
 
-  <script>
-    function rescale() {
-      const canvas = document.getElementById('main-canvas');
-      if (!canvas) return;
-      
-      // 放大倍率邏輯保持不變
-      const scale = window.innerWidth / 440;
-      canvas.style.transform = `scale(${scale})`;
-    }
+    <script>
+        function rescale() {
+            const canvas = document.getElementById('main-canvas');
+            const screenWidth = window.innerWidth;
+            
+            // 計算縮放倍率
+            const scale = screenWidth / 440;
+            
+            // 縮放並維持水平置中
+            canvas.style.transform = `translateX(-50%) scale(${scale})`;
+        }
 
-    window.addEventListener('resize', rescale);
-    rescale();
-  </script>
+        window.addEventListener('resize', rescale);
+        window.addEventListener('orientationchange', rescale);
+        rescale();
+    </script>
 </body>
 </html>
