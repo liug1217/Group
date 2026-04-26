@@ -34,6 +34,44 @@ html, body {
   box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
 }
 
+/* 🔥 rank bar (center group, fixed spacing preserved) */
+.rankBar {
+  position: absolute;
+  top: 358px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 235px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 235px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rankBar span {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial;
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  color: #FFFFFF;
+  text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+}
+
+.rankTitle {
+  font-size: 20px;
+  line-height: 24px;
+}
+
+.leftLabel,
+.rightLabel {
+  font-size: 15px;
+  line-height: 18px;
+}
+
 /* S__3588120 1 */
 .img1 {
   position: absolute;
@@ -80,7 +118,6 @@ html, body {
 .icon7 { top: 707px; background-image: url('https://raw.githubusercontent.com/liug1217/Group/161206efe056e444863f682dae5d32f173c86dfd/S__14131240.jpg'); }
 
 /* dividers */
-/* dividers */
 .divider {
   position: absolute;
   width: calc(100% - 40px);
@@ -96,7 +133,7 @@ html, body {
 .div10 { top: 648px; }
 .div11 { top: 698px; }
 
-/* Rectangle 13 (container) */
+/* Rectangle 13 */
 .rect13 {
   position: absolute;
   width: calc(100% - 40px);
@@ -166,6 +203,12 @@ html, body {
   <div class="rect1"></div>
   <div class="img1"></div>
   <div class="img2"></div>
+
+  <div class="rankBar">
+    <span class="leftLabel">競爭者</span>
+    <span class="rankTitle">排名表</span>
+    <span class="rightLabel">狙擊手</span>
+  </div>
 
   <div class="icon icon1"></div>
   <div class="icon icon2"></div>
