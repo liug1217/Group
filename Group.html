@@ -1,103 +1,58 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>App</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>APP Editor Workspace</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
       background: #212121;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-
-    /* 🔥 改成「上下=和左右一樣的約束邏輯」→ 用 GRID */
-    .app {
-      width: 100%;
-      height: 100%;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-    }
-
-    /* 上方 */
-    .rect1 {
-      height: 145px;
-      background: rgba(53, 53, 53, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-
-    /* 中間區 */
-    .content {
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      overflow: auto;
-    }
-
-    /* 卡片 13 */
-    .rect13 {
-      height: 150px;
-      background: rgba(65, 65, 65, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 35px;
-    }
-
-    /* 卡片 2 */
-    .rect2 {
-      height: 406px;
-      background: rgba(65, 65, 65, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 35px;
-      position: relative;
       overflow: hidden;
     }
 
-    /* 卡片內 header */
-    .rect4 {
+    /* 全螢幕APP容器 */
+    .app {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    /* Rectangle 1 */
+    .rect1 {
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
-      height: 50px;
+      bottom: 811px;
       background: rgba(53, 53, 53, 0.2);
-      border-bottom: 1px solid #838383;
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 35px 35px 0 0;
     }
 
-    /* 下方 */
+    /* Rectangle 2 */
+
+    /* Rectangle 12 */
     .rect12 {
-      height: 120px;
+      position: absolute;
+      top: 836px;
+      left: 0px;
+      right: 0px;
+      bottom: 0px;
       background: rgba(53, 53, 53, 0.2);
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
-
   </style>
 </head>
 <body>
 
   <div class="app">
-
     <div class="rect1"></div>
-
-    <div class="content">
-      <div class="rect13"></div>
-      <div class="rect2">
-        <div class="rect4"></div>
-      </div>
-    </div>
-
+    <div class="rect2"></div>
     <div class="rect12"></div>
-
   </div>
 
 </body>
