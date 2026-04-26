@@ -1,59 +1,116 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>APP Editor Workspace</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>APP UI</title>
 
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background: #212121;
-      overflow: hidden;
-    }
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #212121;
+  overflow: hidden;
+}
 
-    /* 全螢幕APP容器 */
-    .app {
-      width: 100%;
-      height: 100%;
-      position: relative;
-    }
+/* APP */
+.app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #212121;
+}
 
-    /* Rectangle 1 */
-    .rect1 {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 811px;
-      background: rgba(53, 53, 53, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
+/* Rectangle 1 */
+.rect1 {
+  position: absolute;
+  width: 100%;
+  height: 145px;
+  left: 0;
+  top: 0;
+  background: rgba(53, 53, 53, 0.2);
+  box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+}
 
-    /* Rectangle 2 */
+/* Rectangle 13 (container) */
+.rect13 {
+  position: absolute;
+  width: calc(100% - 40px);
+  height: 150px;
+  left: 20px;
+  top: 169px;
+  background: rgba(65, 65, 65, 0.2);
+  box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+  border-radius: 35px;
+  overflow: hidden;
+}
 
-    /* Rectangle 12 */
-    .rect12 {
-      position: absolute;
-      top: 836px;
-      left: 0px;
-      right: 0px;
-      bottom: 0px;
-      background: rgba(53, 53, 53, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-  </style>
+/* Rectangle 14 - FIXED inside Rect13 */
+.rect14 {
+  position: absolute;
+  width: 40%;
+  max-width: 150px;
+  height: 76px;
+  right: 20px;
+  top: 20px;
+  background: rgba(99, 99, 99, 0.2);
+  box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+  border-radius: 10px;
+}
+
+/* Rectangle 2 */
+.rect2 {
+  position: absolute;
+  width: calc(100% - 40px);
+  height: 406px;
+  left: 20px;
+  top: 343px;
+  background: rgba(65, 65, 65, 0.2);
+  box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+  border-radius: 35px;
+}
+
+/* Rectangle 4 */
+.rect4 {
+  position: absolute;
+  width: calc(100% - 40px);
+  height: 50px;
+  left: 20px;
+  top: 343px;
+  background: rgba(53, 53, 53, 0.2);
+  border-bottom: 1px solid #838383;
+  box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+  border-radius: 35px 35px 0 0;
+}
+
+/* Rectangle 12 */
+.rect12 {
+  position: absolute;
+  width: 100%;
+  height: 120px;
+  left: 0;
+  bottom: 0;
+  background: rgba(53, 53, 53, 0.2);
+  box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+}
+
+</style>
 </head>
 <body>
 
-  <div class="app">
-    <div class="rect1"></div>
-    <div class="rect2"></div>
-    <div class="rect12"></div>
+<div class="app">
+  <div class="rect1"></div>
+  
+  <div class="rect13">
+    <div class="rect14"></div>
   </div>
+
+  <div class="rect2"></div>
+  <div class="rect4"></div>
+  <div class="rect12"></div>
+</div>
 
 </body>
 </html>
