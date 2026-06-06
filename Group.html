@@ -1,242 +1,137 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="viewport" content="width=440, initial-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Group</title>
-
-<style>
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  background: #212121;
-  overflow: hidden;
-}
-
-/* APP */
-.app {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  background: #212121;
-}
-
-/* Rectangle 1 */
-.rect1 {
-  position: absolute;
-  width: 100%;
-  height: 145px;
-  left: 0;
-  top: 0;
-  background: rgba(53, 53, 53, 0.2);
-  box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
-}
-
-/* 🔥 rank bar (center group, fixed spacing preserved) */
-.rankBar {
-  position: absolute;
-  top: 357px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 235px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 235px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.rankBar span {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial;
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 400;
-  color: #FFFFFF;
-  text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-}
-
-.rankTitle {
-  font-size: 20px;
-  line-height: 24px;
-}
-
-.leftLabel,
-.rightLabel {
-  font-size: 15px;
-  line-height: 18px;
-}
-
-/* S__3588120 1 */
-.img1 {
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  left: 50%;
-  top: 60px;
-  transform: translateX(-50%);
-  background: url('https://raw.githubusercontent.com/liug1217/Group/161206efe056e444863f682dae5d32f173c86dfd/S__3588120.jpg') center/cover no-repeat;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-  border-radius: 30px;
-}
-
-/* S__14131250 2 */
-.img2 {
-  position: absolute;
-  width: 100px;
-  height: 100px;
-  left: 30px;
-  top: 194px;
-  background: url('https://raw.githubusercontent.com/liug1217/Group/161206efe056e444863f682dae5d32f173c86dfd/S__14131250.jpg') center/cover no-repeat;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-  border-radius: 50px;
-}
-
-/* small icons */
-.icon {
-  position: absolute;
-  width: 35px;
-  height: 35px;
-  left: 30px;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-  border-radius: 17.5px;
-  background-size: cover;
-  background-position: center;
-}
-
-.icon1 { top: 401px; background-image: url('https://raw.githubusercontent.com/liug1217/Group/161206efe056e444863f682dae5d32f173c86dfd/S__14131210.jpg'); }
-.icon2 { top: 452px; background-image: url('https://raw.githubusercontent.com/liug1217/Group/161206efe056e444863f682dae5d32f173c86dfd/S__14131235.jpg'); }
-.icon3 { top: 503px; background-image: url('https://raw.githubusercontent.com/liug1217/Group/161206efe056e444863f682dae5d32f173c86dfd/S__14131250.jpg'); }
-.icon4 { top: 554px; background-image: url('https://raw.githubusercontent.com/liug1217/Group/161206efe056e444863f682dae5d32f173c86dfd/S__14131251.jpg'); }
-.icon5 { top: 605px; background-image: url('https://raw.githubusercontent.com/liug1217/Group/161206efe056e444863f682dae5d32f173c86dfd/S__14131253.jpg'); }
-.icon6 { top: 657px; background-image: url('https://raw.githubusercontent.com/liug1217/Group/161206efe056e444863f682dae5d32f173c86dfd/S__14131255.jpg'); }
-.icon7 { top: 707px; background-image: url('https://raw.githubusercontent.com/liug1217/Group/161206efe056e444863f682dae5d32f173c86dfd/S__14131240.jpg'); }
-
-/* dividers */
-.divider {
-  position: absolute;
-  width: calc(100% - 40px);
-  height: 1px;
-  left: 20px;
-  background: #838383;
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-}
-.div6 { top: 440px; }
-.div7 { top: 491px; }
-.div8 { top: 542px; }
-.div9 { top: 596px; }
-.div10 { top: 648px; }
-.div11 { top: 698px; }
-
-/* Rectangle 13 */
-.rect13 {
-  position: absolute;
-  width: calc(100% - 40px);
-  height: 150px;
-  left: 20px;
-  top: 169px;
-  background: rgba(65, 65, 65, 0.2);
-  box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
-  border-radius: 35px;
-  overflow: hidden;
-}
-
-/* Rectangle 14 */
-.rect14 {
-  position: absolute;
-  width: 40%;
-  max-width: 150px;
-  height: 76px;
-  right: 20px;
-  top: 20px;
-  background: rgba(99, 99, 99, 0.2);
-  box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
-  border-radius: 10px;
-}
-
-/* Rectangle 2 */
-.rect2 {
-  position: absolute;
-  width: calc(100% - 40px);
-  height: 406px;
-  left: 20px;
-  top: 343px;
-  background: rgba(65, 65, 65, 0.2);
-  box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
-  border-radius: 35px;
-}
-
-/* Rectangle 4 */
-.rect4 {
-  position: absolute;
-  width: calc(100% - 40px);
-  height: 50px;
-  left: 20px;
-  top: 343px;
-  background: rgba(53, 53, 53, 0.2);
-  border-bottom: 1px solid #838383;
-  box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
-  border-radius: 35px 35px 0 0;
-}
-
-/* Rectangle 12 */
-.rect12 {
-  position: absolute;
-  width: 100%;
-  height: 120px;
-  left: 0;
-  bottom: 0;
-  background: rgba(53, 53, 53, 0.2);
-  box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
-}
-
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Group</title>
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    .wrapper {
+      position: relative;
+      width: 100%;
+      min-height: 100vh;
+      box-sizing: border-box;
+      padding: 20px;
+      background: #212121;
+    }
+    .rectangle1 {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 145px;
+      top: 0;
+      background: rgba(53, 53, 53, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+    .rectangle13 {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      height: 150px;
+      top: 169px;
+      background: rgba(65, 65, 65, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      border-radius: 35px;
+    }
+    .rectangle2 {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      height: 406px;
+      top: 343px;
+      background: rgba(65, 65, 65, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      border-radius: 35px;
+    }
+    .rectangle4 {
+      box-sizing: border-box;
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      height: 50px;
+      top: 343px;
+      background: rgba(53, 53, 53, 0.2);
+      border-bottom: 1px solid #838383;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      border-radius: 35px 35px 0px 0px;
+    }
+    .rectangle14 {
+      position: absolute;
+      left: 260px;
+      right: 30px;
+      height: 76px;
+      top: 223px;
+      background: rgba(99, 99, 99, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+    }
+    .title-bi {
+      position: absolute;
+      width: 141px;
+      height: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 122px;
+      font-family: 'Inter', sans-serif;
+      font-style: normal;
+      font-weight: 400;
+      font-size: 12px;
+      line-height: 15px;
+      text-align: center;
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+    .avatar-s {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 60px;
+      background: url(https://raw.githubusercontent.com/liug1217/Group/bf1d66b2928638fa9a70f222da17f8243145da46/S__3588120.jpg);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      border-radius: 30px;
+      background-size: cover;
+      background-position: center;
+    }
+    .rectangle12 {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 120px;
+      bottom: 0;
+      background: rgba(53, 53, 53, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+    /* Rectangle 15 */
+    .rectangle15 {
+      position: absolute;
+      left: 370px;
+      right: 20px;
+      height: 20px;
+      top: 119px;
+      background: rgba(217, 217, 217, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      border-radius: 5px;
+    }
+  </style>
 </head>
 <body>
-
-<div class="app">
-  <div class="rect1"></div>
-  <div class="img1"></div>
-  <div class="img2"></div>
-
-  <div class="rankBar">
-    <span class="leftLabel">競爭者</span>
-    <span class="rankTitle">排名表</span>
-    <span class="rightLabel">狙擊手</span>
+  <div class="wrapper">
+    <div class="rectangle1"></div>
+    <div class="rectangle13"></div>
+    <div class="rectangle2"></div>
+    <div class="rectangle4"></div>
+    <div class="rectangle14"></div>
+    <div class="rectangle15"></div>
+    <div class="avatar-s"></div>
+    <div class="title-bi">★Bi_藍冰團★《Roblox》</div>
+    <div class="rectangle12"></div>
   </div>
-
-  <div class="icon icon1"></div>
-  <div class="icon icon2"></div>
-  <div class="icon icon3"></div>
-  <div class="icon icon4"></div>
-  <div class="icon icon5"></div>
-  <div class="icon icon6"></div>
-  <div class="icon icon7"></div>
-
-  <div class="divider div6"></div>
-  <div class="divider div7"></div>
-  <div class="divider div8"></div>
-  <div class="divider div9"></div>
-  <div class="divider div10"></div>
-  <div class="divider div11"></div>
-
-  <div class="rect13">
-    <div class="rect14"></div>
-  </div>
-
-  <div class="rect2"></div>
-  <div class="rect4"></div>
-  <div class="rect12"></div>
-</div>
-
 </body>
 </html>
