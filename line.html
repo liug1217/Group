@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LINE 登入</title>
+  <!-- 1. 🎯 修正：補回正確的 Supabase SDK 安裝網址 -->
+  <script src="https://jsdelivr.net"></script>
+  <style>
+    :root {
+      --line-green: #00c300;
+      --line-dark: #111;
+      --bg: #f7f8fa;
+      --card: #ffffff;
+      --text: #222222;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(180deg, #f7f8fa 0%, #e8eef5 100%);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: min(420px, 100%);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: 0 28px 70px rgba(15, 23, 42, 0.12);
+      overflow: hidden;
+    }
+
+    .hero {
+      background: #00c300;
+      color: white;
+      padding: 32px 24px;
+      text-align: center;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 2rem;
+      letter-spacing: 0.02em;
+    }
+
+    .hero p {
+      margin: 12px auto 0;
+      max-width: 320px;
+      color: rgba(255, 255, 255, 0.88);
+      line-height: 1.6;
+      font-size: 0.95rem;
+    }
+
+    .card-body {
+      padding: 28px 24px 32px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .btn-line {
+      background: #00c300;
+      color: white;
+      box-shadow: 0 12px 24px rgba(0, 195, 0, 0.24);
+    }
+
+    .btn-line:hover {
+      transform: translateY(-1px);
+    }
+
+    .note {
+      margin-top: 18px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .line-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.18);
+      margin-right: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .line-btn-content {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <h1>使用 LINE 登入</h1>
+      <p>快速、安全地使用 LINE 帳號登入，並連動你的個人資料。只要一鍵即可開始。</p>
+    </div>
+    <div class="card-body">
+      <button id="lineLoginBtn" class="btn btn-line" type="button">
+        <span class="line-btn-content">
+          <span class="line-icon">LINE</span>
+          以 LINE 登入
+        </span>
+      </button>
+      <p class="note">密碼與安全性已由 Supabase 雲端後台安全託管。點擊後將一鍵完成安全登入與註冊。</p>
+    </div>
+  </div>
+  
+  <script>
+    // 2. 🎯 修正：填回正確的後台項目網址（就像您的網站大門地址）
+    const supabaseUrl = 'https://supabase.co';
+
+    // 3. 🎯 填入您複製的可發布金鑰（鑰匙）
+    const supabaseKey = 'sb_publishable_pYustaJiWQvydlvQwxMDLg_kXbkauE9'; 
+
+    // 初始化 Supabase 連線
+    const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // 監聽按鈕點擊事件
+    document.getElementById('lineLoginBtn').addEventListener('click', async () => {
+      const { data, error } = await _supabase.auth.signInWithOAuth({
+        provider: 'line', 
+        options: {
+          // 4. 🎯 提醒：記得把這裡改成您目前的「GitHub Pages 實際網址」喔！
+          // 比如：'https://github.io'
+          redirectTo: 'https://github.io' 
+        }
+      });
+      
+      if (error) {
+        alert('登入失敗，錯誤訊息：' + error.message);
+      }
+    });
+  </script>
+</body>
+</html>
