@@ -21,6 +21,93 @@
       padding: 20px;
       background: #212121;
     }
+    .start-frame {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: #212121;
+      z-index: 1000;
+      cursor: pointer;
+    }
+    .start-frame.is-hidden {
+      display: none;
+    }
+    .rectangle16,
+    .rectangle17,
+    .rectangle19 {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      height: 50px;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      border-radius: 25px;
+    }
+    .rectangle16 {
+      top: 350px;
+      background: rgba(65, 65, 65, 0.2);
+    }
+    .rectangle17 {
+      top: 445px;
+      background: rgba(65, 65, 65, 0.2);
+    }
+    .rectangle19 {
+      top: 540px;
+      background: rgba(42, 83, 245, 0.8);
+      cursor: pointer;
+    }
+    .account-label,
+    .password-label,
+    .login-label {
+      position: absolute;
+      font-family: 'Inter', 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-style: normal;
+      font-weight: 400;
+      font-size: 15px;
+      line-height: 18px;
+      color: #FFFFFF;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+    .account-label {
+      width: 30px;
+      height: 18px;
+      left: 85px;
+      top: 366px;
+    }
+    .password-label {
+      width: 30px;
+      height: 18px;
+      left: 85px;
+      top: 461px;
+    }
+    .login-label {
+      width: 30px;
+      height: 18px;
+      left: 205px;
+      top: 556px;
+      text-align: center;
+      pointer-events: none;
+    }
+    .login-vector,
+    .password-vector,
+    .eye-vector {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25));
+    }
+    .login-vector {
+      left: 45px;
+      top: 350px;
+    }
+    .password-vector {
+      left: 45px;
+      top: 445px;
+    }
+    .eye-vector {
+      left: 379px;
+      top: 445px;
+    }
     .rectangle1 {
       position: absolute;
       left: 0;
@@ -729,6 +816,23 @@
   </style>
 </head>
 <body>
+  <div class="start-frame" id="startFrame" aria-label="開啟群組頁面">
+    <div class="rectangle16"></div>
+    <div class="rectangle17"></div>
+    <div class="rectangle19" id="enterButton"></div>
+    <div class="account-label">帳號</div>
+    <div class="password-label">密碼</div>
+    <div class="login-label">登入</div>
+    <svg class="login-vector" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M10 10C12.7625 10 15 7.7625 15 5C15 2.2375 12.7625 0 10 0C7.2375 0 5 2.2375 5 5C5 7.7625 7.2375 10 10 10ZM10 12.5C6.6625 12.5 0 14.175 0 17.5V20H20V17.5C20 14.175 13.3375 12.5 10 12.5Z" fill="white"/>
+    </svg>
+    <svg class="password-vector" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M16 6.667H15V4.7619C15 3.499 14.4732 2.2878 13.5355 1.3947C12.5979 0.5017 11.3261 0 10 0C8.67392 0 7.40215 0.5017 6.46447 1.3947C5.52678 2.2878 5 3.499 5 4.7619V6.667H4C3.20435 6.667 2.44129 6.968 1.87868 7.504C1.31607 8.039 1 8.766 1 9.524V17.143C1 17.901 1.31607 18.627 1.87868 19.163C2.44129 19.699 3.20435 20 4 20H16C16.7956 20 17.5587 19.699 18.1213 19.163C18.6839 18.627 19 17.901 19 17.143V9.524C19 8.766 18.6839 8.039 18.1213 7.504C17.5587 6.968 16.7956 6.667 16 6.667ZM7 4.7619C7 4.0041 7.31607 3.2774 7.87868 2.7416C8.44129 2.2058 9.20435 1.9048 10 1.9048C10.7956 1.9048 11.5587 2.2058 12.1213 2.7416C12.6839 3.2774 13 4.0041 13 4.7619V6.667H7V4.7619ZM11 13.076V15.238C11 15.491 10.8946 15.733 10.7071 15.912C10.5196 16.09 10.2652 16.19 10 16.19C9.73478 16.19 9.48043 16.09 9.29289 15.912C9.10536 15.733 9 15.491 9 15.238V13.076C8.61872 12.867 8.32072 12.543 8.15224 12.156C7.98376 11.768 7.9542 11.339 8.06815 10.934C8.1821 10.529 8.43319 10.171 8.78248 9.915C9.13177 9.66 9.55973 9.522 10 9.522C10.4403 9.522 10.8682 9.66 11.2175 9.915C11.5668 10.171 11.8179 10.529 11.9319 10.934C12.0458 11.339 12.0162 11.768 11.8478 12.156C11.6793 12.543 11.3813 12.867 11 13.076Z" fill="white"/>
+    </svg>
+    <svg class="eye-vector" viewBox="0 0 20 13" fill="none" aria-hidden="true">
+      <path d="M10 0C5.455 0 1.573 2.695 0 6.5C1.573 10.305 5.455 13 10 13C14.545 13 18.427 10.305 20 6.5C18.427 2.695 14.545 0 10 0ZM10 10.833C7.491 10.833 5.455 8.892 5.455 6.5C5.455 4.108 7.491 2.167 10 2.167C12.509 2.167 14.545 4.108 14.545 6.5C14.545 8.892 12.509 10.833 10 10.833ZM10 3.9C8.491 3.9 7.273 5.061 7.273 6.5C7.273 7.939 8.491 9.1 10 9.1C11.509 9.1 12.727 7.939 12.727 6.5C12.727 5.061 11.509 3.9 10 3.9Z" fill="white"/>
+    </svg>
+  </div>
   <div class="wrapper">
     <div class="rectangle1">
       <div class="rectangle15"></div>
@@ -789,5 +893,13 @@
       <div class="icon-3"></div>
     </div>
   </div>
+  <script>
+    const startFrame = document.getElementById('startFrame');
+    const enterButton = document.getElementById('enterButton');
+
+    enterButton.addEventListener('click', () => {
+      startFrame.classList.add('is-hidden');
+    });
+  </script>
 </body>
 </html>
