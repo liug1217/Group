@@ -2,937 +2,461 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 畫布固定 440px 寬（Figma iPhone 16 Pro Max），手機會自動等比縮放 -->
+  <meta name="viewport" content="width=440">
   <title>Group</title>
   <style>
     html, body {
-      width: 100%;
-      height: 100%;
       margin: 0;
       padding: 0;
-      background: #252525;
+      min-height: 100%;
+      background: #212121;
       font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: #FFFFFF;
     }
-    .wrapper {
+    /* 每個畫面都是 440px 寬的 iPhone 畫布 */
+    .screen {
       position: relative;
-      width: 100%;
-      min-height: 100vh;
-      box-sizing: border-box;
-      padding: 20px;
+      width: 440px;
+      height: 956px;
+      margin: 0 auto;
       background: #212121;
+      overflow: hidden;
     }
-    .start-frame {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      background: #212121;
-      z-index: 1000;
-      cursor: pointer;
-    }
-    .start-frame.is-hidden {
+    .screen.is-hidden {
       display: none;
     }
-    .rectangle16,
-    .rectangle17,
-    .rectangle19 {
+    .abs {
+      position: absolute;
+    }
+    .shadow {
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+    .text-shadow {
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+    .t10 { font-size: 10px; }
+    .t12 { font-size: 12px; }
+    .t15 { font-size: 15px; }
+    .t20 { font-size: 20px; }
+    .t30 { font-size: 30px; }
+    .nowrap { white-space: nowrap; }
+    .avatar {
+      position: absolute;
+      object-fit: cover;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    /* ---------- iPhone 16 & 17 Pro Max - 2：登入 ---------- */
+    .field {
       position: absolute;
       left: 20px;
-      right: 20px;
-      max-width: 400px;
+      width: 400px;
       height: 50px;
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
       border-radius: 25px;
-      background: rgba(255, 255, 255, 0.08); 
-      -webkit-backdrop-filter: blur(20px) saturate(190%);
-      backdrop-filter: blur(20px) saturate(190%);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25),
-                  inset 0px 1px 1px rgba(255, 255, 255, 0.15);
-      color: #ffffff;
-    }
-    .rectangle16 {
-      top: 350px;
       background: rgba(65, 65, 65, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
-    .rectangle17 {
-      top: 445px;
-      background: rgba(65, 65, 65, 0.2);
+    .field input {
+      position: absolute;
+      left: 65px;
+      right: 60px;
+      top: 0;
+      height: 50px;
+      padding: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: #FFFFFF;
+      font: inherit;
+      font-size: 15px;
+      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
-    .rectangle19 {
-      top: 540px;
-      background: rgba(42, 83, 245, 0.8);
+    .field input::placeholder {
+      color: #FFFFFF;
+      opacity: 1;
+    }
+    .field-account { top: 350px; }
+    .field-password { top: 445px; }
+    .icon-user { left: 25px; top: 15px; width: 20px; height: 20px; }
+    .icon-lock { left: 26px; top: 15px; width: 18px; height: 20px; }
+    .eye-button {
+      position: absolute;
+      left: 359px;
+      top: 18px;
+      width: 20px;
+      height: 13px;
+      padding: 0;
+      border: 0;
+      background: transparent;
       cursor: pointer;
     }
-    .account-label,
-    .password-label,
-    .login-label {
-      position: absolute;
-      font-family: 'Inter', 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 15px;
-      line-height: 18px;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    .account-label {
-      width: 30px;
-      height: 18px;
-      left: 85px;
-      top: 366px;
-    }
-    .password-label {
-      width: 30px;
-      height: 18px;
-      left: 85px;
-      top: 461px;
-    }
-    .login-label {
-      width: 30px;
-      height: 18px;
-      left: 205px;
-      top: 556px;
-      text-align: center;
-      pointer-events: none;
-    }
-    .login-vector,
-    .password-vector,
-    .eye-vector {
-      position: absolute;
+    .eye-button img {
+      display: block;
       width: 20px;
-      height: 20px;
-      filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.25));
+      height: 13px;
     }
-    .login-vector {
-      left: 45px;
-      top: 350px;
-    }
-    .password-vector {
-      left: 45px;
-      top: 445px;
-    }
-    .eye-vector {
-      left: 379px;
-      top: 445px;
-    }
-    .rectangle1 {
-      position: absolute;
-      left: 0;
-      right: 0;
-      max-width: 440px;
-      height: 85px;
-      top: 0;
-      background: rgba(53, 53, 53, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    .rectangle13 {
+    .login-button {
       position: absolute;
       left: 20px;
-      right: 20px;
-      max-width: 400px;
-      height: 150px;
-      top: 109px;
-      background: rgba(65, 65, 65, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 35px;
-      background: rgba(255, 255, 255, 0.08); 
-      -webkit-backdrop-filter: blur(20px) saturate(190%);
-      backdrop-filter: blur(20px) saturate(190%);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25),
-                  inset 0px 1px 1px rgba(255, 255, 255, 0.15);
-      color: #ffffff;
-    }
-    .rectangle2 {
-      position: absolute;
-      left: 20px;
-      right: 20px;
-      max-width: 400px;
-      height: 406px;
-      top: 283px;
-      background: rgba(65, 65, 65, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 35px;
-      background: rgba(255, 255, 255, 0.08); 
-      -webkit-backdrop-filter: blur(20px) saturate(190%);
-      backdrop-filter: blur(20px) saturate(190%);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25),
-                  inset 0px 1px 1px rgba(255, 255, 255, 0.15);
-      color: #ffffff;
-    }
-    .rectangle4 {
-      box-sizing: border-box;
-      position: absolute;
-      left: 0;
-      right: 0;
-      max-width: 440px;
+      top: 540px;
+      width: 400px;
       height: 50px;
-      top: 0;
-      background: rgba(53, 53, 53, 0.2);
-      border-bottom: 1px solid #838383;
+      border: 0;
+      border-radius: 25px;
+      background: #2949CB;
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 35px 35px 0px 0px;
-      background: rgba(255, 255, 255, 0.08); 
-      -webkit-backdrop-filter: blur(20px) saturate(190%);
-      backdrop-filter: blur(20px) saturate(190%);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25),
-                  inset 0px 1px 1px rgba(255, 255, 255, 0.15);
-      color: #ffffff;
-    }
-    .rank-group {
-      position: absolute;
-      inset: 0;
-      white-space: nowrap;
-    }
-    .rank-table {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 20px;
-      line-height: 24px;
       color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    .competitor,
-    .sniper {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
+      font: inherit;
       font-size: 15px;
-      line-height: 18px;
-      color: #FFFFFF;
       text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      cursor: pointer;
     }
-    .competitor {
-      left: 60px;
-      right: 295px;
-      text-align: left;
+    .social {
+      top: 635px;
+      width: 50px;
+      height: 50px;
+      border-radius: 25px;
+      cursor: pointer;
     }
-    .sniper {
-      right: 60px;
+
+    /* ---------- iPhone 16 & 17 Pro Max - 1：群組主頁 ---------- */
+    .screen-home {
+      height: 1500px;
     }
-    .rank-table,
-    .competitor,
-    .sniper {
-      display: inline-block;
+    .header {
+      left: 0;
+      top: 0;
+      width: 440px;
+      height: 145px;
+      background: rgba(53, 53, 53, 0.2);
     }
-    .rectangle14 {
-      position: absolute;
-      left: 240px;
-      right: 30px;
-      height: 76px;
-      top: 54px;
-      background: rgba(99, 99, 99, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .title-bi {
-      position: absolute;
-      width: 141px;
-      height: 15px;
-      left: 50%;
-      right: 50%;
-      transform: translateX(-50%);
-      top: 62px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 12px;
-      line-height: 15px;
-      white-space: nowrap;
-      text-align: center;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    .avatar-s {
-      position: absolute;
+    .group-avatar {
+      left: 190px;
+      top: 60px;
       width: 60px;
       height: 60px;
-      left: 50%;
-      transform: translateX(-50%);
-      top: 0;
-      background: url(https://raw.githubusercontent.com/liug1217/Group/bf1d66b2928638fa9a70f222da17f8243145da46/S__3588120.jpg);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
       border-radius: 30px;
-      background-size: cover;
-      background-position: center;
     }
-    .rectangle12 {
-      position: absolute;
-      left: 0;
-      right: 0;
-      width: 100%;
-      max-width: 440px;
-      height: 100px;
-      bottom: 0;
-      background: rgba(53, 53, 53, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    .group-title {
+      left: 219.5px;
+      top: 120px;
+      transform: translateX(-50%);
     }
-    /* S__14131250 3 */
-    .s-14131250-3 {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      left: 390px;
-      top: 12px;
-      background: url(https://raw.githubusercontent.com/liug1217/Group/bba43d4b613d0e703445e04b8e5d0268207d150a/5D814FDE-C2F9-4D40-BCF1-3EA5388171AB.jpg);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 50px;
-      background-size: cover;
-      background-position: center;
-    }
-    .my-label {
-      position: absolute;
-      left: 390px;
-      top: 42px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 10px;
-      line-height: 12px;
-      text-align: center;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    .notification-label {
-      position: absolute;
-      left: 301px;
-      top: 42px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 10px;
-      line-height: 12px;
-      text-align: center;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    .home-label {
-      position: absolute;
-      left: 30px;
-      top: 42px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 10px;
-      line-height: 12px;
-      text-align: center;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    .chat-label {
-      position: absolute;
-      left: 119.5px;
-      top: 42px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 10px;
-      line-height: 12px;
-      text-align: center;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    .video-label {
-      position: absolute;
-      left: 205px;
-      top: 42px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 10px;
-      line-height: 12px;
-      text-align: center;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    .vector {
-      position: absolute;
-      left: 6.98%;
-      right: 88.8%;
-      top: 57.78%;
-      bottom: 40.98%;
-      border: 1.5px solid #FFFFFF;
-    }
-    .icon-1 {
-      position: absolute;
-      left: 27.43%;
-      right: 68.56%;
-      top: 57.81%;
-      bottom: 41.01%;
-      border: 1.5px solid #FFFFFF;
-    }
-    .icon-2 {
-      position: absolute;
-      left: 47.73%;
-      right: 47.73%;
-      top: 57.73%;
-      bottom: 40.93%;
-      border: 1.5px solid #FFFFFF;
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    .icon-3 {
-      position: absolute;
-      left: 68.3%;
-      right: 27.16%;
-      top: 57.73%;
-      bottom: 40.93%;
-      border: 1.5px solid #FFFFFF;
-    }
-    /* Rectangle 15 */
-    .rectangle15 {
-      position: absolute;
+    .header-tag {
       left: 370px;
-      right: 20px;
-      height: 20px;
-      top: 59px;
-      background: rgba(217, 217, 217, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 5px;
-    }
-    /* 劉 O 佑 */
-    .liu-o-you {
-      position: absolute;
+      top: 119px;
       width: 50px;
-      height: 18px;
-      left: 130px;
-      top: 35px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 15px;
-      line-height: 18px;
-      white-space: nowrap;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      height: 20px;
+      border-radius: 5px;
+      background: rgba(217, 217, 217, 0.2);
     }
-    /* Bi_liug1217 */
-    .bi-liug1217 {
+    .card {
       position: absolute;
-      width: 78px;
-      height: 18px;
-      left: 130px;
-      top: 53px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 15px;
-      line-height: 18px;
-      white-space: nowrap;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      left: 20px;
+      width: 400px;
+      border-radius: 35px;
+      background: rgba(65, 65, 65, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
-    /* Roblox競爭者等級 */
-    .roblox-rank {
-      position: absolute;
-      width: 99px;
-      height: 15px;
-      left: 130px;
-      top: 71px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 12px;
-      line-height: 15px;
-      white-space: nowrap;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    .leader-card {
+      top: 169px;
+      height: 150px;
     }
-    /* 87 */
-    .number-87 {
-      position: absolute;
-      width: 15px;
-      height: 15px;
-      left: 130px;
-      top: 86px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 12px;
-      line-height: 15px;
-      white-space: nowrap;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    /* 排名表 */
-    .rank-table {
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 20px;
-      line-height: 24px;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    /* 競爭者 */
-    .competitor {
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 15px;
-      line-height: 18px;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    /* 狙擊手 */
-    .sniper {
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 15px;
-      line-height: 18px;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    /* S__14131250 2 */
-    .s-14131250-2 {
-      position: absolute;
-      width: 100px;
-      height: 100px;
+    .leader-avatar {
       left: 10px;
       top: 25px;
-      background: url(https://raw.githubusercontent.com/liug1217/Group/bba43d4b613d0e703445e04b8e5d0268207d150a/S__14131253.jpg);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25), 0px 4px 4px rgba(0, 0, 0, 0.25);
+      width: 100px;
+      height: 100px;
       border-radius: 50px;
-      background-size: cover;
-      background-position: center;
     }
-    /* S__14131210 1 */
-    .s-14131210-1 {
-      position: absolute;
-      width: 35px;
-      height: 35px;
-      left: 10px;
-      top: 57.5px;
-      background: url(https://raw.githubusercontent.com/liug1217/Group/bba43d4b613d0e703445e04b8e5d0268207d150a/4072FDA8-E43E-42A7-B7E4-891547A3BB95.jpg);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 17.5px;
-      background-size: cover;
-      background-position: center;
-    }
-    /* S__14131235 1 */
-    .s-14131235-1 {
-      position: absolute;
-      width: 35px;
-      height: 35px;
-      left: 10px;
-      top: 108.5px;
-      background: url(https://raw.githubusercontent.com/liug1217/Group/bba43d4b613d0e703445e04b8e5d0268207d150a/F4A859E9-CDA5-4A1F-A943-7534FA55A63C.jpg);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 17.5px;
-      background-size: cover;
-      background-position: center;
-    }
-    /* S__14131250 1 */
-    .s-14131250-1 {
-      position: absolute;
-      width: 35px;
-      height: 35px;
-      left: 10px;
-      top: 159.5px;
-      background: url(https://raw.githubusercontent.com/liug1217/Group/bba43d4b613d0e703445e04b8e5d0268207d150a/5D814FDE-C2F9-4D40-BCF1-3EA5388171AB.jpg);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 17.5px;
-      background-size: cover;
-      background-position: center;
-    }
-    /* S__14131251 1 */
-    .s-14131251-1 {
-      position: absolute;
-      width: 35px;
-      height: 35px;
-      left: 10px;
-      top: 210.5px;
-      background: url(https://raw.githubusercontent.com/liug1217/Group/bba43d4b613d0e703445e04b8e5d0268207d150a/86ADFEF6-08B7-4D35-94BE-9B67BEC5C207.jpg);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 17.5px;
-      background-size: cover;
-      background-position: center;
-    }
-    /* S__14131253 1 */
-    .s-14131253-1 {
-      position: absolute;
-      width: 35px;
-      height: 35px;
-      left: 10px;
-      top: 261.5px;
-      background: url(https://raw.githubusercontent.com/liug1217/Group/bba43d4b613d0e703445e04b8e5d0268207d150a/S__14131253.jpg);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      border-radius: 17.5px;
-      background-size: cover;
-      background-position: center;
-    }
-    /* Roblox競爭者等級 : 207 */
-    .roblox-rank-207 {
-      position: absolute;
-      width: 130px;
-      height: 15px;
-      left: 60px;
-      top: 76.5px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 12px;
-      line-height: 15px;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      white-space: nowrap;
-    }
-    /* 陳柏安 */
-    .chen-bai-an {
-      position: absolute;
-      width: 45px;
-      height: 18px;
-      left: 60px;
-      top: 58.5px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 15px;
-      line-height: 18px;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      white-space: nowrap;
-    }
-    /* Roblox競爭者等級 : */
-    .roblox-rank-none {
-      position: absolute;
-      width: 106px;
-      height: 15px;
-      left: 60px;
-      top: 280.5px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 12px;
-      line-height: 15px;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      white-space: nowrap;
-    }
-    /* 帆 */
-    .fan {
-      position: absolute;
-      width: 15px;
-      height: 18px;
-      left: 60px;
-      top: 262.5px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 15px;
-      line-height: 18px;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      white-space: nowrap;
-    }
-    /* Roblox競爭者等級 : 128 */
-    .roblox-rank-128 {
-      position: absolute;
-      width: 129px;
-      height: 15px;
-      left: 60px;
-      top: 229.5px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 12px;
-      line-height: 15px;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      white-space: nowrap;
-    }
-    /* 劉思妤 Bi_Robbyg309bbb */
-    .liu-siyu {
-      position: absolute;
-      width: 189px;
-      height: 18px;
-      left: 60px;
-      top: 211.5px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 15px;
-      line-height: 18px;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      white-space: nowrap;
-    }
-    /* Roblox競爭者等級 : 87 */
-    .roblox-rank-87 {
-      position: absolute;
-      width: 123px;
-      height: 15px;
-      left: 60px;
-      top: 178.5px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 12px;
-      line-height: 15px;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      white-space: nowrap;
-    }
-    /* Rectangle 21 */
-    .rectangle21 {
-      position: absolute;
+    .leader-badge {
       left: 330px;
-      right: 20px;
-      height: 20px;
       top: 10px;
-      background: rgba(99, 99, 99, 0.2);
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      width: 50px;
+      height: 20px;
       border-radius: 8px;
+      background: rgba(99, 99, 99, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    /* 團長 */
-    .leader-label {
-      font-family: 'Inter', 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 12px;
-      line-height: 15px;
-      color: #FFFFFF;
-    }
-    /* 劉 O 佑 Bi_liug1217 */
-    .liu-o-you-bio {
-      position: absolute;
-      width: 140px;
-      height: 18px;
-      left: 60px;
-      top: 160.5px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 15px;
-      line-height: 18px;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      white-space: nowrap;
-    }
-    /* Roblox競爭者等級 : 159 */
-    .roblox-rank-159 {
-      position: absolute;
-      width: 129px;
-      height: 15px;
-      left: 60px;
-      top: 127.5px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 12px;
-      line-height: 15px;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      white-space: nowrap;
-    }
-    /* 張 O 寧 Bi_VIP1124 */
-    .zhang-o-ning {
-      position: absolute;
-      width: 139px;
-      height: 18px;
-      left: 60px;
-      top: 109.5px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 15px;
-      line-height: 18px;
-      color: #FFFFFF;
-      text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      white-space: nowrap;
-    }
-    /* Rectangle 6 */
-    .rectangle6 {
-      position: absolute;
-      left: 0;
-      right: 0;
-      height: 1px;
-      top: 100px;
-      background: #838383;
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    /* Rectangle 7 */
-    .rectangle7 {
-      position: absolute;
-      left: 0;
-      right: 0;
-      height: 1px;
-      top: 151px;
-      background: #838383;
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    /* Rectangle 8 */
-    .rectangle8 {
-      position: absolute;
-      left: 0;
-      right: 0;
-      height: 1px;
-      top: 202px;
-      background: #838383;
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    /* Rectangle 9 */
-    .rectangle9 {
-      position: absolute;
-      left: 0;
-      right: 0;
-      height: 1px;
-      top: 253px;
-      background: #838383;
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    /* Rectangle 10 */
-    .rectangle10 {
-      position: absolute;
-      left: 0;
-      right: 0;
-      height: 1px;
-      top: 304px;
-      background: #838383;
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    /* Rectangle 11 */
-    .rectangle11 {
-      position: absolute;
-      left: 0;
-      right: 0;
-      height: 1px;
-      top: 355px;
-      background: #838383;
-      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    /* 個人簡介 : */
-    .personal-bio {
-      position: absolute;
-      width: 55px;
-      height: 15px;
+    .bio-box {
       left: 240px;
-      top: 35px;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 12px;
-      line-height: 15px;
-      color: #FFFFFF;
-    }
-    /* 無 */
-    .no-label {
-      width: 30px;
-      height: 36px;
+      top: 54px;
+      width: 150px;
+      height: 76px;
+      border-radius: 10px;
+      background: rgba(99, 99, 99, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      font-style: normal;
-      font-weight: 400;
-      font-size: 30px;
-      line-height: 36px;
-      color: #FFFFFF;
+    }
+    .rank-card {
+      top: 343px;
+      height: 406px;
+    }
+    .rank-header {
+      left: 0;
+      top: 0;
+      width: 400px;
+      height: 50px;
+      box-sizing: border-box;
+      border-bottom: 1px solid #838383;
+      border-radius: 35px 35px 0px 0px;
+      background: rgba(53, 53, 53, 0.2);
+    }
+    .divider {
+      left: 0;
+      width: 400px;
+      height: 1px;
+      background: #838383;
+    }
+    .member-avatar {
+      left: 10px;
+      width: 35px;
+      height: 35px;
+      border-radius: 17.5px;
+    }
+
+    /* Tab Bar - iPhone · 五分頁 */
+    .tab-bar {
+      position: fixed;
+      left: 50%;
+      bottom: 29px;
+      width: 402px;
+      height: 70px;
+      margin-left: -201px;
+      border-radius: 1000px;
+      background: rgba(242, 242, 247, 0.8);
+      -webkit-backdrop-filter: blur(20px) saturate(190%);
+      backdrop-filter: blur(20px) saturate(190%);
+      box-shadow: 1.25px 0px 0px -0.75px #D0D0D0, -1.25px 0px 0px -0.75px #D0D0D0, 0px 0px 0px 0.5px #E8E8E8, 0px 8px 15px 0px rgba(0, 0, 0, 0.02);
+      font-family: 'Inter', 'SF Pro', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      z-index: 10;
+    }
+    .tab-bar[hidden] {
+      display: none;
+    }
+    .tab {
+      position: absolute;
+      top: 5px;
+      width: 76px;
+      height: 60px;
+      padding: 0;
+      border: 0;
+      border-radius: 30px;
+      background: transparent;
+      color: #1C1C1E;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .tab.is-active {
+      background: rgba(0, 122, 255, 0.4);
+      color: #007AFF;
+    }
+    .tab img {
+      position: absolute;
+      left: 50%;
+      top: 9px;
+      transform: translateX(-50%);
+    }
+    .tab span {
+      position: absolute;
+      left: 50%;
+      top: 37px;
+      transform: translateX(-50%);
       white-space: nowrap;
+    }
+    .tab .tab-avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50px;
+      object-fit: cover;
+    }
+
+    /* ---------- iPhone 16 & 17 Pro Max - 3：VIDEO ---------- */
+    .call-title {
+      left: 90.5px;
+      top: 75px;
+      transform: translateX(-50%);
+    }
+    .call-clock {
+      left: 21.5px;
+      top: 95.5px;
+      width: 9px;
+      height: 9px;
+    }
+    .call-timer {
+      left: 47.5px;
+      top: 94px;
+      transform: translateX(-50%);
+    }
+    .call-glow {
+      left: 20px;
+      top: 378px;
+      width: 400px;
+      height: 200px;
+      border-radius: 30px;
+      object-fit: cover;
+      filter: blur(25px);
+    }
+    .call-avatar {
+      left: 144px;
+      top: 403px;
+      width: 151px;
+      height: 150px;
+      border-radius: 75px;
     }
   </style>
 </head>
 <body>
-  <div class="start-frame" id="startFrame" aria-label="開啟群組頁面">
-    <div class="rectangle16"></div>
-    <div class="rectangle17"></div>
-    <div class="rectangle19" id="enterButton"></div>
-    <div class="account-label">帳號</div>
-    <div class="password-label">密碼</div>
-    <div class="login-label">登入</div>
-    <svg class="login-vector" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path d="M10 10C12.7625 10 15 7.7625 15 5C15 2.2375 12.7625 0 10 0C7.2375 0 5 2.2375 5 5C5 7.7625 7.2375 10 10 10ZM10 12.5C6.6625 12.5 0 14.175 0 17.5V20H20V17.5C20 14.175 13.3375 12.5 10 12.5Z" fill="white"/>
-    </svg>
-    <svg class="password-vector" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <path d="M16 6.667H15V4.7619C15 3.499 14.4732 2.2878 13.5355 1.3947C12.5979 0.5017 11.3261 0 10 0C8.67392 0 7.40215 0.5017 6.46447 1.3947C5.52678 2.2878 5 3.499 5 4.7619V6.667H4C3.20435 6.667 2.44129 6.968 1.87868 7.504C1.31607 8.039 1 8.766 1 9.524V17.143C1 17.901 1.31607 18.627 1.87868 19.163C2.44129 19.699 3.20435 20 4 20H16C16.7956 20 17.5587 19.699 18.1213 19.163C18.6839 18.627 19 17.901 19 17.143V9.524C19 8.766 18.6839 8.039 18.1213 7.504C17.5587 6.968 16.7956 6.667 16 6.667ZM7 4.7619C7 4.0041 7.31607 3.2774 7.87868 2.7416C8.44129 2.2058 9.20435 1.9048 10 1.9048C10.7956 1.9048 11.5587 2.2058 12.1213 2.7416C12.6839 3.2774 13 4.0041 13 4.7619V6.667H7V4.7619ZM11 13.076V15.238C11 15.491 10.8946 15.733 10.7071 15.912C10.5196 16.09 10.2652 16.19 10 16.19C9.73478 16.19 9.48043 16.09 9.29289 15.912C9.10536 15.733 9 15.491 9 15.238V13.076C8.61872 12.867 8.32072 12.543 8.15224 12.156C7.98376 11.768 7.9542 11.339 8.06815 10.934C8.1821 10.529 8.43319 10.171 8.78248 9.915C9.13177 9.66 9.55973 9.522 10 9.522C10.4403 9.522 10.8682 9.66 11.2175 9.915C11.5668 10.171 11.8179 10.529 11.9319 10.934C12.0458 11.339 12.0162 11.768 11.8478 12.156C11.6793 12.543 11.3813 12.867 11 13.076Z" fill="white"/>
-    </svg>
-    <svg class="eye-vector" viewBox="0 0 20 13" fill="none" aria-hidden="true">
-      <path d="M10 0C5.455 0 1.573 2.695 0 6.5C1.573 10.305 5.455 13 10 13C14.545 13 18.427 10.305 20 6.5C18.427 2.695 14.545 0 10 0ZM10 10.833C7.491 10.833 5.455 8.892 5.455 6.5C5.455 4.108 7.491 2.167 10 2.167C12.509 2.167 14.545 4.108 14.545 6.5C14.545 8.892 12.509 10.833 10 10.833ZM10 3.9C8.491 3.9 7.273 5.061 7.273 6.5C7.273 7.939 8.491 9.1 10 9.1C11.509 9.1 12.727 7.939 12.727 6.5C12.727 5.061 11.509 3.9 10 3.9Z" fill="white"/>
-    </svg>
-  </div>
-  <div class="wrapper">
-    <div class="rectangle1">
-      <div class="rectangle15"></div>
-      <div class="avatar-s"></div>
-      <div class="title-bi">★Bi_藍冰團★《Roblox》</div>
-    </div>
-    <div class="rectangle13">
-      <div class="rectangle14"><div class="no-label">無</div></div>
-      <div class="s-14131250-2"></div>
-      <div class="liu-o-you">帆～</div>
-      <div class="bi-liug1217">Bi_wuda0823</div>
-      <div class="roblox-rank">Roblox競爭者等級</div>
-      <div class="number-87">180</div>
-      <div class="personal-bio">個人簡介 :</div>
-      <div class="rectangle21"><div class="leader-label">團長</div></div>
-    </div>
-    <div class="rectangle2">
-      <div class="rectangle4">
-        <div class="rank-group">
-          <div class="competitor">競爭者</div>
-          <div class="rank-table">排名表</div>
-          <div class="sniper">狙擊手</div>
-        </div>
-      </div>
-      <div class="rectangle6"></div>
-      <div class="rectangle7"></div>
-      <div class="rectangle8"></div>
-      <div class="rectangle9"></div>
-      <div class="rectangle10"></div>
-      <div class="rectangle11"></div>
-      <div class="s-14131210-1"></div>
-      <div class="s-14131235-1"></div>
-      <div class="s-14131250-1"></div>
-      <div class="s-14131251-1"></div>
-      <div class="s-14131253-1"></div>
-      <div class="chen-bai-an">陳柏安 Bi_koimpkj</div>
-      <div class="roblox-rank-207">Roblox競爭者等級 : 207</div>
-      <div class="zhang-o-ning">寧~ Bi_VIP1124</div>
-      <div class="roblox-rank-159">Roblox競爭者等級 : 163</div>
-      <div class="liu-o-you-bio">劉 O 佑 Bi_liug1217</div>
-      <div class="roblox-rank-87">Roblox競爭者等級 : 87</div>
-      <div class="liu-siyu">劉思妤 Bi_Robbyg309bbb</div>
-      <div class="roblox-rank-128">Roblox競爭者等級 : 128</div>
-      <div class="fan">帆~ Bi_wuda0823</div>
-      <div class="roblox-rank-none">Roblox競爭者等級 : 180</div>
-    </div>
-    
-    <div class="rectangle12">
-      <div class="s-14131250-3"></div>
-      <div class="my-label">我的</div>
-      <div class="notification-label">通知</div>
-      <div class="home-label">主頁</div>
-      <div class="chat-label">聊天</div>
-      <div class="video-label">VIDEO</div>
-      <div class="vector"></div>
-      <div class="icon-1"></div>
-      <div class="icon-2"></div>
-      <div class="icon-3"></div>
-    </div>
-  </div>
-  <script>
-    const startFrame = document.getElementById('startFrame');
-    const enterButton = document.getElementById('enterButton');
 
-    enterButton.addEventListener('click', () => {
-      startFrame.classList.add('is-hidden');
+  <!-- 登入畫面 -->
+  <section class="screen screen-login" id="loginScreen">
+    <div class="field field-account">
+      <img class="abs icon-user" src="assets/icon-user.svg" alt="">
+      <input type="text" placeholder="帳號" aria-label="帳號" autocomplete="username">
+    </div>
+    <div class="field field-password">
+      <img class="abs icon-lock" src="assets/icon-lock.svg" alt="">
+      <input type="password" id="passwordInput" placeholder="密碼" aria-label="密碼" autocomplete="current-password">
+      <button class="eye-button" id="eyeButton" type="button" aria-label="顯示密碼">
+        <img src="assets/icon-eye.svg" alt="">
+      </button>
+    </div>
+    <button class="login-button" id="loginButton" type="button">登入</button>
+    <img class="abs social shadow" style="left: 20px;" src="assets/login-line.png" alt="LINE 登入">
+    <img class="abs social shadow" style="left: 80px;" src="assets/login-google.jpg" alt="Google 登入">
+    <img class="abs social shadow" style="left: 140px;" src="assets/login-facebook.png" alt="Facebook 登入">
+    <img class="abs social shadow" style="left: 200px;" src="assets/login-instagram.jpg" alt="Instagram 登入">
+  </section>
+
+  <!-- 群組主頁 -->
+  <section class="screen screen-home is-hidden" id="homeScreen">
+    <div class="abs header shadow"></div>
+    <img class="avatar group-avatar" src="assets/group-avatar.jpg" alt="">
+    <div class="abs group-title t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
+    <div class="abs header-tag shadow"></div>
+
+    <!-- 團長卡片 -->
+    <div class="card leader-card">
+      <img class="avatar leader-avatar" src="assets/member-5.jpg" alt="">
+      <div class="abs t15 nowrap text-shadow" style="left: 130px; top: 35px;">帆～</div>
+      <div class="abs t15 nowrap text-shadow" style="left: 130px; top: 53px;">Bi_wuda0823</div>
+      <div class="abs t12 nowrap text-shadow" style="left: 130px; top: 71px;">Roblox競爭者等級</div>
+      <div class="abs t12 nowrap text-shadow" style="left: 130px; top: 86px;">180</div>
+      <div class="abs t12 nowrap" style="left: 240px; top: 35px;">個人簡介 :</div>
+      <div class="abs bio-box shadow"><span class="t30">無</span></div>
+      <div class="abs leader-badge shadow"><span class="t12">團長</span></div>
+    </div>
+
+    <!-- 排名表 -->
+    <div class="card rank-card">
+      <div class="abs rank-header shadow"></div>
+      <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 16px;">競爭者</div>
+      <div class="abs t20 nowrap text-shadow" style="left: 170px; top: 13px;">排名表</div>
+      <div class="abs t15 nowrap text-shadow" style="left: 295px; top: 16px;">狙擊手</div>
+
+      <div class="abs divider shadow" style="top: 100px;"></div>
+      <div class="abs divider shadow" style="top: 151px;"></div>
+      <div class="abs divider shadow" style="top: 202px;"></div>
+      <div class="abs divider shadow" style="top: 253px;"></div>
+      <div class="abs divider shadow" style="top: 304px;"></div>
+      <div class="abs divider shadow" style="top: 355px;"></div>
+
+      <img class="avatar member-avatar" style="top: 57.5px;" src="assets/member-1.jpg" alt="">
+      <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 58.5px;">陳柏安 Bi_koimpkj</div>
+      <div class="abs t12 nowrap text-shadow" style="left: 60px; top: 76.5px;">Roblox競爭者等級 : 207</div>
+
+      <img class="avatar member-avatar" style="top: 108.5px;" src="assets/member-2.jpg" alt="">
+      <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 109.5px;">張 O 寧 Bi_VIP1124</div>
+      <div class="abs t12 nowrap text-shadow" style="left: 60px; top: 127.5px;">Roblox競爭者等級 : 159</div>
+
+      <img class="avatar member-avatar" style="top: 159.5px;" src="assets/member-3.jpg" alt="">
+      <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 160.5px;">劉 O 佑 Bi_liug1217</div>
+      <div class="abs t12 nowrap text-shadow" style="left: 60px; top: 178.5px;">Roblox競爭者等級 : 87</div>
+
+      <img class="avatar member-avatar" style="top: 210.5px;" src="assets/member-4.jpg" alt="">
+      <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 211.5px;">劉思妤 Bi_Robbyg309bbb</div>
+      <div class="abs t12 nowrap text-shadow" style="left: 60px; top: 229.5px;">Roblox競爭者等級 : 128</div>
+
+      <img class="avatar member-avatar" style="top: 261.5px;" src="assets/member-5.jpg" alt="">
+      <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 262.5px;">帆~ Bi_wuda0823</div>
+      <div class="abs t12 nowrap text-shadow" style="left: 60px; top: 280.5px;">Roblox競爭者等級 : 180</div>
+
+      <img class="avatar member-avatar" style="top: 312.5px;" src="assets/member-6.jpg" alt="">
+      <img class="avatar member-avatar" style="top: 363.5px;" src="assets/member-7.jpg" alt="">
+    </div>
+  </section>
+
+  <!-- VIDEO -->
+  <section class="screen screen-video is-hidden" id="videoScreen">
+    <div class="abs call-title t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
+    <img class="abs call-clock" src="assets/icon-clock.svg" alt="">
+    <div class="abs call-timer t10 nowrap" id="callTimer">00:00</div>
+    <img class="abs call-glow shadow" src="assets/member-5.jpg" alt="">
+    <img class="avatar call-avatar" src="assets/member-5.jpg" alt="">
+    <div class="abs t15 nowrap text-shadow" style="left: 205px; top: 561px;">帆～</div>
+  </section>
+
+  <nav class="tab-bar" id="tabBar" hidden>
+    <button class="tab" style="left: 2.2px;" data-target="homeScreen" type="button">
+      <img src="assets/icon-home.svg" alt="" width="20" height="20"><span>主頁</span>
+    </button>
+    <button class="tab" style="left: 82.6px;" type="button">
+      <img src="assets/icon-chat.svg" alt="" width="19" height="19"><span>聊天</span>
+    </button>
+    <button class="tab" style="left: 163px;" data-target="videoScreen" type="button">
+      <img src="assets/icon-video.svg" alt="" width="21" height="21"><span>VIDEO</span>
+    </button>
+    <button class="tab" style="left: 243.4px;" type="button">
+      <img src="assets/icon-bell.svg" alt="" width="21" height="21"><span>通知</span>
+    </button>
+    <button class="tab is-active" style="left: 323px;" data-target="homeScreen" type="button">
+      <img class="tab-avatar" src="assets/member-3.jpg" alt=""><span>我的</span>
+    </button>
+  </nav>
+
+  <script>
+    const screens = document.querySelectorAll('.screen');
+    const tabBar = document.getElementById('tabBar');
+    const tabs = tabBar.querySelectorAll('.tab');
+    const callTimer = document.getElementById('callTimer');
+    let timerId = null;
+
+    function showScreen(id) {
+      screens.forEach((screen) => screen.classList.toggle('is-hidden', screen.id !== id));
+      tabBar.hidden = id === 'loginScreen';
+      window.scrollTo(0, 0);
+
+      clearInterval(timerId);
+      if (id === 'videoScreen') {
+        let seconds = 0;
+        callTimer.textContent = '00:00';
+        timerId = setInterval(() => {
+          seconds += 1;
+          const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
+          const ss = String(seconds % 60).padStart(2, '0');
+          callTimer.textContent = `${mm}:${ss}`;
+        }, 1000);
+      }
+    }
+
+    document.getElementById('loginButton').addEventListener('click', () => showScreen('homeScreen'));
+
+    const passwordInput = document.getElementById('passwordInput');
+    document.getElementById('eyeButton').addEventListener('click', () => {
+      passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+    });
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        if (!tab.dataset.target) return;
+        tabs.forEach((t) => t.classList.toggle('is-active', t === tab));
+        showScreen(tab.dataset.target);
+      });
     });
   </script>
 </body>
