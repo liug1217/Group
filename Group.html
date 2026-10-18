@@ -705,8 +705,13 @@
     }
 
     /* ---------- 其他頁面共用：背景、頂部標題 ---------- */
+    .videos-card {
+      top: calc(109px + var(--safe-top));
+      height: 130px;
+    }
     .screen-chat,
     .screen-notify,
+    .screen-videos,
     .screen-me {
       background: #212121 url(assets/home-bg.jpg) 0 0 / 100% auto no-repeat;
     }
@@ -772,15 +777,19 @@
       font-size: 11px;
       color: rgba(255, 255, 255, 0.6);
     }
+    /* 訊息氣泡：完全圓角（膠囊形）+ 玻璃（<lg-panel>），顏色跟原本一樣 */
     .msg-bubble {
-      padding: 8px 12px;
-      border-radius: 16px;
+      display: block;
+      padding: 9px 16px;
+      border-radius: 999px;
       background: rgba(65, 65, 65, 0.55);
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
       font-size: 15px;
       line-height: 20px;
       white-space: pre-wrap;
       word-break: break-word;
+      --lg-tint: rgba(65, 65, 65, 0.55);
+      --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
     .msg-time {
       margin: 3px 4px 0;
@@ -796,6 +805,7 @@
     }
     .msg.is-me .msg-bubble {
       background: #2949CB;
+      --lg-tint: rgba(41, 73, 203, 0.75);
     }
     .msg.is-me .msg-time {
       text-align: right;
@@ -874,6 +884,35 @@
     }
     .page-back[hidden] {
       display: none;
+    }
+    .page-actions {
+      top: calc(30px + var(--safe-top));
+      right: 8px;
+      display: flex;
+    }
+    .page-actions[hidden] {
+      display: none;
+    }
+    .page-action {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #FFFFFF;
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    .page-action:active {
+      transform: scale(0.9);
+    }
+    /* 聊天室名稱太長時不要蓋到左右的按鈕 */
+    .screen-chat.is-thread .page-title {
+      max-width: calc(100% - 200px);
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     /* 聊天列表全螢幕：頂部下面到螢幕底，可以捲動，沒有卡片和邊框 */
     .chat-threads {
@@ -1186,7 +1225,7 @@
       <div class="abs center-x t15 nowrap text-shadow" style="top: 16px;">選擇你的身分</div>
       <div class="abs picker-grid" id="memberPicker" role="radiogroup" aria-label="選擇你的身分"></div>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.2.1</div>
+    <div class="abs version-label t12 nowrap">ESN v1.3.0</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1288,12 +1327,12 @@
 
   <!-- VIDEO -->
   <section class="screen screen-video is-hidden" id="videoScreen" data-lg-backdrop="">
-    <div class="abs call-title t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
+    <div class="abs call-title t12 nowrap text-shadow" id="callTitle">視訊通話</div>
     <img class="abs call-clock" src="assets/icon-clock.svg" alt="">
     <div class="abs call-timer t10 nowrap" id="callTimer">00:00</div>
-    <div class="abs call-glow shadow"><img src="assets/member-5.jpg" alt=""></div>
-    <img class="avatar call-avatar center-x" src="assets/member-5.jpg" alt="">
-    <div class="abs call-name center-x t15 nowrap text-shadow">帆～</div>
+    <div class="abs call-glow shadow"><img id="callGlow" src="assets/member-5.jpg" alt=""></div>
+    <img class="avatar call-avatar center-x" id="callAvatar" src="assets/member-5.jpg" alt="">
+    <div class="abs call-name center-x t15 nowrap text-shadow" id="callName">帆～</div>
     <div class="abs call-status center-x t12 nowrap" id="callStatus"></div>
     <div class="call-controls">
       <lg-panel class="call-btn glass" id="micBtn" radius="30">
@@ -1316,6 +1355,19 @@
     </div>
   </section>
 
+  <!-- VIDEO（底部中間）：之後放影片；通話改在聊天室裡 -->
+  <section class="screen screen-videos is-hidden" id="videosScreen" data-lg-backdrop="">
+    <lg-panel class="page-header glass shadow" radius="0">
+      <div class="abs page-title center-x t20 nowrap text-shadow">VIDEO</div>
+    </lg-panel>
+    <lg-panel class="card glass videos-card" radius="35">
+      <div class="abs rank-header shadow"></div>
+      <div class="abs center-x card-title t20 nowrap text-shadow">影片</div>
+      <div class="abs center-x t15 nowrap text-shadow" style="top: 70px;">影片功能即將推出</div>
+      <div class="abs center-x t12 nowrap" style="top: 98px; color: rgba(255, 255, 255, 0.6);">要打電話或視訊，請到聊天室右上角</div>
+    </lg-panel>
+  </section>
+
   <!-- 聊天 -->
   <section class="screen screen-chat is-hidden" id="chatScreen" data-lg-backdrop="">
     <lg-panel class="page-header glass shadow" radius="0">
@@ -1324,6 +1376,15 @@
       </button>
       <div class="abs page-title center-x t20 nowrap text-shadow" id="chatTitle">聊天</div>
       <div class="abs chat-status center-x t10 nowrap" id="chatStatus"></div>
+      <!-- 聊天室右上角：語音通話、視訊通話 -->
+      <div class="abs page-actions" id="chatActions" hidden>
+        <button class="page-action" id="voiceCallBtn" type="button" aria-label="語音通話">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>
+        </button>
+        <button class="page-action" id="videoCallBtn" type="button" aria-label="視訊通話">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10l5-3v10l-5-3"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+        </button>
+      </div>
     </lg-panel>
     <!-- 聊天列表：群組聊天室 + 每個成員（全螢幕，沒有卡片） -->
     <div class="chat-threads" id="chatThreads">
@@ -1401,7 +1462,7 @@
     <button class="tab" data-target="chatScreen" type="button">
       <i class="tab-icon" style="--icon: url(assets/icon-chat.svg); --size: 19px;"></i><span>聊天</span>
     </button>
-    <button class="tab" data-target="videoScreen" type="button">
+    <button class="tab" data-target="videosScreen" type="button">
       <i class="tab-icon" style="--icon: url(assets/icon-video.svg); --size: 21px;"></i><span>VIDEO</span>
     </button>
     <button class="tab" data-target="notifyScreen" type="button">
@@ -1615,7 +1676,8 @@
       const current = document.querySelector('.screen:not(.is-hidden)');
       if (current && current.id === id) return;
       screens.forEach((screen) => screen.classList.toggle('is-hidden', screen.id !== id));
-      tabBar.hidden = id === 'loginScreen';
+      // 登入畫面和通話中不顯示底部分頁列
+      tabBar.hidden = id === 'loginScreen' || id === 'videoScreen';
       window.scrollTo(0, 0);
       onScreenShown(id);
 
@@ -1936,6 +1998,7 @@
       chatTitle.textContent = '聊天';
       chatStatus.hidden = false;
       chatBack.hidden = true;
+      document.getElementById('chatActions').hidden = true;
       renderThreadList();
       requestAnimationFrame(alignGlassBackdrop);
     }
@@ -1948,6 +2011,7 @@
       chatTitle.textContent = thread.name;
       chatStatus.hidden = true;
       chatBack.hidden = false;
+      document.getElementById('chatActions').hidden = false;
       chatText.value = '';
       chatSend.disabled = true;
       renderChat();
@@ -1970,14 +2034,19 @@
         chatList.replaceChildren(el('div', 'chat-empty', '還沒有訊息，打聲招呼吧！'));
         return;
       }
-      chatList.replaceChildren(...chatMessages.map((m) => {
+      chatList.replaceChildren(...chatMessages.map((m, index) => {
         const sender = senderOf(m);
         const row = el('div', sender.isMe ? 'msg is-me' : 'msg');
         const avatar = el('img');
         avatar.src = sender.avatar;
         avatar.alt = '';
         const body = el('div');
-        body.append(el('div', 'msg-name', sender.name), el('div', 'msg-bubble', m.text), el('div', 'msg-time', m.time));
+        // 最新 30 則用玻璃氣泡（太多玻璃會拖慢手機），更早的用一樣顏色的一般氣泡
+        const bubble = index >= chatMessages.length - 30
+          ? Object.assign(document.createElement('lg-panel'), { className: 'msg-bubble glass', textContent: m.text })
+          : el('div', 'msg-bubble', m.text);
+        if (bubble.tagName === 'LG-PANEL') bubble.setAttribute('radius', '999');
+        body.append(el('div', 'msg-name', sender.name), bubble, el('div', 'msg-time', m.time));
         row.append(avatar, body);
         return row;
       }));
@@ -2030,7 +2099,29 @@
         updateCallStatus();
       });
     });
-    document.querySelector('#endBtn button').addEventListener('click', () => selectTab(0));
+    // 通話從聊天室發起：右上角的語音 / 視訊按鈕；掛斷回到原本的聊天室
+    let callReturnThread = null;
+    function startCall(thread, mode) {
+      callReturnThread = thread;
+      document.getElementById('callTitle').textContent = mode === 'voice' ? '語音通話' : '視訊通話';
+      document.getElementById('callName').textContent = thread.name;
+      document.getElementById('callAvatar').src = thread.avatar;
+      document.getElementById('callGlow').src = thread.avatar;
+      showScreen('videoScreen');
+      if (mode === 'voice') {
+        camBtn.classList.add('is-off');
+        camBtn.querySelector('button').setAttribute('aria-pressed', 'true');
+      }
+      updateCallStatus();
+    }
+    document.querySelector('#endBtn button').addEventListener('click', () => {
+      const thread = callReturnThread;
+      callReturnThread = null;
+      showScreen('chatScreen');
+      if (thread) openThread(thread);
+    });
+    document.getElementById('voiceCallBtn').addEventListener('click', () => currentThread && startCall(currentThread, 'voice'));
+    document.getElementById('videoCallBtn').addEventListener('click', () => currentThread && startCall(currentThread, 'video'));
 
     // ----- 通知：已讀 / 全部已讀、底部未讀數量 -----
     const NOTIFICATIONS = [
