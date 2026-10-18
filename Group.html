@@ -542,7 +542,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.0.6</div>
+    <div class="abs version-label t12 nowrap">ESN v1.0.7</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button">登入</button>
     </lg-panel>
@@ -624,8 +624,9 @@
     <div class="abs call-name center-x t15 nowrap text-shadow">帆～</div>
   </section>
 
-  <!-- 分頁列也固定在畫面上：一樣透出底下真正的內容 -->
-  <lg-panel class="tab-bar glass" id="tabBar" role="navigation" radius="35" backdrop="none" hidden>
+  <!-- 分頁列在主頁外面，用 backdrop 指定折射主頁的背景（iPhone Safari 也是真的玻璃；
+       backdrop="none" 在 Safari 只會變毛玻璃） -->
+  <lg-panel class="tab-bar glass" id="tabBar" role="navigation" radius="35" backdrop="#homeScreen" hidden>
     <span class="tab-surface" id="tabSurface" aria-hidden="true"></span>
     <lg-panel class="tab-pill glass" id="tabPill" radius="30" backdrop="#tabSurface"></lg-panel>
     <!-- 一開始就是主頁，所以預設選「主頁」；「我的」還沒有畫面，先不連 -->
