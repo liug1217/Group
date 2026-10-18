@@ -392,6 +392,40 @@
       border-radius: 17.5px;
     }
 
+    /* 排名表下面的卡片（間距 24px，跟上面卡片一樣） */
+    .notice-card {
+      top: calc(713px + var(--safe-top));
+      height: 130px;
+    }
+    .event-card {
+      top: calc(867px + var(--safe-top));
+      height: 166px;
+    }
+    .stats-card {
+      top: calc(1057px + var(--safe-top));
+      height: 130px;
+    }
+    .card-title {
+      top: 13px;
+    }
+    /* 群組數據：三欄置中 */
+    .stat {
+      top: 62px;
+      width: 33.33%;
+      text-align: center;
+    }
+    .stat-value {
+      display: block;
+      font-size: 24px;
+      line-height: 30px;
+    }
+    .stat-label {
+      display: block;
+      font-size: 12px;
+      line-height: 16px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
     /* Tab Bar - iPhone · 五分頁（可點擊也可滑動） */
     .tab-bar {
       position: fixed;
@@ -562,7 +596,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.0.8</div>
+    <div class="abs version-label t12 nowrap">ESN v1.0.9</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button">登入</button>
     </lg-panel>
@@ -631,6 +665,34 @@
 
       <img class="avatar member-avatar" style="top: 312.5px;" src="assets/member-6.jpg" alt="">
       <img class="avatar member-avatar" style="top: 363.5px;" src="assets/member-7.jpg" alt="">
+    </lg-panel>
+
+    <!-- 群組公告 -->
+    <lg-panel class="card glass notice-card" radius="35">
+      <div class="abs rank-header shadow"></div>
+      <div class="abs center-x card-title t20 nowrap text-shadow">群組公告</div>
+      <div class="abs t15 nowrap text-shadow" style="left: 25px; top: 66px;">歡迎加入 ★Bi_藍冰團★！</div>
+      <div class="abs t12 nowrap text-shadow" style="left: 25px; top: 92px;">有任何問題請找團長 帆～</div>
+    </lg-panel>
+
+    <!-- 本週活動（範例，之後換成真的活動） -->
+    <lg-panel class="card glass event-card" radius="35">
+      <div class="abs rank-header shadow"></div>
+      <div class="abs center-x card-title t20 nowrap text-shadow">本週活動</div>
+      <div class="abs t15 nowrap text-shadow" style="left: 25px; top: 66px;">週六 20:00</div>
+      <div class="abs t15 nowrap text-shadow" style="right: 25px; top: 66px;">團戰練習</div>
+      <div class="abs divider shadow" style="top: 100px;"></div>
+      <div class="abs t15 nowrap text-shadow" style="left: 25px; top: 117px;">週日 21:00</div>
+      <div class="abs t15 nowrap text-shadow" style="right: 25px; top: 117px;">狙擊手對決</div>
+    </lg-panel>
+
+    <!-- 群組數據（從排名表算的） -->
+    <lg-panel class="card glass stats-card" radius="35">
+      <div class="abs rank-header shadow"></div>
+      <div class="abs center-x card-title t20 nowrap text-shadow">群組數據</div>
+      <div class="abs stat text-shadow" style="left: 0;"><span class="stat-value">7</span><span class="stat-label">成員</span></div>
+      <div class="abs stat text-shadow" style="left: 33.33%;"><span class="stat-value">152</span><span class="stat-label">平均等級</span></div>
+      <div class="abs stat text-shadow" style="left: 66.66%;"><span class="stat-value">207</span><span class="stat-label">最高等級・陳柏安</span></div>
     </lg-panel>
   </section>
 
