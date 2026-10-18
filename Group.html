@@ -146,6 +146,8 @@
     /* 主頁可以往下滑（Figma 畫面高度 1500 - 60） */
     .screen-home {
       height: 1440px;
+      /* 照 liquidglass.dev：玻璃後面放圖片，折射才看得出來（自己畫的波浪圖，440×1440 @2x） */
+      background: #212121 url(assets/home-bg.jpg) 0 0 / 100% 100% no-repeat;
     }
     /* 頂部固定，往下滑時不會跟著捲走；底色用不透明的 #252525（= header 疊在背景上的顏色），內容才不會透出來 */
     .header {
@@ -181,12 +183,12 @@
       border-radius: 35px;
       background: rgba(65, 65, 65, 0.2);
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      /* liquidglass.dev 的玻璃顏色 / 陰影，維持原本卡片的設定 */
+      /* 玻璃顏色用原本卡片的灰色；陰影照 liquidglass.dev 網站 */
       --lg-tint: rgba(65, 65, 65, 0.2);
-      --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      --lg-shadow-2: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-    /* 玻璃裡的背景複本：背景是純色，不需要跟整個主頁（1440px 高）對齊，
-       直接填滿卡片就好。複本超出卡片時，iPhone Safari 算濾鏡範圍會把它算進去，玻璃會往右下位移 */
+    /* 玻璃裡的背景複本只有卡片大小，用 background-position 對齊整張背景圖（JS 設定）。
+       複本超出卡片時，iPhone Safari 算濾鏡範圍會把它算進去，玻璃會往右下位移 */
     .card .lg-surface__copy {
       width: 100% !important;
       height: 100% !important;
@@ -405,7 +407,7 @@
   </section>
 
   <!-- 群組主頁 -->
-  <!-- data-lg-backdrop：玻璃折射主頁自己的 CSS 背景，Safari / Firefox 也能真的折射 -->
+  <!-- data-lg-backdrop：玻璃折射主頁自己的 CSS 背景（背景圖），Safari / Firefox 也能真的折射 -->
   <section class="screen screen-home is-hidden" id="homeScreen" data-lg-backdrop="">
     <div class="header shadow">
       <img class="avatar group-avatar center-x" src="assets/group-avatar.jpg" alt="">
@@ -514,7 +516,20 @@
         panel.surface.detach();
         panel.surface.attach();
       });
+      alignGlassBackdrop();
     }
+
+    // 卡片裡的背景複本只有卡片大小（CSS 固定），這裡用 background-size / position
+    // 讓它顯示整張背景圖中、剛好在卡片後面的那一塊，折射才對得上
+    function alignGlassBackdrop() {
+      const home = homeScreen.getBoundingClientRect();
+      document.querySelectorAll('lg-panel .lg-surface__copy').forEach((copy) => {
+        const r = copy.getBoundingClientRect();
+        copy.style.backgroundSize = `${home.width}px ${home.height}px`;
+        copy.style.backgroundPosition = `${home.left - r.left}px ${home.top - r.top}px`;
+      });
+    }
+    window.addEventListener('resize', () => requestAnimationFrame(alignGlassBackdrop));
     homeScreen.addEventListener('animationend', (event) => {
       if (event.target === homeScreen) refreshGlass();
     });
