@@ -243,14 +243,6 @@
       opacity: 0.5;
       cursor: default;
     }
-    /* 聊天列表上的連線狀態 */
-    .chat-status {
-      top: calc(64px + var(--safe-top));
-      color: rgba(255, 255, 255, 0.55);
-    }
-    .chat-status.is-warning {
-      color: #FFB020;
-    }
 
     /* 登入按鈕：玻璃外殼（<lg-panel>）+ 裡面一個透明的原生按鈕 */
     .login-button {
@@ -433,7 +425,7 @@
     }
     .rank-card {
       top: calc(283px + var(--safe-top));
-      height: 406px;
+      height: 355px;
     }
     .rank-header {
       left: 0;
@@ -460,15 +452,15 @@
 
     /* 排名表下面的卡片（間距 24px，跟上面卡片一樣） */
     .notice-card {
-      top: calc(713px + var(--safe-top));
+      top: calc(662px + var(--safe-top));
       height: 130px;
     }
     .event-card {
-      top: calc(867px + var(--safe-top));
+      top: calc(816px + var(--safe-top));
       height: 166px;
     }
     .stats-card {
-      top: calc(1057px + var(--safe-top));
+      top: calc(1006px + var(--safe-top));
       height: 130px;
     }
     .card-title {
@@ -1248,7 +1240,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.3.2</div>
+    <div class="abs version-label t12 nowrap">ESN v1.3.3</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1293,30 +1285,25 @@
       <div class="abs divider shadow" style="top: 202px;"></div>
       <div class="abs divider shadow" style="top: 253px;"></div>
       <div class="abs divider shadow" style="top: 304px;"></div>
-      <div class="abs divider shadow" style="top: 355px;"></div>
 
-      <img class="avatar member-avatar" style="top: 57.5px;" src="assets/member-1.jpg" alt="">
-      <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 58.5px;">陳柏安 Bi_koimpkj</div>
-      <div class="abs t12 nowrap text-shadow" style="left: 60px; top: 76.5px;">Roblox競爭者等級 : 207</div>
+      <img class="avatar member-avatar" style="top: 57.5px;" src="assets/member-2.jpg" alt="">
+      <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 58.5px;">張 O 寧 Bi_VIP1124</div>
+      <div class="abs t12 nowrap text-shadow" style="left: 60px; top: 76.5px;">Roblox競爭者等級 : 159</div>
 
-      <img class="avatar member-avatar" style="top: 108.5px;" src="assets/member-2.jpg" alt="">
-      <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 109.5px;">張 O 寧 Bi_VIP1124</div>
-      <div class="abs t12 nowrap text-shadow" style="left: 60px; top: 127.5px;">Roblox競爭者等級 : 159</div>
+      <img class="avatar member-avatar" style="top: 108.5px;" src="assets/member-3.jpg" alt="">
+      <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 109.5px;">劉 O 佑 Bi_liug1217</div>
+      <div class="abs t12 nowrap text-shadow" style="left: 60px; top: 127.5px;">Roblox競爭者等級 : 87</div>
 
-      <img class="avatar member-avatar" style="top: 159.5px;" src="assets/member-3.jpg" alt="">
-      <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 160.5px;">劉 O 佑 Bi_liug1217</div>
-      <div class="abs t12 nowrap text-shadow" style="left: 60px; top: 178.5px;">Roblox競爭者等級 : 87</div>
+      <img class="avatar member-avatar" style="top: 159.5px;" src="assets/member-4.jpg" alt="">
+      <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 160.5px;">劉思妤 Bi_Robbyg309bbb</div>
+      <div class="abs t12 nowrap text-shadow" style="left: 60px; top: 178.5px;">Roblox競爭者等級 : 128</div>
 
-      <img class="avatar member-avatar" style="top: 210.5px;" src="assets/member-4.jpg" alt="">
-      <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 211.5px;">劉思妤 Bi_Robbyg309bbb</div>
-      <div class="abs t12 nowrap text-shadow" style="left: 60px; top: 229.5px;">Roblox競爭者等級 : 128</div>
+      <img class="avatar member-avatar" style="top: 210.5px;" src="assets/member-5.jpg" alt="">
+      <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 211.5px;">帆~ Bi_wuda0823</div>
+      <div class="abs t12 nowrap text-shadow" style="left: 60px; top: 229.5px;">Roblox競爭者等級 : 180</div>
 
-      <img class="avatar member-avatar" style="top: 261.5px;" src="assets/member-5.jpg" alt="">
-      <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 262.5px;">帆~ Bi_wuda0823</div>
-      <div class="abs t12 nowrap text-shadow" style="left: 60px; top: 280.5px;">Roblox競爭者等級 : 180</div>
-
-      <img class="avatar member-avatar" style="top: 312.5px;" src="assets/member-6.jpg" alt="">
-      <img class="avatar member-avatar" style="top: 363.5px;" src="assets/member-7.jpg" alt="">
+      <img class="avatar member-avatar" style="top: 261.5px;" src="assets/member-6.jpg" alt="">
+      <img class="avatar member-avatar" style="top: 312.5px;" src="assets/member-7.jpg" alt="">
     </lg-panel>
 
     <!-- 群組公告 -->
@@ -1342,9 +1329,9 @@
     <lg-panel class="card glass stats-card" radius="35">
       <div class="abs rank-header shadow"></div>
       <div class="abs center-x card-title t20 nowrap text-shadow">群組數據</div>
-      <div class="abs stat text-shadow" style="left: 0;"><span class="stat-value">7</span><span class="stat-label">成員</span></div>
-      <div class="abs stat text-shadow" style="left: 33.33%;"><span class="stat-value">152</span><span class="stat-label">平均等級</span></div>
-      <div class="abs stat text-shadow" style="left: 66.66%;"><span class="stat-value">207</span><span class="stat-label">最高等級・陳柏安</span></div>
+      <div class="abs stat text-shadow" style="left: 0;"><span class="stat-value">6</span><span class="stat-label">成員</span></div>
+      <div class="abs stat text-shadow" style="left: 33.33%;"><span class="stat-value">139</span><span class="stat-label">平均等級</span></div>
+      <div class="abs stat text-shadow" style="left: 66.66%;"><span class="stat-value">180</span><span class="stat-label">最高等級・帆～</span></div>
     </lg-panel>
   </section>
 
@@ -1398,7 +1385,6 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
       <div class="abs page-title center-x t20 nowrap text-shadow" id="chatTitle">聊天</div>
-      <div class="abs chat-status center-x t10 nowrap" id="chatStatus"></div>
       <!-- 聊天室右上角：語音通話、視訊通話 -->
       <div class="abs page-actions" id="chatActions" hidden>
         <button class="page-action" id="voiceCallBtn" type="button" aria-label="語音通話">
@@ -1808,7 +1794,6 @@
     // 成員（跟主頁排名表一樣）；登入時選自己是哪一個
     const MEMBERS = [
       { id: 'fan', name: '帆～', roblox: 'Bi_wuda0823', level: 180, avatar: 'assets/member-5.jpg', tag: '群主' },
-      { id: 'chen', name: '陳柏安', roblox: 'Bi_koimpkj', level: 207, avatar: 'assets/member-1.jpg' },
       { id: 'zhang', name: '張 O 寧', roblox: 'Bi_VIP1124', level: 159, avatar: 'assets/member-2.jpg' },
       { id: 'liu', name: '劉 O 佑', roblox: 'Bi_liug1217', level: 87, avatar: 'assets/member-3.jpg' },
       { id: 'si', name: '劉思妤', roblox: 'Bi_Robbyg309bbb', level: 128, avatar: 'assets/member-4.jpg' },
@@ -1898,7 +1883,7 @@
     };
     const GROUP_DEFAULT = [
       { from: 'fan', text: '歡迎加入 ★Bi_藍冰團★！', time: '20:01' },
-      { from: 'chen', text: '週六團戰練習大家記得上線', time: '20:03' },
+      { from: 'fan', text: '週六團戰練習大家記得上線', time: '20:03' },
       { from: 'si', text: '收到～', time: '20:05' },
     ];
     const dmRoom = (a, b) => `dm:${[a, b].sort().join('-')}`;
@@ -2002,7 +1987,6 @@
     // ----- 聊天：列表（群組 + 其他成員）→ 對話 -----
     const chatScreen = document.getElementById('chatScreen');
     const chatTitle = document.getElementById('chatTitle');
-    const chatStatus = document.getElementById('chatStatus');
     const chatBack = document.getElementById('chatBack');
     const chatThreadRows = document.getElementById('chatThreadRows');
     const chatList = document.getElementById('chatList');
@@ -2013,16 +1997,8 @@
     let currentThread = null;
     let chatMessages = [];
 
-    function updateChatStatus(state) {
-      chatStatus.textContent = {
-        online: '● 已連線到伺服器，訊息大家都看得到',
-        reconnecting: '○ 伺服器連線中斷，重新連線中…',
-        unreachable: '⚠ 連不到聊天伺服器，訊息傳不出去（每 10 秒重試）',
-        local: '離線模式：訊息只存在這支手機',
-      }[state] || '';
-      chatStatus.classList.toggle('is-warning', state === 'unreachable');
-      chatText.placeholder = state === 'unreachable' ? '⚠ 連不到伺服器，訊息傳不出去' : '輸入訊息…';
-    }
+    // 連線狀態不顯示文字（背景照樣會自動重連；連不到時訊息不會偷偷只存在手機，打的字會留著）
+    function updateChatStatus() {}
 
     function threads() {
       const list = [{ room: 'group', name: '★Bi_藍冰團★《Roblox》', avatar: 'assets/group-avatar.jpg', defaults: GROUP_DEFAULT }];
@@ -2075,7 +2051,6 @@
       chatScreen.classList.remove('is-thread');
       if (!chatScreen.classList.contains('is-hidden')) tabBar.hidden = false;
       chatTitle.textContent = '聊天';
-      chatStatus.hidden = false;
       chatBack.hidden = true;
       document.getElementById('chatActions').hidden = true;
       renderThreadList();
@@ -2088,7 +2063,6 @@
       chatScreen.classList.add('is-thread');
       tabBar.hidden = true; // 聊天室裡不顯示底部分頁列
       chatTitle.textContent = thread.name;
-      chatStatus.hidden = true;
       chatBack.hidden = false;
       document.getElementById('chatActions').hidden = false;
       chatText.value = '';
@@ -2206,7 +2180,6 @@
     const NOTIFICATIONS = [
       { id: 'n1', title: '帆～ 發布了新公告', desc: '歡迎加入 ★Bi_藍冰團★！', time: '2 小時前' },
       { id: 'n2', title: '本週活動', desc: '週六 20:00 團戰練習', time: '1 天前' },
-      { id: 'n3', title: '陳柏安 升到 207 級', desc: 'Roblox競爭者等級 : 207', time: '2 天前' },
       { id: 'n4', title: '劉思妤 加入了群組', desc: '跟大家打聲招呼吧！', time: '3 天前' },
     ];
     const notifyCard = document.getElementById('notifyCard');

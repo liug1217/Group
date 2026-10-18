@@ -36,7 +36,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 DATA_FILE = os.path.join(DATA_DIR, 'chat-data.json')
 
 # 跟 Group.html 的 MEMBERS 一樣
-MEMBER_IDS = {'fan', 'chen', 'zhang', 'liu', 'si'}
+MEMBER_IDS = {'fan', 'zhang', 'liu', 'si'}
 MAX_TEXT = 300
 MAX_PER_ROOM = 500
 
@@ -65,7 +65,7 @@ def load_rooms():
         return {
             'group': [
                 {'id': 'seed-1', 'from': 'fan', 'text': '歡迎加入 ★Bi_藍冰團★！', 'time': '20:01', 'ts': 0},
-                {'id': 'seed-2', 'from': 'chen', 'text': '週六團戰練習大家記得上線', 'time': '20:03', 'ts': 0},
+                {'id': 'seed-2', 'from': 'fan', 'text': '週六團戰練習大家記得上線', 'time': '20:03', 'ts': 0},
                 {'id': 'seed-3', 'from': 'si', 'text': '收到～', 'time': '20:05', 'ts': 0},
             ],
         }
