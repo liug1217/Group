@@ -192,7 +192,7 @@
     }
     /* 登入：選擇自己是哪一個成員 */
     .login-picker {
-      top: 270px;
+      top: 110px;
       height: 156px;
     }
     .picker-grid {
@@ -1236,7 +1236,19 @@
       <div class="abs center-x t15 nowrap text-shadow" style="top: 16px;">選擇你的身分</div>
       <div class="abs picker-grid" id="memberPicker" role="radiogroup" aria-label="選擇你的身分"></div>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.3.1</div>
+    <!-- 原本的帳號 / 密碼（打成員名字或 Roblox 帳號，上面會自動選好那個人） -->
+    <lg-panel class="field field-account glass" radius="25">
+      <img class="abs icon-user" src="assets/icon-user.svg" alt="">
+      <input type="text" id="accountInput" placeholder="帳號" aria-label="帳號" autocomplete="username">
+    </lg-panel>
+    <lg-panel class="field field-password glass" radius="25">
+      <img class="abs icon-lock" src="assets/icon-lock.svg" alt="">
+      <input type="password" id="passwordInput" placeholder="密碼" aria-label="密碼" autocomplete="current-password">
+      <button class="eye-button" id="eyeButton" type="button" aria-label="顯示密碼">
+        <img src="assets/icon-eye.svg" alt="">
+      </button>
+    </lg-panel>
+    <div class="abs version-label t12 nowrap">ESN v1.3.2</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1828,6 +1840,7 @@
         item.append(img, el('span', '', m.name));
         item.addEventListener('click', () => {
           pickedMember = m;
+          document.getElementById('accountInput').value = m.roblox;
           renderPicker();
         });
         return item;
@@ -1835,6 +1848,23 @@
       loginButtonEl.disabled = !pickedMember;
     }
     renderPicker();
+
+    // 原本的帳號欄：打成員名字或 Roblox 帳號，就自動選好那個人
+    const accountInput = document.getElementById('accountInput');
+    const normalize = (text) => text.toLowerCase().replace(/[\s~～]/g, '');
+    accountInput.value = pickedMember ? pickedMember.roblox : '';
+    accountInput.addEventListener('input', () => {
+      const typed = normalize(accountInput.value);
+      const match = typed && MEMBERS.find((m) => normalize(m.roblox) === typed || normalize(m.name) === typed);
+      if (match && match !== pickedMember) {
+        pickedMember = match;
+        renderPicker();
+      }
+    });
+    const passwordInput = document.getElementById('passwordInput');
+    document.getElementById('eyeButton').addEventListener('click', () => {
+      passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+    });
 
     // 登入後：「我的」頁、分頁列頭像、聊天都換成這個人
     function setMe(member) {
