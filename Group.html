@@ -2,8 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <!-- 畫布固定 440px 寬（Figma iPhone 16 Pro Max），手機會自動等比縮放 -->
-  <meta name="viewport" content="width=440">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <!-- 手機頂部安全區（狀態列）顏色，跟頂部 header 一樣 -->
   <meta name="theme-color" content="#252525">
   <title>Group</title>
@@ -15,21 +14,30 @@
       background: #252525;
       font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       color: #FFFFFF;
+      -webkit-tap-highlight-color: transparent;
     }
-    /* 每個畫面都是 440px 寬的 iPhone 畫布 */
+    /* 畫面跟著螢幕寬度拉長，物件用 left / right 固定兩側留空 */
     .screen {
       position: relative;
-      width: 440px;
-      height: 896px;
-      margin: 0 auto;
+      width: 100%;
+      min-height: 100vh;
       background: #212121;
       overflow: hidden;
+      animation: screen-in 0.3s ease;
     }
     .screen.is-hidden {
       display: none;
     }
+    @keyframes screen-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: none; }
+    }
     .abs {
       position: absolute;
+    }
+    .center-x {
+      left: 50%;
+      transform: translateX(-50%);
     }
     .shadow {
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
@@ -49,11 +57,11 @@
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
 
-    /* ---------- iPhone 16 & 17 Pro Max - 2：登入 ---------- */
+    /* ---------- 登入 ---------- */
     .field {
       position: absolute;
       left: 20px;
-      width: 400px;
+      right: 20px;
       height: 50px;
       border-radius: 25px;
       background: rgba(65, 65, 65, 0.2);
@@ -84,7 +92,7 @@
     .icon-lock { left: 26px; top: 15px; width: 18px; height: 20px; }
     .eye-button {
       position: absolute;
-      left: 359px;
+      right: 21px;
       top: 18px;
       width: 20px;
       height: 13px;
@@ -101,8 +109,8 @@
     .login-button {
       position: absolute;
       left: 20px;
+      right: 20px;
       top: 480px;
-      width: 400px;
       height: 50px;
       border: 0;
       border-radius: 25px;
@@ -113,6 +121,10 @@
       font-size: 15px;
       text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
       cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+    .login-button:active {
+      transform: scale(0.97);
     }
     .social {
       top: 575px;
@@ -122,31 +134,28 @@
       cursor: pointer;
     }
 
-    /* ---------- iPhone 16 & 17 Pro Max - 1：群組主頁 ---------- */
+    /* ---------- 群組主頁 ---------- */
     .screen-home {
-      height: 1440px;
+      min-height: max(100vh, 830px);
     }
     .header {
       left: 0;
+      right: 0;
       top: 0;
-      width: 440px;
       height: 85px;
       background: rgba(53, 53, 53, 0.2);
     }
     .group-avatar {
-      left: 190px;
       top: 0px;
       width: 60px;
       height: 60px;
       border-radius: 30px;
     }
     .group-title {
-      left: 219.5px;
       top: 60px;
-      transform: translateX(-50%);
     }
     .header-tag {
-      left: 370px;
+      right: 20px;
       top: 59px;
       width: 50px;
       height: 20px;
@@ -156,7 +165,7 @@
     .card {
       position: absolute;
       left: 20px;
-      width: 400px;
+      right: 20px;
       border-radius: 35px;
       background: rgba(65, 65, 65, 0.2);
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
@@ -173,7 +182,7 @@
       border-radius: 50px;
     }
     .leader-badge {
-      left: 330px;
+      right: 20px;
       top: 10px;
       width: 50px;
       height: 20px;
@@ -183,10 +192,15 @@
       align-items: center;
       justify-content: center;
     }
+    .bio-label {
+      left: 240px;
+      right: 10px;
+      top: 35px;
+    }
     .bio-box {
       left: 240px;
+      right: 10px;
       top: 54px;
-      width: 150px;
       height: 76px;
       border-radius: 10px;
       background: rgba(99, 99, 99, 0.2);
@@ -200,8 +214,8 @@
     }
     .rank-header {
       left: 0;
+      right: 0;
       top: 0;
-      width: 400px;
       height: 50px;
       box-sizing: border-box;
       border-bottom: 1px solid #838383;
@@ -210,7 +224,7 @@
     }
     .divider {
       left: 0;
-      width: 400px;
+      right: 0;
       height: 1px;
       background: #838383;
     }
@@ -221,53 +235,75 @@
       border-radius: 17.5px;
     }
 
-    /* Tab Bar - iPhone · 五分頁 */
+    /* Tab Bar - iPhone · 五分頁（可點擊也可滑動） */
     .tab-bar {
       position: fixed;
-      left: 50%;
+      left: 19px;
+      right: 19px;
       bottom: 29px;
-      width: 402px;
       height: 70px;
-      margin-left: -201px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
       border-radius: 1000px;
       background: rgba(242, 242, 247, 0.8);
       -webkit-backdrop-filter: blur(20px) saturate(190%);
       backdrop-filter: blur(20px) saturate(190%);
       box-shadow: 1.25px 0px 0px -0.75px #D0D0D0, -1.25px 0px 0px -0.75px #D0D0D0, 0px 0px 0px 0.5px #E8E8E8, 0px 8px 15px 0px rgba(0, 0, 0, 0.02);
       font-family: 'Inter', 'SF Pro', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
       z-index: 10;
     }
     .tab-bar[hidden] {
       display: none;
     }
-    .tab {
+    /* 選取底色：用 transform 移動，點擊跟滑動都有動畫 */
+    .tab-pill {
       position: absolute;
+      left: 2px;
       top: 5px;
-      width: 76px;
+      width: calc(20% - 4px);
       height: 60px;
+      border-radius: 30px;
+      background: rgba(0, 122, 255, 0.4);
+      transform: translateX(var(--pill-x, 0px)) scale(var(--pill-scale, 1));
+      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+    }
+    .tab-bar.is-dragging .tab-pill {
+      --pill-scale: 1.12;
+      transition: transform 0.12s ease-out;
+    }
+    .tab {
+      position: relative;
+      height: 70px;
       padding: 0;
       border: 0;
-      border-radius: 30px;
       background: transparent;
       color: #1C1C1E;
       font: inherit;
       font-size: 12px;
       cursor: pointer;
+      transition: color 0.25s ease;
     }
     .tab.is-active {
-      background: rgba(0, 122, 255, 0.4);
       color: #007AFF;
     }
     .tab img {
       position: absolute;
       left: 50%;
-      top: 9px;
+      top: 14px;
       transform: translateX(-50%);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .tab.is-active img {
+      transform: translateX(-50%) scale(1.12);
     }
     .tab span {
       position: absolute;
       left: 50%;
-      top: 37px;
+      top: 42px;
       transform: translateX(-50%);
       white-space: nowrap;
     }
@@ -278,11 +314,10 @@
       object-fit: cover;
     }
 
-    /* ---------- iPhone 16 & 17 Pro Max - 3：VIDEO ---------- */
+    /* ---------- VIDEO ---------- */
     .call-title {
-      left: 90.5px;
+      left: 20px;
       top: 15px;
-      transform: translateX(-50%);
     }
     .call-clock {
       left: 21.5px;
@@ -291,25 +326,31 @@
       height: 9px;
     }
     .call-timer {
-      left: 47.5px;
+      left: 33px;
       top: 34px;
-      transform: translateX(-50%);
     }
     .call-glow {
       left: 20px;
+      right: 20px;
       top: 318px;
-      width: 400px;
       height: 200px;
       border-radius: 30px;
-      object-fit: cover;
+      overflow: hidden;
       filter: blur(25px);
     }
+    .call-glow img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
     .call-avatar {
-      left: 144px;
       top: 343px;
       width: 151px;
       height: 150px;
       border-radius: 75px;
+    }
+    .call-name {
+      top: 501px;
     }
   </style>
 </head>
@@ -338,8 +379,8 @@
   <!-- 群組主頁 -->
   <section class="screen screen-home is-hidden" id="homeScreen">
     <div class="abs header shadow"></div>
-    <img class="avatar group-avatar" src="assets/group-avatar.jpg" alt="">
-    <div class="abs group-title t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
+    <img class="avatar group-avatar center-x" src="assets/group-avatar.jpg" alt="">
+    <div class="abs group-title center-x t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
     <div class="abs header-tag shadow"></div>
 
     <!-- 團長卡片 -->
@@ -349,7 +390,7 @@
       <div class="abs t15 nowrap text-shadow" style="left: 130px; top: 53px;">Bi_wuda0823</div>
       <div class="abs t12 nowrap text-shadow" style="left: 130px; top: 71px;">Roblox競爭者等級</div>
       <div class="abs t12 nowrap text-shadow" style="left: 130px; top: 86px;">180</div>
-      <div class="abs t12 nowrap" style="left: 240px; top: 35px;">個人簡介 :</div>
+      <div class="abs bio-label t12 nowrap">個人簡介 :</div>
       <div class="abs bio-box shadow"><span class="t30">無</span></div>
       <div class="abs leader-badge shadow"><span class="t12">團長</span></div>
     </div>
@@ -358,8 +399,8 @@
     <div class="card rank-card">
       <div class="abs rank-header shadow"></div>
       <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 16px;">競爭者</div>
-      <div class="abs t20 nowrap text-shadow" style="left: 170px; top: 13px;">排名表</div>
-      <div class="abs t15 nowrap text-shadow" style="left: 295px; top: 16px;">狙擊手</div>
+      <div class="abs center-x t20 nowrap text-shadow" style="top: 13px;">排名表</div>
+      <div class="abs t15 nowrap text-shadow" style="right: 60px; top: 16px;">狙擊手</div>
 
       <div class="abs divider shadow" style="top: 100px;"></div>
       <div class="abs divider shadow" style="top: 151px;"></div>
@@ -398,25 +439,26 @@
     <div class="abs call-title t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
     <img class="abs call-clock" src="assets/icon-clock.svg" alt="">
     <div class="abs call-timer t10 nowrap" id="callTimer">00:00</div>
-    <img class="abs call-glow shadow" src="assets/member-5.jpg" alt="">
-    <img class="avatar call-avatar" src="assets/member-5.jpg" alt="">
-    <div class="abs t15 nowrap text-shadow" style="left: 205px; top: 501px;">帆～</div>
+    <div class="abs call-glow shadow"><img src="assets/member-5.jpg" alt=""></div>
+    <img class="avatar call-avatar center-x" src="assets/member-5.jpg" alt="">
+    <div class="abs call-name center-x t15 nowrap text-shadow">帆～</div>
   </section>
 
   <nav class="tab-bar" id="tabBar" hidden>
-    <button class="tab" style="left: 2.2px;" data-target="homeScreen" type="button">
+    <div class="tab-pill" id="tabPill"></div>
+    <button class="tab" data-target="homeScreen" type="button">
       <img src="assets/icon-home.svg" alt="" width="20" height="20"><span>主頁</span>
     </button>
-    <button class="tab" style="left: 82.6px;" type="button">
+    <button class="tab" type="button">
       <img src="assets/icon-chat.svg" alt="" width="19" height="19"><span>聊天</span>
     </button>
-    <button class="tab" style="left: 163px;" data-target="videoScreen" type="button">
+    <button class="tab" data-target="videoScreen" type="button">
       <img src="assets/icon-video.svg" alt="" width="21" height="21"><span>VIDEO</span>
     </button>
-    <button class="tab" style="left: 243.4px;" type="button">
+    <button class="tab" type="button">
       <img src="assets/icon-bell.svg" alt="" width="21" height="21"><span>通知</span>
     </button>
-    <button class="tab is-active" style="left: 323px;" data-target="homeScreen" type="button">
+    <button class="tab is-active" data-target="homeScreen" type="button">
       <img class="tab-avatar" src="assets/member-3.jpg" alt=""><span>我的</span>
     </button>
   </nav>
@@ -424,11 +466,15 @@
   <script>
     const screens = document.querySelectorAll('.screen');
     const tabBar = document.getElementById('tabBar');
-    const tabs = tabBar.querySelectorAll('.tab');
+    const tabPill = document.getElementById('tabPill');
+    const tabs = [...tabBar.querySelectorAll('.tab')];
     const callTimer = document.getElementById('callTimer');
     let timerId = null;
+    let activeIndex = tabs.findIndex((tab) => tab.classList.contains('is-active'));
 
     function showScreen(id) {
+      const current = document.querySelector('.screen:not(.is-hidden)');
+      if (current && current.id === id) return;
       screens.forEach((screen) => screen.classList.toggle('is-hidden', screen.id !== id));
       tabBar.hidden = id === 'loginScreen';
       window.scrollTo(0, 0);
@@ -446,20 +492,78 @@
       }
     }
 
-    document.getElementById('loginButton').addEventListener('click', () => showScreen('homeScreen'));
+    document.getElementById('loginButton').addEventListener('click', () => {
+      showScreen('homeScreen');
+      placePill(activeIndex);
+    });
 
     const passwordInput = document.getElementById('passwordInput');
     document.getElementById('eyeButton').addEventListener('click', () => {
       passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
     });
 
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        if (!tab.dataset.target) return;
-        tabs.forEach((t) => t.classList.toggle('is-active', t === tab));
-        showScreen(tab.dataset.target);
-      });
+    // ---------- 底部分頁：點擊或左右滑動 ----------
+    function slotWidth() {
+      return tabBar.clientWidth / tabs.length;
+    }
+
+    function placePill(index) {
+      tabPill.style.setProperty('--pill-x', `${index * slotWidth()}px`);
+    }
+
+    function selectTab(index) {
+      activeIndex = index;
+      tabs.forEach((tab, i) => tab.classList.toggle('is-active', i === index));
+      placePill(index);
+      if (tabs[index].dataset.target) showScreen(tabs[index].dataset.target);
+    }
+
+    function indexAt(clientX) {
+      const x = clientX - tabBar.getBoundingClientRect().left;
+      return Math.max(0, Math.min(tabs.length - 1, Math.floor(x / slotWidth())));
+    }
+
+    let dragStartX = null;
+    let dragging = false;
+
+    tabBar.addEventListener('pointerdown', (event) => {
+      dragStartX = event.clientX;
+      dragging = false;
+      tabBar.setPointerCapture(event.pointerId);
     });
+
+    tabBar.addEventListener('pointermove', (event) => {
+      if (dragStartX === null) return;
+      if (!dragging && Math.abs(event.clientX - dragStartX) < 6) return;
+      dragging = true;
+      tabBar.classList.add('is-dragging');
+      // 選取底色跟著手指移動
+      const x = event.clientX - tabBar.getBoundingClientRect().left - slotWidth() / 2;
+      const maxX = slotWidth() * (tabs.length - 1);
+      tabPill.style.setProperty('--pill-x', `${Math.max(0, Math.min(maxX, x))}px`);
+      tabs.forEach((tab, i) => tab.classList.toggle('is-active', i === indexAt(event.clientX)));
+    });
+
+    function endDrag(event) {
+      if (dragStartX === null) return;
+      tabBar.classList.remove('is-dragging');
+      // 放開時（或單純點擊）吸附到手指所在的分頁
+      selectTab(indexAt(event.clientX));
+      dragStartX = null;
+      dragging = false;
+    }
+
+    tabBar.addEventListener('pointerup', endDrag);
+    tabBar.addEventListener('pointercancel', (event) => {
+      tabBar.classList.remove('is-dragging');
+      dragStartX = null;
+      selectTab(activeIndex);
+    });
+
+    // 鍵盤（Enter / 空白鍵）操作分頁
+    tabs.forEach((tab, i) => tab.addEventListener('click', () => selectTab(i)));
+
+    window.addEventListener('resize', () => placePill(activeIndex));
   </script>
 </body>
 </html>
