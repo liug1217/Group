@@ -57,6 +57,56 @@
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: none; }
     }
+
+    /* ---------- 載入畫面：圖片和玻璃都準備好才進入 ---------- */
+    .splash {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      background: #212121;
+      transition: opacity 0.4s ease;
+    }
+    .splash.is-done {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .splash-logo {
+      width: 84px;
+      height: 84px;
+      border-radius: 42px;
+      object-fit: cover;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      animation: splash-pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes splash-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+    .splash-bar {
+      width: 140px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+    }
+    .splash-bar span {
+      display: block;
+      width: 0%;
+      height: 100%;
+      border-radius: 2px;
+      background: #FFFFFF;
+      transition: width 0.25s ease;
+    }
+    /* 載入時先把主頁偷偷排版一次（看不到），玻璃就能先算好 */
+    .is-warming {
+      visibility: hidden !important;
+      animation: none !important;
+    }
     .abs {
       position: absolute;
     }
@@ -472,6 +522,13 @@
 </head>
 <body>
 
+  <!-- 載入畫面 -->
+  <div class="splash" id="splash" role="status" aria-label="載入中">
+    <img class="splash-logo" src="assets/group-avatar.jpg" alt="">
+    <div class="t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
+    <div class="splash-bar"><span id="splashProgress"></span></div>
+  </div>
+
   <!-- 登入畫面 -->
   <section class="screen screen-login" id="loginScreen" data-lg-backdrop="">
     <lg-panel class="field field-account glass" radius="25">
@@ -485,7 +542,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.0.5</div>
+    <div class="abs version-label t12 nowrap">ESN v1.0.6</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button">登入</button>
     </lg-panel>
@@ -498,7 +555,9 @@
   <!-- 群組主頁 -->
   <!-- data-lg-backdrop：玻璃折射主頁自己的 CSS 背景（背景圖），Safari / Firefox 也能真的折射 -->
   <section class="screen screen-home is-hidden" id="homeScreen" data-lg-backdrop="">
-    <lg-panel class="header glass shadow" radius="0">
+    <!-- 頂部固定在畫面上、卡片會捲到它底下：backdrop="none" 讓玻璃透出底下真正的內容
+         （Chrome 會折射；iPhone Safari 會是毛玻璃，這是 Safari 的限制） -->
+    <lg-panel class="header glass shadow" radius="0" backdrop="none">
       <img class="avatar group-avatar center-x" src="assets/group-avatar.jpg" alt="">
       <div class="abs group-title center-x t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
       <lg-panel class="abs header-tag glass shadow" radius="5"></lg-panel>
@@ -565,11 +624,12 @@
     <div class="abs call-name center-x t15 nowrap text-shadow">帆～</div>
   </section>
 
-  <!-- 分頁列在主頁外面，用 backdrop 指定折射主頁的背景 -->
-  <lg-panel class="tab-bar glass" id="tabBar" role="navigation" radius="35" backdrop="#homeScreen" hidden>
+  <!-- 分頁列也固定在畫面上：一樣透出底下真正的內容 -->
+  <lg-panel class="tab-bar glass" id="tabBar" role="navigation" radius="35" backdrop="none" hidden>
     <span class="tab-surface" id="tabSurface" aria-hidden="true"></span>
     <lg-panel class="tab-pill glass" id="tabPill" radius="30" backdrop="#tabSurface"></lg-panel>
-    <button class="tab" data-target="homeScreen" type="button">
+    <!-- 一開始就是主頁，所以預設選「主頁」；「我的」還沒有畫面，先不連 -->
+    <button class="tab is-active" data-target="homeScreen" type="button">
       <img src="assets/icon-home.svg" alt="" width="20" height="20"><span>主頁</span>
     </button>
     <button class="tab" type="button">
@@ -581,7 +641,7 @@
     <button class="tab" type="button">
       <img src="assets/icon-bell.svg" alt="" width="21" height="21"><span>通知</span>
     </button>
-    <button class="tab is-active" data-target="homeScreen" type="button">
+    <button class="tab" type="button">
       <img class="tab-avatar" src="assets/member-3.jpg" alt=""><span>我的</span>
     </button>
   </lg-panel>
@@ -746,6 +806,73 @@
     tabs.forEach((tab, i) => tab.addEventListener('click', () => selectTab(i)));
 
     window.addEventListener('resize', () => placePill(activeIndex));
+
+    // ---------- 載入畫面：先把圖片和玻璃都準備好 ----------
+    const splash = document.getElementById('splash');
+    const splashProgress = document.getElementById('splashProgress');
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const warmHome = document.getElementById('homeScreen');
+
+    // 預熱結束：不管成功、失敗或逾時，都把主頁和分頁列藏回去（只做一次）
+    function finishWarm() {
+      if (!warmHome.classList.contains('is-warming')) return;
+      warmHome.classList.add('is-hidden');
+      warmHome.classList.remove('is-warming');
+      tabBar.hidden = true;
+      tabBar.classList.remove('is-warming');
+    }
+
+    // 主頁先偷偷排版一次（看不到），讓玻璃算好位移圖；之後進主頁會直接用快取，不用等
+    async function warmGlass() {
+      const home = warmHome;
+      home.classList.add('is-warming');
+      home.classList.remove('is-hidden');
+      tabBar.classList.add('is-warming');
+      tabBar.hidden = false;
+      await wait(60);
+      alignGlassBackdrop();
+      // 等所有主頁玻璃的濾鏡都套上（最多 2 秒）
+      const panels = [...home.querySelectorAll('lg-panel'), ...tabBar.querySelectorAll('lg-panel')]
+        .filter((panel) => panel.surface?.mode === 'copy');
+      const until = performance.now() + 2000;
+      while (performance.now() < until) {
+        const ready = panels.every((panel) => getComputedStyle(panel.querySelector('.lg-surface__glass')).filter !== 'none');
+        if (ready) break;
+        await wait(50);
+      }
+      finishWarm();
+    }
+
+    async function preload() {
+      const urls = [...new Set([
+        ...[...document.images].map((img) => img.src),
+        new URL('assets/home-bg.jpg', location.href).href,
+      ])];
+      const total = urls.length + 2;
+      let done = 0;
+      const tick = () => {
+        done += 1;
+        splashProgress.style.width = `${Math.min(100, (done / total) * 100)}%`;
+      };
+      await Promise.all(urls.map((url) => new Promise((resolve) => {
+        const img = new Image();
+        img.onload = img.onerror = () => { tick(); resolve(); };
+        img.src = url;
+      })));
+      await Promise.race([customElements.whenDefined('lg-panel'), wait(4000)]);
+      tick();
+      await warmGlass();
+      refreshGlass();
+      tick();
+    }
+
+    // 最多等 8 秒，就算有東西載不到也會進入
+    Promise.race([preload(), wait(8000)]).finally(async () => {
+      finishWarm();
+      await wait(200);
+      splash.classList.add('is-done');
+      setTimeout(() => splash.remove(), 500);
+    });
   </script>
 </body>
 </html>
