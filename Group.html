@@ -788,6 +788,119 @@
       transform: scale(0.92);
     }
 
+    /* 聊天：列表 / 對話 兩種畫面 */
+    .screen-chat:not(.is-thread) .chat-list,
+    .screen-chat:not(.is-thread) .chat-input,
+    .screen-chat.is-thread .chat-threads {
+      display: none;
+    }
+    .page-back {
+      top: calc(30px + var(--safe-top));
+      left: 8px;
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #FFFFFF;
+      cursor: pointer;
+    }
+    .page-back[hidden] {
+      display: none;
+    }
+    /* 聊天列表全螢幕：頂部下面到螢幕底，可以捲動，沒有卡片和邊框 */
+    .chat-threads {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(85px + var(--safe-top));
+      bottom: 0;
+      padding-bottom: calc(max(29px, var(--safe-bottom)) + 70px + 16px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .chat-thread-rows {
+      position: relative;
+    }
+    /* 進入聊天室：沒有底部分頁列，輸入框貼到最下面 */
+    .screen-chat.is-thread .chat-list {
+      bottom: calc(max(16px, var(--safe-bottom)) + 50px + 14px);
+    }
+    .screen-chat.is-thread .chat-input {
+      bottom: max(16px, var(--safe-bottom));
+    }
+    .thread-row {
+      left: 0;
+      right: 0;
+      height: 66px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .thread-row:active {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .thread-row img {
+      position: absolute;
+      left: 20px;
+      top: 11px;
+      width: 44px;
+      height: 44px;
+      border-radius: 22px;
+      object-fit: cover;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+    .thread-name {
+      position: absolute;
+      left: 76px;
+      right: 80px;
+      top: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 15px;
+    }
+    /* 「群主」標籤，跟主頁的「團長」標籤同色 */
+    .thread-tag {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 0 7px;
+      border-radius: 8px;
+      background: rgba(99, 99, 99, 0.45);
+      font-size: 11px;
+      line-height: 18px;
+      vertical-align: 1px;
+    }
+    .thread-preview {
+      position: absolute;
+      left: 76px;
+      right: 20px;
+      top: 37px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .thread-time {
+      position: absolute;
+      right: 20px;
+      top: 15px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.45);
+    }
+    .chat-empty {
+      margin: auto;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 13px;
+    }
+
     /* ---------- 通知 ---------- */
     .notify-card {
       top: calc(109px + var(--safe-top));
@@ -1013,7 +1126,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.1.0</div>
+    <div class="abs version-label t12 nowrap">ESN v1.1.2</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button">登入</button>
     </lg-panel>
@@ -1146,8 +1259,16 @@
   <!-- 聊天 -->
   <section class="screen screen-chat is-hidden" id="chatScreen" data-lg-backdrop="">
     <lg-panel class="page-header glass shadow" radius="0">
-      <div class="abs page-title center-x t20 nowrap text-shadow">聊天</div>
+      <button class="abs page-back" id="chatBack" type="button" aria-label="返回聊天列表" hidden>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="abs page-title center-x t20 nowrap text-shadow" id="chatTitle">聊天</div>
     </lg-panel>
+    <!-- 聊天列表：群組聊天室 + 每個成員（全螢幕，沒有卡片） -->
+    <div class="chat-threads" id="chatThreads">
+      <div class="chat-thread-rows" id="chatThreadRows"></div>
+    </div>
+    <!-- 對話 -->
     <div class="chat-list" id="chatList" aria-live="polite"></div>
     <lg-panel class="chat-input glass" radius="25">
       <form id="chatForm" autocomplete="off">
@@ -1509,23 +1630,105 @@
 
     // 切到某個頁面時要做的事
     function onScreenShown(id) {
-      if (id === 'chatScreen') requestAnimationFrame(() => { chatList.scrollTop = chatList.scrollHeight; });
+      if (id === 'chatScreen') showThreadList();
       if (id === 'videoScreen') resetCall();
     }
 
-    // ----- 聊天：送出訊息、保存、捲到最新 -----
+    // ----- 聊天：列表（群組 + 成員）→ 對話；每個對話分開保存 -----
+    const chatScreen = document.getElementById('chatScreen');
+    const chatTitle = document.getElementById('chatTitle');
+    const chatBack = document.getElementById('chatBack');
+    const chatThreads = document.getElementById('chatThreads');
+    const chatThreadRows = document.getElementById('chatThreadRows');
     const chatList = document.getElementById('chatList');
     const chatForm = document.getElementById('chatForm');
     const chatText = document.getElementById('chatText');
     const chatSend = document.getElementById('chatSend');
-    const DEFAULT_CHAT = [
-      { name: '帆～', avatar: 'assets/member-5.jpg', text: '歡迎加入 ★Bi_藍冰團★！', time: '20:01' },
-      { name: '陳柏安', avatar: 'assets/member-1.jpg', text: '週六團戰練習大家記得上線', time: '20:03' },
-      { name: '劉思妤', avatar: 'assets/member-4.jpg', text: '收到～', time: '20:05' },
+    const THREADS = [
+      {
+        id: 'group',
+        name: '★Bi_藍冰團★《Roblox》', // 跟主頁頂部一樣
+        avatar: 'assets/group-avatar.jpg',
+        messages: [
+          { name: '帆～', avatar: 'assets/member-5.jpg', text: '歡迎加入 ★Bi_藍冰團★！', time: '20:01' },
+          { name: '陳柏安', avatar: 'assets/member-1.jpg', text: '週六團戰練習大家記得上線', time: '20:03' },
+          { name: '劉思妤', avatar: 'assets/member-4.jpg', text: '收到～', time: '20:05' },
+        ],
+      },
+      {
+        id: 'fan',
+        name: '帆～',
+        tag: '群主', // 主頁最上面那張團長卡片
+        avatar: 'assets/member-5.jpg',
+        messages: [{ name: '帆～', avatar: 'assets/member-5.jpg', text: '有任何問題都可以問我～', time: '19:40' }],
+      },
+      { id: 'chen', name: '陳柏安', avatar: 'assets/member-1.jpg', messages: [] },
+      { id: 'zhang', name: '張 O 寧', avatar: 'assets/member-2.jpg', messages: [] },
+      { id: 'liu', name: '劉思妤', avatar: 'assets/member-4.jpg', messages: [] },
     ];
-    let chatMessages = store.get('chat', DEFAULT_CHAT);
+    const THREAD_ROW = 66;
+    let currentThread = null;
+    let chatMessages = [];
+
+    // 以前只有一個群組聊天室時存在 esn.chat，搬到群組對話
+    const threadMessages = (thread) => store.get(`chat.${thread.id}`, thread.id === 'group' ? store.get('chat', thread.messages) : thread.messages);
+
+    function renderThreadList() {
+      const nodes = [];
+      THREADS.forEach((thread, i) => {
+        if (i > 0) {
+          const line = el('div', 'abs divider shadow');
+          line.style.top = `${i * THREAD_ROW}px`;
+          nodes.push(line);
+        }
+        const messages = threadMessages(thread);
+        const last = messages[messages.length - 1];
+        const row = el('button', 'abs thread-row');
+        row.type = 'button';
+        row.style.top = `${i * THREAD_ROW}px`;
+        const avatar = el('img');
+        avatar.src = thread.avatar;
+        avatar.alt = '';
+        const name = el('span', 'thread-name', thread.name);
+        if (thread.tag) name.append(el('span', 'thread-tag', thread.tag));
+        const preview = last ? `${last.me ? '我' : last.name}：${last.text}` : '還沒有訊息，打聲招呼吧！';
+        row.append(avatar, name, el('span', 'thread-preview', preview), el('span', 'thread-time', last ? last.time : ''));
+        row.addEventListener('click', () => openThread(thread));
+        nodes.push(row);
+      });
+      chatThreadRows.replaceChildren(...nodes);
+      chatThreadRows.style.height = `${THREADS.length * THREAD_ROW}px`;
+    }
+
+    function showThreadList() {
+      currentThread = null;
+      chatScreen.classList.remove('is-thread');
+      if (!chatScreen.classList.contains('is-hidden')) tabBar.hidden = false;
+      chatTitle.textContent = '聊天';
+      chatBack.hidden = true;
+      renderThreadList();
+      requestAnimationFrame(alignGlassBackdrop);
+    }
+
+    function openThread(thread) {
+      currentThread = thread;
+      chatMessages = threadMessages(thread);
+      chatScreen.classList.add('is-thread');
+      tabBar.hidden = true; // 聊天室裡不顯示底部分頁列
+      chatTitle.textContent = thread.name;
+      chatBack.hidden = false;
+      chatText.value = '';
+      chatSend.disabled = true;
+      renderChat();
+      requestAnimationFrame(alignGlassBackdrop);
+    }
+    chatBack.addEventListener('click', showThreadList);
 
     function renderChat() {
+      if (!chatMessages.length) {
+        chatList.replaceChildren(el('div', 'chat-empty', '還沒有訊息，打聲招呼吧！'));
+        return;
+      }
       chatList.replaceChildren(...chatMessages.map((m) => {
         const row = el('div', m.me ? 'msg is-me' : 'msg');
         const avatar = el('img');
@@ -1545,15 +1748,15 @@
     chatForm.addEventListener('submit', (event) => {
       event.preventDefault();
       const text = chatText.value.trim();
-      if (!text) return;
+      if (!text || !currentThread) return;
       chatMessages.push({ me: true, name: ME.name, avatar: ME.avatar, text, time: nowTime() });
       chatMessages = chatMessages.slice(-100);
-      store.set('chat', chatMessages);
+      store.set(`chat.${currentThread.id}`, chatMessages);
       chatText.value = '';
       chatSend.disabled = true;
       renderChat();
     });
-    renderChat();
+    renderThreadList();
 
     // ----- VIDEO：麥克風、鏡頭、掛斷 -----
     const callStatus = document.getElementById('callStatus');
