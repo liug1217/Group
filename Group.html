@@ -1136,47 +1136,14 @@
       justify-content: space-between;
       font-size: 15px;
     }
-    /* 自己做的開關（白色圓鈕、開啟時藍色） */
-    .toggle {
-      position: relative;
-      width: 51px;
-      height: 31px;
+    /* 開關：liquidglass.dev <lg-switch>，開啟是 iOS 綠色；在深色玻璃卡片上關閉時用 iOS 深色模式的灰 */
+    .setting-row lg-switch {
+      --lg-on: #34C759;
+      --lg-track-off: rgba(120, 120, 128, 0.32);
+      --lg-surface: transparent;
+      --lg-shadow-1: 0px 3px 8px rgba(0, 0, 0, 0.15), 0px 1px 1px rgba(0, 0, 0, 0.16);
       flex: none;
-    }
-    .toggle input {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      opacity: 0;
-      cursor: pointer;
-    }
-    .toggle span {
-      position: absolute;
-      inset: 0;
-      border-radius: 16px;
-      background: rgba(120, 120, 128, 0.32);
-      transition: background 0.25s ease;
-      pointer-events: none;
-    }
-    .toggle span::after {
-      content: "";
-      position: absolute;
-      left: 2px;
-      top: 2px;
-      width: 27px;
-      height: 27px;
-      border-radius: 14px;
-      background: #FFFFFF;
-      box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.15);
-      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .toggle input:checked + span {
-      background: #2949CB;
-    }
-    .toggle input:checked + span::after {
-      transform: translateX(20px);
+      touch-action: pan-y; /* 左右滑交給開關，上下還是捲頁面 */
     }
     .logout-btn {
       position: absolute;
@@ -1240,7 +1207,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.3.3</div>
+    <div class="abs version-label t12 nowrap">ESN v1.4.0</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1444,15 +1411,16 @@
     <lg-panel class="card glass settings-card" radius="35">
       <div class="abs rank-header shadow"></div>
       <div class="abs t15 nowrap text-shadow" style="left: 25px; top: 16px;">設定</div>
-      <label class="abs setting-row" style="top: 50px;">
-        <span>通知提醒</span>
-        <span class="toggle"><input type="checkbox" id="settingNotify" checked><span></span></span>
-      </label>
+      <!-- 開關：liquidglass.dev 的 <lg-switch>（iOS 27 Toggle - Switch，64×28、開啟綠色、按住時圓鈕變玻璃） -->
+      <div class="abs setting-row" style="top: 50px;">
+        <span id="settingNotifyLabel">通知提醒</span>
+        <lg-switch id="settingNotify" checked aria-label="通知提醒"></lg-switch>
+      </div>
       <div class="abs divider shadow" style="top: 100px;"></div>
-      <label class="abs setting-row" style="top: 101px;">
+      <div class="abs setting-row" style="top: 101px;">
         <span>顯示我的等級</span>
-        <span class="toggle"><input type="checkbox" id="settingLevel" checked><span></span></span>
-      </label>
+        <lg-switch id="settingLevel" checked aria-label="顯示我的等級"></lg-switch>
+      </div>
     </lg-panel>
     <lg-panel class="logout-btn glass" radius="25">
       <button type="button" id="logoutBtn">登出</button>
@@ -2234,21 +2202,83 @@
       setTimeout(() => { bioSave.textContent = '儲存'; }, 1500);
     });
 
+    // <lg-switch>：用 checked 屬性設定（元件載入前後都有效），change 事件從裡面的勾選框冒上來
     function applySettings() {
-      settingNotify.checked = settings.notify;
-      settingLevel.checked = settings.level;
+      settingNotify.toggleAttribute('checked', settings.notify);
+      settingLevel.toggleAttribute('checked', settings.level);
       document.body.classList.toggle('level-hidden', !settings.level);
       updateBadge();
     }
-    settingNotify.addEventListener('change', () => {
-      settings.notify = settingNotify.checked;
+    // 震動一下：Android 用 navigator.vibrate；iPhone 不支援 vibrate，
+    // 改點一個看不到的原生 iOS 開關（<input switch>，iOS 18 以上 Safari 會震）
+    const hapticLabel = el('label');
+    hapticLabel.setAttribute('aria-hidden', 'true');
+    hapticLabel.style.cssText = 'position:fixed;left:-9999px;width:1px;height:1px;overflow:hidden;';
+    const hapticInput = el('input');
+    hapticInput.type = 'checkbox';
+    hapticInput.setAttribute('switch', '');
+    hapticInput.tabIndex = -1;
+    hapticLabel.append(hapticInput);
+    document.body.append(hapticLabel);
+    function haptic() {
+      if (navigator.vibrate) navigator.vibrate(10);
+      else hapticLabel.click();
+    }
+
+    settingNotify.addEventListener('change', (event) => {
+      haptic();
+      settings.notify = event.target.checked;
       store.set('settings', settings);
       applySettings();
     });
-    settingLevel.addEventListener('change', () => {
-      settings.level = settingLevel.checked;
+    settingLevel.addEventListener('change', (event) => {
+      haptic();
+      settings.level = event.target.checked;
       store.set('settings', settings);
       applySettings();
+    });
+
+    // 按住開關左右滑動（跟 iOS 一樣）：圓鈕跟著手指走，放開時過一半就切過去
+    function enableSwitchDrag(sw) {
+      const input = sw.querySelector('input');
+      let drag = null;
+      let skipClick = false;
+      input.addEventListener('pointerdown', (event) => {
+        drag = { x0: event.clientX, from: input.checked ? 1 : 0, pos: input.checked ? 1 : 0, moved: false };
+        input.setPointerCapture(event.pointerId);
+      });
+      input.addEventListener('pointermove', (event) => {
+        if (!drag) return;
+        const dx = event.clientX - drag.x0;
+        if (Math.abs(dx) > 4) drag.moved = true;
+        if (!drag.moved) return;
+        drag.pos = Math.min(1, Math.max(0, drag.from + dx / 24)); // 圓鈕可移動 24px
+        sw.xs.set(drag.pos);
+      });
+      input.addEventListener('pointerup', () => {
+        const d = drag;
+        drag = null;
+        if (!d?.moved) return;
+        // 滑動過就不要再讓接下來的 click 切換一次
+        skipClick = true;
+        setTimeout(() => { skipClick = false; }, 400);
+        const on = d.pos > 0.5;
+        if (on !== input.checked) {
+          input.checked = on;
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        } else sw.xs.set(on ? 1 : 0);
+      });
+      input.addEventListener('pointercancel', () => {
+        drag = null;
+        sw.xs.set(input.checked ? 1 : 0);
+      });
+      input.addEventListener('click', (event) => {
+        if (skipClick) event.preventDefault();
+      });
+    }
+    customElements.whenDefined('lg-switch').then(() => {
+      enableSwitchDrag(settingNotify);
+      enableSwitchDrag(settingLevel);
     });
     applySettings();
 
