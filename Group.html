@@ -1145,6 +1145,9 @@
       flex: none;
       touch-action: pan-y; /* 左右滑交給開關，上下還是捲頁面 */
     }
+    /* 圓鈕到底時底色才換，換的那一下淡入 0.2 秒 */
+    @property --p { syntax: '<number>'; inherits: true; initial-value: 0; }
+    .setting-row .lg-switch__control { transition: --p 0.2s ease; }
     .logout-btn {
       position: absolute;
       left: 20px;
@@ -1207,7 +1210,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.4.2</div>
+    <div class="abs version-label t12 nowrap">ESN v1.4.3</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -2327,9 +2330,22 @@
         requestAnimationFrame(() => requestAnimationFrame(() => sw.render()));
       }
     }
+    // 底色不要跟著圓鈕慢慢變：圓鈕到最右邊才變綠、到最左邊才變灰（中間維持原本的顏色）
+    function snapSwitchColor(sw) {
+      const base = sw.render;
+      let on = sw.checked ? 1 : 0;
+      sw.render = function render() {
+        base.call(this);
+        if (this.x >= 0.99) on = 1;
+        else if (this.x <= 0.01) on = 0;
+        this.firstChild.lastChild.style.setProperty('--p', String(on));
+      };
+      sw.render();
+    }
     customElements.whenDefined('lg-switch').then(() => {
       for (const sw of [settingNotify, settingLevel]) {
         if (IS_WEBKIT || new URLSearchParams(location.search).has('webkit')) steadySwitchLens(sw);
+        snapSwitchColor(sw);
         enableSwitchDrag(sw);
       }
     });
