@@ -1207,7 +1207,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.4.1</div>
+    <div class="abs version-label t12 nowrap">ESN v1.4.2</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -2293,9 +2293,45 @@
         }
       });
     }
+    // iPhone（WebKit）：折射圖（feImage）是非同步載入的，圓鈕每一幀變大小就要換一張新圖，
+    // 新圖還沒載好那幾幀就會卡、只畫一半。所以在 WebKit 上，玻璃鏡片只用兩種固定大小
+    // （平常 36×24、按住 54×36），圖算過一次就重複用，移動時只改位置；
+    // 白色圓鈕和陰影是一般 CSS，照樣平滑變大。玻璃和折射都保留。
+    const IS_WEBKIT = /AppleWebKit\//.test(navigator.userAgent) && !/Chrome\/|Chromium\/|Edg\//.test(navigator.userAgent);
+    function steadySwitchLens(sw) {
+      const lerp = (a, b, t) => a + (b - a) * t;
+      const place = (node, x, y, w, h) => {
+        node.style.width = `${w}px`;
+        node.style.height = `${h}px`;
+        node.style.borderRadius = `${h / 2}px`;
+        node.style.transform = `translate(${x}px, ${y}px)`;
+      };
+      const lens = (pressed) => (pressed ? { w: 54, h: 36 } : { w: 36, h: 24 });
+      sw.render = function render() {
+        if (!this.glass) return;
+        const center = 20 + 24 * this.x;
+        const { w, h } = lens(this.p > 0.5);
+        this.firstChild.lastChild.style.setProperty('--p', this.x.toFixed(3));
+        this.glass.update({ x: center - w / 2 + 16, y: 14 - h / 2 + 16, width: w, height: h, radius: h / 2 });
+        const tw = lerp(36, 54, this.p);
+        const th = lerp(24, 36, this.p);
+        place(this.thumb, center - tw / 2, 14 - th / 2, tw, th);
+        place(this.shadow, center - w / 2, 14 - h / 2, w, h);
+        this.thumb.style.opacity = String(1 - this.p);
+        this.shadow.style.opacity = String(this.p);
+      };
+      // 先把「按住」那張圖算好，第一次按才不會閃
+      if (sw.glass) {
+        const { w, h } = lens(true);
+        sw.glass.update({ x: 16, y: 16, width: w, height: h, radius: h / 2 });
+        requestAnimationFrame(() => requestAnimationFrame(() => sw.render()));
+      }
+    }
     customElements.whenDefined('lg-switch').then(() => {
-      enableSwitchDrag(settingNotify);
-      enableSwitchDrag(settingLevel);
+      for (const sw of [settingNotify, settingLevel]) {
+        if (IS_WEBKIT || new URLSearchParams(location.search).has('webkit')) steadySwitchLens(sw);
+        enableSwitchDrag(sw);
+      }
     });
     applySettings();
 
