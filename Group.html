@@ -185,6 +185,13 @@
       --lg-tint: rgba(65, 65, 65, 0.2);
       --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
+    /* 玻璃裡的背景複本：背景是純色，不需要跟整個主頁（1440px 高）對齊，
+       直接填滿卡片就好。複本超出卡片時，iPhone Safari 算濾鏡範圍會把它算進去，玻璃會往右下位移 */
+    .card .lg-surface__copy {
+      width: 100% !important;
+      height: 100% !important;
+      transform: none !important;
+    }
     /* <lg-panel> 載入後由玻璃畫底色和陰影；載入失敗時維持上面的樣式 */
     .card:defined {
       background: none;
@@ -389,7 +396,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </div>
-    <div class="abs version-label t12 nowrap">ESN v1.0.0</div>
+    <div class="abs version-label t12 nowrap">ESN v1.0.1</div>
     <button class="login-button" id="loginButton" type="button">登入</button>
     <img class="abs social shadow" style="left: 20px;" src="assets/login-line.png" alt="LINE 登入">
     <img class="abs social shadow" style="left: 80px;" src="assets/login-google.jpg" alt="Google 登入">
