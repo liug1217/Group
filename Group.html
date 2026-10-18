@@ -572,6 +572,423 @@
     .call-name {
       top: 501px;
     }
+    /* 通話按鈕：麥克風、鏡頭、掛斷（玻璃圓鈕） */
+    .call-controls {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(590px + var(--safe-top));
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+    }
+    .call-btn {
+      position: relative;
+      width: 60px;
+      height: 60px;
+      border-radius: 30px;
+      background: rgba(65, 65, 65, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      transition: transform 0.15s ease;
+      --lg-tint: rgba(65, 65, 65, 0.2);
+      --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+    .call-btn:active {
+      transform: scale(0.94);
+    }
+    .call-btn.is-off {
+      background: rgba(255, 255, 255, 0.75);
+      --lg-tint: rgba(255, 255, 255, 0.75);
+      color: #1C1C1E;
+    }
+    .call-btn.is-end {
+      background: #E5484D;
+      --lg-tint: #E5484D;
+    }
+    .call-btn > .lg-panel__body {
+      position: absolute;
+      inset: 0;
+    }
+    .call-btn button {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      border-radius: 30px;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+    }
+    .call-btn svg {
+      width: 26px;
+      height: 26px;
+    }
+    .call-btn .icon-off {
+      display: none;
+    }
+    .call-btn.is-off .icon-on {
+      display: none;
+    }
+    .call-btn.is-off .icon-off {
+      display: block;
+    }
+    .call-status {
+      top: calc(530px + var(--safe-top));
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* ---------- 其他頁面共用：背景、頂部標題 ---------- */
+    .screen-chat,
+    .screen-notify,
+    .screen-me {
+      background: #212121 url(assets/home-bg.jpg) 0 0 / 100% auto no-repeat;
+    }
+    .page-header {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: calc(85px + var(--safe-top));
+      background: #252525;
+      z-index: 5;
+      --lg-tint: rgba(53, 53, 53, 0.2);
+      --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+    .page-title {
+      top: calc(38px + var(--safe-top));
+    }
+    /* 卡片裡的文字按鈕（全部已讀、儲存） */
+    .text-btn {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #4D8DFF;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* ---------- 聊天 ---------- */
+    .screen-chat {
+      height: 100vh;
+      height: 100dvh;
+    }
+    .chat-list {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(85px + var(--safe-top));
+      bottom: calc(max(29px, var(--safe-bottom)) + 70px + 78px);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px 20px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .msg {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      max-width: 85%;
+    }
+    .msg > img {
+      flex: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 16px;
+      object-fit: cover;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+    .msg-name {
+      margin: 0 0 3px 4px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .msg-bubble {
+      padding: 8px 12px;
+      border-radius: 16px;
+      background: rgba(65, 65, 65, 0.55);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      font-size: 15px;
+      line-height: 20px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg-time {
+      margin: 3px 4px 0;
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.45);
+    }
+    .msg.is-me {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+    .msg.is-me .msg-name {
+      display: none;
+    }
+    .msg.is-me .msg-bubble {
+      background: #2949CB;
+    }
+    .msg.is-me .msg-time {
+      text-align: right;
+    }
+    .chat-input {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: calc(max(29px, var(--safe-bottom)) + 70px + 14px);
+      height: 50px;
+      border-radius: 25px;
+      background: rgba(65, 65, 65, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      --lg-tint: rgba(65, 65, 65, 0.2);
+      --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+    .chat-input input {
+      position: absolute;
+      left: 20px;
+      right: 60px;
+      top: 0;
+      height: 50px;
+      padding: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: #FFFFFF;
+      font: inherit;
+      font-size: 15px;
+    }
+    .chat-input input::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .chat-send {
+      position: absolute;
+      right: 6px;
+      top: 6px;
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      border-radius: 19px;
+      background: #2949CB;
+      color: #FFFFFF;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .chat-send:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+    .chat-send:active:not(:disabled) {
+      transform: scale(0.92);
+    }
+
+    /* ---------- 通知 ---------- */
+    .notify-card {
+      top: calc(109px + var(--safe-top));
+    }
+    .notify-row {
+      left: 0;
+      right: 0;
+      height: 61px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+    .notify-row .dot {
+      position: absolute;
+      left: 20px;
+      top: 26px;
+      width: 8px;
+      height: 8px;
+      border-radius: 4px;
+      background: #4D8DFF;
+    }
+    .notify-row.is-read .dot {
+      visibility: hidden;
+    }
+    .notify-row.is-read .notify-title {
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .notify-title {
+      position: absolute;
+      left: 40px;
+      right: 80px;
+      top: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 15px;
+    }
+    .notify-desc {
+      position: absolute;
+      left: 40px;
+      right: 20px;
+      top: 33px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .notify-time {
+      position: absolute;
+      right: 20px;
+      top: 14px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.45);
+    }
+    .notify-empty {
+      left: 0;
+      right: 0;
+      top: 70px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    /* 底部「通知」圖示上的未讀數量 */
+    .tab-badge {
+      position: absolute;
+      left: calc(50% + 6px);
+      top: 8px;
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 8px;
+      background: #E5484D;
+      color: #FFFFFF;
+      font-size: 10px;
+      font-style: normal;
+      line-height: 16px;
+      text-align: center;
+      box-sizing: border-box;
+    }
+    .tab-badge[hidden] {
+      display: none;
+    }
+
+    /* ---------- 我的 ---------- */
+    .me-card {
+      top: calc(109px + var(--safe-top));
+      height: 150px;
+    }
+    .bio-card {
+      top: calc(283px + var(--safe-top));
+      height: 170px;
+    }
+    .bio-input {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      top: 62px;
+      height: 92px;
+      padding: 0;
+      border: 0;
+      outline: none;
+      resize: none;
+      background: transparent;
+      color: #FFFFFF;
+      font: inherit;
+      font-size: 15px;
+      line-height: 22px;
+    }
+    .bio-input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .settings-card {
+      top: calc(477px + var(--safe-top));
+      height: 152px;
+    }
+    .setting-row {
+      left: 20px;
+      right: 20px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 15px;
+    }
+    /* 自己做的開關（白色圓鈕、開啟時藍色） */
+    .toggle {
+      position: relative;
+      width: 51px;
+      height: 31px;
+      flex: none;
+    }
+    .toggle input {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .toggle span {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      background: rgba(120, 120, 128, 0.32);
+      transition: background 0.25s ease;
+      pointer-events: none;
+    }
+    .toggle span::after {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      width: 27px;
+      height: 27px;
+      border-radius: 14px;
+      background: #FFFFFF;
+      box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.15);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .toggle input:checked + span {
+      background: #2949CB;
+    }
+    .toggle input:checked + span::after {
+      transform: translateX(20px);
+    }
+    .logout-btn {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      top: calc(653px + var(--safe-top));
+      height: 50px;
+      border-radius: 25px;
+      background: rgba(229, 72, 77, 0.35);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      --lg-tint: rgba(229, 72, 77, 0.35);
+      --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+    .logout-btn > .lg-panel__body {
+      position: absolute;
+      inset: 0;
+    }
+    .logout-btn button {
+      position: absolute;
+      inset: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 25px;
+      background: transparent;
+      color: #FFFFFF;
+      font: inherit;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .level-hidden .me-level {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -596,7 +1013,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.0.9</div>
+    <div class="abs version-label t12 nowrap">ESN v1.1.0</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button">登入</button>
     </lg-panel>
@@ -697,13 +1114,97 @@
   </section>
 
   <!-- VIDEO -->
-  <section class="screen screen-video is-hidden" id="videoScreen">
+  <section class="screen screen-video is-hidden" id="videoScreen" data-lg-backdrop="">
     <div class="abs call-title t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
     <img class="abs call-clock" src="assets/icon-clock.svg" alt="">
     <div class="abs call-timer t10 nowrap" id="callTimer">00:00</div>
     <div class="abs call-glow shadow"><img src="assets/member-5.jpg" alt=""></div>
     <img class="avatar call-avatar center-x" src="assets/member-5.jpg" alt="">
     <div class="abs call-name center-x t15 nowrap text-shadow">帆～</div>
+    <div class="abs call-status center-x t12 nowrap" id="callStatus"></div>
+    <div class="call-controls">
+      <lg-panel class="call-btn glass" id="micBtn" radius="30">
+        <button type="button" aria-label="麥克風" aria-pressed="false">
+          <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/></svg>
+          <svg class="icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l20 20"/><path d="M15 9.3V5a3 3 0 0 0-5.7-1.3"/><path d="M9 9v2a3 3 0 0 0 5.1 2.1"/><path d="M19 10v1a7 7 0 0 1-1.1 3.8"/><path d="M5 10v1a7 7 0 0 0 11.3 5.5"/><path d="M12 18v4"/></svg>
+        </button>
+      </lg-panel>
+      <lg-panel class="call-btn glass" id="camBtn" radius="30">
+        <button type="button" aria-label="鏡頭" aria-pressed="false">
+          <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10l5-3v10l-5-3"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+          <svg class="icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l20 20"/><path d="M16 10l5-3v10l-2-1.2"/><path d="M14 18H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1"/><path d="M9 6h5a2 2 0 0 1 2 2v3"/></svg>
+        </button>
+      </lg-panel>
+      <lg-panel class="call-btn glass is-end" id="endBtn" radius="30">
+        <button type="button" aria-label="掛斷">
+          <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14.5c5-4.7 13-4.7 18 0l-2.2 2.6-3.3-1.6v-2.6a10 10 0 0 0-7 0v2.6l-3.3 1.6z"/></svg>
+        </button>
+      </lg-panel>
+    </div>
+  </section>
+
+  <!-- 聊天 -->
+  <section class="screen screen-chat is-hidden" id="chatScreen" data-lg-backdrop="">
+    <lg-panel class="page-header glass shadow" radius="0">
+      <div class="abs page-title center-x t20 nowrap text-shadow">聊天</div>
+    </lg-panel>
+    <div class="chat-list" id="chatList" aria-live="polite"></div>
+    <lg-panel class="chat-input glass" radius="25">
+      <form id="chatForm" autocomplete="off">
+        <input type="text" id="chatText" placeholder="輸入訊息…" aria-label="輸入訊息" maxlength="300">
+        <button class="chat-send" id="chatSend" type="submit" aria-label="送出" disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+        </button>
+      </form>
+    </lg-panel>
+  </section>
+
+  <!-- 通知 -->
+  <section class="screen screen-notify is-hidden" id="notifyScreen" data-lg-backdrop="">
+    <lg-panel class="page-header glass shadow" radius="0">
+      <div class="abs page-title center-x t20 nowrap text-shadow">通知</div>
+    </lg-panel>
+    <lg-panel class="card glass notify-card" id="notifyCard" radius="35">
+      <div class="abs rank-header shadow"></div>
+      <div class="abs t15 nowrap text-shadow" style="left: 25px; top: 16px;">最新通知</div>
+      <button class="abs text-btn" id="readAllBtn" type="button" style="right: 25px; top: 18px;">全部已讀</button>
+      <div class="abs" id="notifyRows" style="left: 0; right: 0; top: 50px;"></div>
+    </lg-panel>
+  </section>
+
+  <!-- 我的 -->
+  <section class="screen screen-me is-hidden" id="meScreen" data-lg-backdrop="">
+    <lg-panel class="page-header glass shadow" radius="0">
+      <div class="abs page-title center-x t20 nowrap text-shadow">我的</div>
+    </lg-panel>
+    <lg-panel class="card glass me-card" radius="35">
+      <img class="avatar leader-avatar" src="assets/member-3.jpg" alt="">
+      <div class="abs t15 nowrap text-shadow" style="left: 130px; top: 40px;">劉 O 佑</div>
+      <div class="abs t15 nowrap text-shadow" style="left: 130px; top: 58px;">Bi_liug1217</div>
+      <div class="abs t12 nowrap text-shadow me-level" style="left: 130px; top: 82px;">Roblox競爭者等級 : 87</div>
+    </lg-panel>
+    <lg-panel class="card glass bio-card" radius="35">
+      <div class="abs rank-header shadow"></div>
+      <div class="abs t15 nowrap text-shadow" style="left: 25px; top: 16px;">個人簡介</div>
+      <button class="abs text-btn" id="bioSave" type="button" style="right: 25px; top: 18px;">儲存</button>
+      <textarea class="bio-input" id="bioInput" maxlength="80" placeholder="寫點什麼介紹自己…" aria-label="個人簡介"></textarea>
+    </lg-panel>
+    <lg-panel class="card glass settings-card" radius="35">
+      <div class="abs rank-header shadow"></div>
+      <div class="abs t15 nowrap text-shadow" style="left: 25px; top: 16px;">設定</div>
+      <label class="abs setting-row" style="top: 50px;">
+        <span>通知提醒</span>
+        <span class="toggle"><input type="checkbox" id="settingNotify" checked><span></span></span>
+      </label>
+      <div class="abs divider shadow" style="top: 100px;"></div>
+      <label class="abs setting-row" style="top: 101px;">
+        <span>顯示我的等級</span>
+        <span class="toggle"><input type="checkbox" id="settingLevel" checked><span></span></span>
+      </label>
+    </lg-panel>
+    <lg-panel class="logout-btn glass" radius="25">
+      <button type="button" id="logoutBtn">登出</button>
+    </lg-panel>
   </section>
 
   <!-- 分頁列在主頁外面，用 backdrop 指定折射主頁的背景（iPhone Safari 也是真的玻璃；
@@ -711,20 +1212,20 @@
   <lg-panel class="tab-bar glass" id="tabBar" role="navigation" radius="35" backdrop="#homeScreen" hidden>
     <span class="tab-surface" id="tabSurface" aria-hidden="true"></span>
     <lg-panel class="tab-pill glass" id="tabPill" radius="30" backdrop="#tabSurface"></lg-panel>
-    <!-- 一開始就是主頁，所以預設選「主頁」；「我的」還沒有畫面，先不連 -->
+    <!-- 一開始就是主頁，所以預設選「主頁」 -->
     <button class="tab is-active" data-target="homeScreen" type="button">
       <i class="tab-icon" style="--icon: url(assets/icon-home.svg); --size: 20px;"></i><span>主頁</span>
     </button>
-    <button class="tab" type="button">
+    <button class="tab" data-target="chatScreen" type="button">
       <i class="tab-icon" style="--icon: url(assets/icon-chat.svg); --size: 19px;"></i><span>聊天</span>
     </button>
     <button class="tab" data-target="videoScreen" type="button">
       <i class="tab-icon" style="--icon: url(assets/icon-video.svg); --size: 21px;"></i><span>VIDEO</span>
     </button>
-    <button class="tab" type="button">
-      <i class="tab-icon" style="--icon: url(assets/icon-bell.svg); --size: 21px;"></i><span>通知</span>
+    <button class="tab" data-target="notifyScreen" type="button">
+      <i class="tab-icon" style="--icon: url(assets/icon-bell.svg); --size: 21px;"></i><i class="tab-badge" id="notifyBadge" hidden></i><span>通知</span>
     </button>
-    <button class="tab" type="button">
+    <button class="tab" data-target="meScreen" type="button">
       <img class="tab-avatar" src="assets/member-3.jpg" alt=""><span>我的</span>
     </button>
   </lg-panel>
@@ -860,8 +1361,9 @@
 
     // 頂部只要底部的玻璃邊：玻璃往上、左、右多延伸 60px 到螢幕外，那三邊的邊框就看不到
     customElements.whenDefined('lg-panel').then(() => {
-      const header = document.querySelector('.header');
-      header.surface?.setDelta({ x: -60, y: -60, w: 120, h: 60 });
+      document.querySelectorAll('.header, .page-header').forEach((header) => {
+        header.surface?.setDelta({ x: -60, y: -60, w: 120, h: 60 });
+      });
       // 元件剛升級成玻璃（登入畫面一打開就看得到），對齊一次背景
       requestAnimationFrame(alignGlassBackdrop);
     });
@@ -889,6 +1391,7 @@
       screens.forEach((screen) => screen.classList.toggle('is-hidden', screen.id !== id));
       tabBar.hidden = id === 'loginScreen';
       window.scrollTo(0, 0);
+      onScreenShown(id);
 
       clearInterval(timerId);
       if (id === 'videoScreen') {
@@ -976,32 +1479,222 @@
 
     window.addEventListener('resize', () => placePill(activeIndex));
 
+    // ---------- 各頁面的功能（資料存在這支手機的瀏覽器裡） ----------
+    const store = {
+      get(key, fallback) {
+        try {
+          const value = localStorage.getItem(`esn.${key}`);
+          return value === null ? fallback : JSON.parse(value);
+        } catch {
+          return fallback;
+        }
+      },
+      set(key, value) {
+        try {
+          localStorage.setItem(`esn.${key}`, JSON.stringify(value));
+        } catch {
+          // 私密瀏覽等情況存不了，就只在這次開啟期間有效
+        }
+      },
+    };
+    const ME = { name: '劉 O 佑', avatar: 'assets/member-3.jpg' };
+    const nowTime = () => new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    // 切到某個頁面時要做的事
+    function onScreenShown(id) {
+      if (id === 'chatScreen') requestAnimationFrame(() => { chatList.scrollTop = chatList.scrollHeight; });
+      if (id === 'videoScreen') resetCall();
+    }
+
+    // ----- 聊天：送出訊息、保存、捲到最新 -----
+    const chatList = document.getElementById('chatList');
+    const chatForm = document.getElementById('chatForm');
+    const chatText = document.getElementById('chatText');
+    const chatSend = document.getElementById('chatSend');
+    const DEFAULT_CHAT = [
+      { name: '帆～', avatar: 'assets/member-5.jpg', text: '歡迎加入 ★Bi_藍冰團★！', time: '20:01' },
+      { name: '陳柏安', avatar: 'assets/member-1.jpg', text: '週六團戰練習大家記得上線', time: '20:03' },
+      { name: '劉思妤', avatar: 'assets/member-4.jpg', text: '收到～', time: '20:05' },
+    ];
+    let chatMessages = store.get('chat', DEFAULT_CHAT);
+
+    function renderChat() {
+      chatList.replaceChildren(...chatMessages.map((m) => {
+        const row = el('div', m.me ? 'msg is-me' : 'msg');
+        const avatar = el('img');
+        avatar.src = m.avatar;
+        avatar.alt = '';
+        const body = el('div');
+        body.append(el('div', 'msg-name', m.name), el('div', 'msg-bubble', m.text), el('div', 'msg-time', m.time));
+        row.append(avatar, body);
+        return row;
+      }));
+      chatList.scrollTop = chatList.scrollHeight;
+    }
+
+    chatText.addEventListener('input', () => {
+      chatSend.disabled = !chatText.value.trim();
+    });
+    chatForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const text = chatText.value.trim();
+      if (!text) return;
+      chatMessages.push({ me: true, name: ME.name, avatar: ME.avatar, text, time: nowTime() });
+      chatMessages = chatMessages.slice(-100);
+      store.set('chat', chatMessages);
+      chatText.value = '';
+      chatSend.disabled = true;
+      renderChat();
+    });
+    renderChat();
+
+    // ----- VIDEO：麥克風、鏡頭、掛斷 -----
+    const callStatus = document.getElementById('callStatus');
+    const micBtn = document.getElementById('micBtn');
+    const camBtn = document.getElementById('camBtn');
+
+    function updateCallStatus() {
+      const parts = [];
+      if (micBtn.classList.contains('is-off')) parts.push('麥克風已關閉');
+      if (camBtn.classList.contains('is-off')) parts.push('鏡頭已關閉');
+      callStatus.textContent = parts.join('・');
+    }
+    function resetCall() {
+      [micBtn, camBtn].forEach((btn) => {
+        btn.classList.remove('is-off');
+        btn.querySelector('button').setAttribute('aria-pressed', 'false');
+      });
+      updateCallStatus();
+    }
+    [micBtn, camBtn].forEach((btn) => {
+      btn.querySelector('button').addEventListener('click', (event) => {
+        const off = btn.classList.toggle('is-off');
+        event.currentTarget.setAttribute('aria-pressed', String(off));
+        updateCallStatus();
+      });
+    });
+    document.querySelector('#endBtn button').addEventListener('click', () => selectTab(0));
+
+    // ----- 通知：已讀 / 全部已讀、底部未讀數量 -----
+    const NOTIFICATIONS = [
+      { id: 'n1', title: '帆～ 發布了新公告', desc: '歡迎加入 ★Bi_藍冰團★！', time: '2 小時前' },
+      { id: 'n2', title: '本週活動', desc: '週六 20:00 團戰練習', time: '1 天前' },
+      { id: 'n3', title: '陳柏安 升到 207 級', desc: 'Roblox競爭者等級 : 207', time: '2 天前' },
+      { id: 'n4', title: '劉思妤 加入了群組', desc: '跟大家打聲招呼吧！', time: '3 天前' },
+    ];
+    const notifyCard = document.getElementById('notifyCard');
+    const notifyRows = document.getElementById('notifyRows');
+    const notifyBadge = document.getElementById('notifyBadge');
+    const readIds = new Set(store.get('notifyRead', []));
+    const settings = Object.assign({ notify: true, level: true }, store.get('settings', {}));
+    const ROW_HEIGHT = 61;
+
+    function updateBadge() {
+      const unread = NOTIFICATIONS.filter((n) => !readIds.has(n.id)).length;
+      notifyBadge.textContent = unread;
+      notifyBadge.hidden = !settings.notify || unread === 0;
+    }
+    function markRead(ids) {
+      ids.forEach((id) => readIds.add(id));
+      store.set('notifyRead', [...readIds]);
+      renderNotify();
+    }
+    function renderNotify() {
+      const nodes = [];
+      NOTIFICATIONS.forEach((n, i) => {
+        if (i > 0) {
+          const line = el('div', 'abs divider shadow');
+          line.style.top = `${i * ROW_HEIGHT}px`;
+          nodes.push(line);
+        }
+        const row = el('button', `abs notify-row${readIds.has(n.id) ? ' is-read' : ''}`);
+        row.type = 'button';
+        row.style.top = `${i * ROW_HEIGHT}px`;
+        row.append(el('span', 'dot'), el('span', 'notify-title', n.title), el('span', 'notify-desc', n.desc), el('span', 'notify-time', n.time));
+        row.addEventListener('click', () => markRead([n.id]));
+        nodes.push(row);
+      });
+      if (!NOTIFICATIONS.length) nodes.push(el('div', 'abs notify-empty t15', '目前沒有通知'));
+      notifyRows.replaceChildren(...nodes);
+      notifyCard.style.height = `${50 + Math.max(1, NOTIFICATIONS.length) * ROW_HEIGHT + 4}px`;
+      updateBadge();
+    }
+    document.getElementById('readAllBtn').addEventListener('click', () => markRead(NOTIFICATIONS.map((n) => n.id)));
+    renderNotify();
+
+    // ----- 我的：個人簡介、設定、登出 -----
+    const bioInput = document.getElementById('bioInput');
+    const bioSave = document.getElementById('bioSave');
+    const settingNotify = document.getElementById('settingNotify');
+    const settingLevel = document.getElementById('settingLevel');
+    bioInput.value = store.get('bio', '');
+    bioSave.addEventListener('click', () => {
+      store.set('bio', bioInput.value.trim());
+      bioSave.textContent = '已儲存';
+      setTimeout(() => { bioSave.textContent = '儲存'; }, 1500);
+    });
+
+    function applySettings() {
+      settingNotify.checked = settings.notify;
+      settingLevel.checked = settings.level;
+      document.body.classList.toggle('level-hidden', !settings.level);
+      updateBadge();
+    }
+    settingNotify.addEventListener('change', () => {
+      settings.notify = settingNotify.checked;
+      store.set('settings', settings);
+      applySettings();
+    });
+    settingLevel.addEventListener('change', () => {
+      settings.level = settingLevel.checked;
+      store.set('settings', settings);
+      applySettings();
+    });
+    applySettings();
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      selectTab(0);
+      showScreen('loginScreen');
+    });
+
     // ---------- 載入畫面：先把圖片和玻璃都準備好 ----------
     const splash = document.getElementById('splash');
     const splashProgress = document.getElementById('splashProgress');
     const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    const warmHome = document.getElementById('homeScreen');
+    let warmScreens = [];
 
-    // 預熱結束：不管成功、失敗或逾時，都把主頁和分頁列藏回去（只做一次）
+    // 預熱結束：不管成功、失敗或逾時，都把預熱的頁面和分頁列藏回去（只做一次）
     function finishWarm() {
-      if (!warmHome.classList.contains('is-warming')) return;
-      warmHome.classList.add('is-hidden');
-      warmHome.classList.remove('is-warming');
+      if (!warmScreens.length) return;
+      warmScreens.forEach((screen) => {
+        screen.classList.add('is-hidden');
+        screen.classList.remove('is-warming');
+      });
+      warmScreens = [];
       tabBar.hidden = true;
       tabBar.classList.remove('is-warming');
     }
 
-    // 主頁先偷偷排版一次（看不到），讓玻璃算好位移圖；之後進主頁會直接用快取，不用等
+    // 所有還沒顯示的頁面先偷偷排版一次（看不到），讓玻璃算好位移圖；之後切頁面會直接用快取，不用等
     async function warmGlass() {
-      const home = warmHome;
-      home.classList.add('is-warming');
-      home.classList.remove('is-hidden');
+      warmScreens = [...screens].filter((screen) => screen.classList.contains('is-hidden'));
+      warmScreens.forEach((screen) => {
+        screen.classList.add('is-warming');
+        screen.classList.remove('is-hidden');
+      });
       tabBar.classList.add('is-warming');
       tabBar.hidden = false;
       await wait(60);
       alignGlassBackdrop();
-      // 等所有主頁玻璃的濾鏡都套上（最多 2 秒）
-      const panels = [...home.querySelectorAll('lg-panel'), ...tabBar.querySelectorAll('lg-panel')]
+      // 等所有頁面玻璃的濾鏡都套上（最多 2 秒）
+      const panels = [...warmScreens.flatMap((screen) => [...screen.querySelectorAll('lg-panel')]), ...tabBar.querySelectorAll('lg-panel')]
         .filter((panel) => panel.surface?.mode === 'copy');
       const until = performance.now() + 2000;
       while (performance.now() < until) {
