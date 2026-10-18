@@ -40,6 +40,8 @@
       font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       color: #FFFFFF;
       -webkit-tap-highlight-color: transparent;
+      /* 上下滑到底時不要整頁彈出去再彈回來（iOS 的橡皮筋效果） */
+      overscroll-behavior: none;
     }
     /* 畫面跟著螢幕寬度拉長，物件用 left / right 固定兩側留空 */
     .screen {
@@ -68,7 +70,8 @@
       align-items: center;
       justify-content: center;
       gap: 14px;
-      background: #212121;
+      /* 跟其他頁一樣：原本的灰色 + 淡淡圖案 */
+      background: #212121 url(assets/home-bg.jpg) 0 0 / 100% auto no-repeat;
       transition: opacity 0.4s ease;
     }
     .splash.is-done {
@@ -244,6 +247,9 @@
     .chat-status {
       top: calc(64px + var(--safe-top));
       color: rgba(255, 255, 255, 0.55);
+    }
+    .chat-status.is-warning {
+      color: #FFB020;
     }
 
     /* 登入按鈕：玻璃外殼（<lg-panel>）+ 裡面一個透明的原生按鈕 */
@@ -928,6 +934,11 @@
     .chat-thread-rows {
       position: relative;
     }
+    /* 聊天列表、對話滑到底也不要彈，也不要把整頁一起拉動 */
+    .chat-threads,
+    .chat-list {
+      overscroll-behavior: none;
+    }
     /* 進入聊天室：沒有底部分頁列，輸入框貼到最下面 */
     .screen-chat.is-thread .chat-list {
       bottom: calc(max(16px, var(--safe-bottom)) + 50px + 14px);
@@ -1225,7 +1236,7 @@
       <div class="abs center-x t15 nowrap text-shadow" style="top: 16px;">選擇你的身分</div>
       <div class="abs picker-grid" id="memberPicker" role="radiogroup" aria-label="選擇你的身分"></div>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.3.0</div>
+    <div class="abs version-label t12 nowrap">ESN v1.3.1</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1864,31 +1875,62 @@
     const chat = {
       online: false,
       rooms: {},
+      retrying: false,
+      async loadRooms() {
+        this.rooms = await (await fetch(`${this.base}/api/messages`, { cache: 'no-store' })).json();
+      },
       async init() {
         const base = chatBase();
         if (base === null) {
-          updateChatStatus(false);
+          updateChatStatus('local');
           return;
         }
         this.base = base;
         try {
           const ping = await fetch(`${base}/api/ping`, { cache: 'no-store' });
-          if (!ping.ok) return;
-          this.rooms = await (await fetch(`${base}/api/messages`, { cache: 'no-store' })).json();
+          if (!ping.ok) throw new Error(`ping ${ping.status}`);
+          await this.loadRooms();
           this.online = true;
+          this.retrying = false;
           const events = new EventSource(`${base}/api/events`);
+          let dropped = false;
           events.onmessage = (event) => {
             const { room, msg } = JSON.parse(event.data);
             const list = (this.rooms[room] ||= []);
             if (!list.some((m) => m.id === msg.id)) list.push(msg);
             onChatUpdate(room);
           };
-          events.onopen = () => updateChatStatus(true);
-          events.onerror = () => updateChatStatus(false);
+          events.onopen = async () => {
+            updateChatStatus('online');
+            // 斷線期間可能有新訊息：重新連上時整批再抓一次
+            if (dropped) {
+              dropped = false;
+              try {
+                await this.loadRooms();
+                if (currentThread) onChatUpdate(currentThread.room);
+                else renderThreadList();
+              } catch {
+                // 下次重連再試
+              }
+            }
+          };
+          events.onerror = () => {
+            dropped = true;
+            updateChatStatus('reconnecting');
+          };
+          updateChatStatus('online');
         } catch {
-          // 沒有伺服器：離線模式
+          // 連不到伺服器（伺服器沒開、電腦睡著、Funnel 沒開）：清楚顯示，10 秒後再試
+          this.online = false;
+          updateChatStatus('unreachable');
+          if (!this.retrying) {
+            this.retrying = true;
+            setTimeout(() => {
+              this.retrying = false;
+              this.init();
+            }, 10000);
+          }
         }
-        updateChatStatus(this.online);
         renderThreadList();
       },
       get(room, defaults = []) {
@@ -1909,6 +1951,8 @@
           onChatUpdate(room);
           return;
         }
+        // 有設定伺服器但現在連不到：不要偷偷只存在手機，讓使用者知道沒送出
+        if (chatBase() !== null) throw new Error('chat server unreachable');
         const list = this.get(room, []).concat({ from: ME.id, text, time: nowTime() }).slice(-100);
         store.set(`chat.${room}`, list);
         onChatUpdate(room);
@@ -1939,10 +1983,15 @@
     let currentThread = null;
     let chatMessages = [];
 
-    function updateChatStatus(connected) {
-      chatStatus.textContent = chat.online
-        ? (connected ? '● 已連線到伺服器，訊息大家都看得到' : '○ 伺服器連線中斷，重新連線中…')
-        : '離線模式：訊息只存在這支手機';
+    function updateChatStatus(state) {
+      chatStatus.textContent = {
+        online: '● 已連線到伺服器，訊息大家都看得到',
+        reconnecting: '○ 伺服器連線中斷，重新連線中…',
+        unreachable: '⚠ 連不到聊天伺服器，訊息傳不出去（每 10 秒重試）',
+        local: '離線模式：訊息只存在這支手機',
+      }[state] || '';
+      chatStatus.classList.toggle('is-warning', state === 'unreachable');
+      chatText.placeholder = state === 'unreachable' ? '⚠ 連不到伺服器，訊息傳不出去' : '輸入訊息…';
     }
 
     function threads() {

@@ -11,6 +11,10 @@ set ESN_PORT=8800
 rem 聊天資料放在 OneDrive 外面，避免一直觸發同步
 set ESN_DATA_DIR=C:\ESNData
 
+rem 確保對外網址還在：只補上 8443 → 8800，不會動到其他 App 的 Funnel（例如 443 → 8787）
+tailscale funnel --bg --https=8443 8800 >nul 2>&1
+if errorlevel 1 echo 提醒：Tailscale Funnel 設定失敗，請確認 Tailscale 有開著並已登入
+
 :loop
 py -u server.py
 echo.
