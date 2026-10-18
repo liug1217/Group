@@ -1207,7 +1207,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.4.0</div>
+    <div class="abs version-label t12 nowrap">ESN v1.4.1</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -2238,42 +2238,59 @@
       applySettings();
     });
 
-    // 按住開關左右滑動（跟 iOS 一樣）：圓鈕跟著手指走，放開時過一半就切過去
+    // 按住開關左右滑動（跟 iOS 一樣）：圓鈕跟著手指走，放開時過一半就切過去。
+    // 手指點下去一定會抖幾 px，所以點一下 / 滑動都在 pointerup 自己判斷，
+    // 不靠瀏覽器的 click（手機上手指有移動時 click 常常不來或被吃掉）。
     function enableSwitchDrag(sw) {
       const input = sw.querySelector('input');
       let drag = null;
       let skipClick = false;
+      const setChecked = (on) => {
+        if (on !== input.checked) {
+          input.checked = on;
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        } else sw.xs.set(on ? 1 : 0);
+      };
       input.addEventListener('pointerdown', (event) => {
-        drag = { x0: event.clientX, from: input.checked ? 1 : 0, pos: input.checked ? 1 : 0, moved: false };
-        input.setPointerCapture(event.pointerId);
+        if (input.disabled) return;
+        drag = { x0: event.clientX, y0: event.clientY, from: input.checked ? 1 : 0, pos: input.checked ? 1 : 0, moved: false };
+        input.setPointerCapture?.(event.pointerId);
       });
       input.addEventListener('pointermove', (event) => {
         if (!drag) return;
         const dx = event.clientX - drag.x0;
-        if (Math.abs(dx) > 4) drag.moved = true;
-        if (!drag.moved) return;
+        const dy = event.clientY - drag.y0;
+        if (!drag.moved) {
+          // 先往上下走：當作捲頁面，放掉開關
+          if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) {
+            drag = null;
+            return;
+          }
+          if (Math.abs(dx) < 8) return; // 點一下的抖動
+          drag.moved = true;
+        }
         drag.pos = Math.min(1, Math.max(0, drag.from + dx / 24)); // 圓鈕可移動 24px
         sw.xs.set(drag.pos);
       });
       input.addEventListener('pointerup', () => {
         const d = drag;
         drag = null;
-        if (!d?.moved) return;
-        // 滑動過就不要再讓接下來的 click 切換一次
+        if (!d) return;
+        // 接下來的 click（如果有來）不要再切一次
         skipClick = true;
-        setTimeout(() => { skipClick = false; }, 400);
-        const on = d.pos > 0.5;
-        if (on !== input.checked) {
-          input.checked = on;
-          input.dispatchEvent(new Event('change', { bubbles: true }));
-        } else sw.xs.set(on ? 1 : 0);
+        setTimeout(() => { skipClick = false; }, 500);
+        setChecked(d.moved ? d.pos > 0.5 : !d.from);
       });
       input.addEventListener('pointercancel', () => {
         drag = null;
         sw.xs.set(input.checked ? 1 : 0);
       });
       input.addEventListener('click', (event) => {
-        if (skipClick) event.preventDefault();
+        // 鍵盤（空白鍵）還是走原本的 click
+        if (skipClick) {
+          skipClick = false;
+          event.preventDefault();
+        }
       });
     }
     customElements.whenDefined('lg-switch').then(() => {
