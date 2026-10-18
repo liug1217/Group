@@ -135,15 +135,19 @@
     }
 
     /* ---------- 群組主頁 ---------- */
+    /* 主頁可以往下滑（Figma 畫面高度 1500 - 60） */
     .screen-home {
-      min-height: max(100vh, 830px);
+      height: 1440px;
     }
+    /* 頂部固定，往下滑時不會跟著捲走；底色用不透明的 #252525（= header 疊在背景上的顏色），內容才不會透出來 */
     .header {
+      position: fixed;
       left: 0;
       right: 0;
       top: 0;
       height: 85px;
-      background: rgba(53, 53, 53, 0.2);
+      background: #252525;
+      z-index: 5;
     }
     .group-avatar {
       top: 0px;
@@ -378,10 +382,11 @@
 
   <!-- 群組主頁 -->
   <section class="screen screen-home is-hidden" id="homeScreen">
-    <div class="abs header shadow"></div>
-    <img class="avatar group-avatar center-x" src="assets/group-avatar.jpg" alt="">
-    <div class="abs group-title center-x t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
-    <div class="abs header-tag shadow"></div>
+    <div class="header shadow">
+      <img class="avatar group-avatar center-x" src="assets/group-avatar.jpg" alt="">
+      <div class="abs group-title center-x t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
+      <div class="abs header-tag shadow"></div>
+    </div>
 
     <!-- 團長卡片 -->
     <div class="card leader-card">
