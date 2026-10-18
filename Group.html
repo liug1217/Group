@@ -4,13 +4,15 @@
   <meta charset="UTF-8" />
   <!-- 畫布固定 440px 寬（Figma iPhone 16 Pro Max），手機會自動等比縮放 -->
   <meta name="viewport" content="width=440">
+  <!-- 手機頂部安全區（狀態列）顏色，跟頂部 header 一樣 -->
+  <meta name="theme-color" content="#252525">
   <title>Group</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
       min-height: 100%;
-      background: #212121;
+      background: #252525;
       font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       color: #FFFFFF;
     }
@@ -18,7 +20,7 @@
     .screen {
       position: relative;
       width: 440px;
-      height: 956px;
+      height: 896px;
       margin: 0 auto;
       background: #212121;
       overflow: hidden;
@@ -76,8 +78,8 @@
       color: #FFFFFF;
       opacity: 1;
     }
-    .field-account { top: 350px; }
-    .field-password { top: 445px; }
+    .field-account { top: 290px; }
+    .field-password { top: 385px; }
     .icon-user { left: 25px; top: 15px; width: 20px; height: 20px; }
     .icon-lock { left: 26px; top: 15px; width: 18px; height: 20px; }
     .eye-button {
@@ -99,7 +101,7 @@
     .login-button {
       position: absolute;
       left: 20px;
-      top: 540px;
+      top: 480px;
       width: 400px;
       height: 50px;
       border: 0;
@@ -113,7 +115,7 @@
       cursor: pointer;
     }
     .social {
-      top: 635px;
+      top: 575px;
       width: 50px;
       height: 50px;
       border-radius: 25px;
@@ -122,30 +124,30 @@
 
     /* ---------- iPhone 16 & 17 Pro Max - 1：群組主頁 ---------- */
     .screen-home {
-      height: 1500px;
+      height: 1440px;
     }
     .header {
       left: 0;
       top: 0;
       width: 440px;
-      height: 145px;
+      height: 85px;
       background: rgba(53, 53, 53, 0.2);
     }
     .group-avatar {
       left: 190px;
-      top: 60px;
+      top: 0px;
       width: 60px;
       height: 60px;
       border-radius: 30px;
     }
     .group-title {
       left: 219.5px;
-      top: 120px;
+      top: 60px;
       transform: translateX(-50%);
     }
     .header-tag {
       left: 370px;
-      top: 119px;
+      top: 59px;
       width: 50px;
       height: 20px;
       border-radius: 5px;
@@ -160,7 +162,7 @@
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
     .leader-card {
-      top: 169px;
+      top: 109px;
       height: 150px;
     }
     .leader-avatar {
@@ -193,7 +195,7 @@
       justify-content: center;
     }
     .rank-card {
-      top: 343px;
+      top: 283px;
       height: 406px;
     }
     .rank-header {
@@ -279,23 +281,23 @@
     /* ---------- iPhone 16 & 17 Pro Max - 3：VIDEO ---------- */
     .call-title {
       left: 90.5px;
-      top: 75px;
+      top: 15px;
       transform: translateX(-50%);
     }
     .call-clock {
       left: 21.5px;
-      top: 95.5px;
+      top: 35.5px;
       width: 9px;
       height: 9px;
     }
     .call-timer {
       left: 47.5px;
-      top: 94px;
+      top: 34px;
       transform: translateX(-50%);
     }
     .call-glow {
       left: 20px;
-      top: 378px;
+      top: 318px;
       width: 400px;
       height: 200px;
       border-radius: 30px;
@@ -304,7 +306,7 @@
     }
     .call-avatar {
       left: 144px;
-      top: 403px;
+      top: 343px;
       width: 151px;
       height: 150px;
       border-radius: 75px;
@@ -398,7 +400,7 @@
     <div class="abs call-timer t10 nowrap" id="callTimer">00:00</div>
     <img class="abs call-glow shadow" src="assets/member-5.jpg" alt="">
     <img class="avatar call-avatar" src="assets/member-5.jpg" alt="">
-    <div class="abs t15 nowrap text-shadow" style="left: 205px; top: 561px;">帆～</div>
+    <div class="abs t15 nowrap text-shadow" style="left: 205px; top: 501px;">帆～</div>
   </section>
 
   <nav class="tab-bar" id="tabBar" hidden>
