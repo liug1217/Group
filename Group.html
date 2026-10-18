@@ -2,11 +2,22 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- viewport-fit=cover：畫到整個螢幕（瀏海、狀態列、底部橫桿底下），再用 env(safe-area-inset-*) 讓開 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <!-- 手機頂部安全區（狀態列）顏色，跟頂部 header 一樣 -->
   <meta name="theme-color" content="#252525">
+  <!-- 加入主畫面後用全螢幕 App 開啟；狀態列透明（白字），頂部玻璃延伸到狀態列底下 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Group">
   <title>Group</title>
   <style>
+    /* 安全區高度：系統依機型給的值；一般 Safari 分頁裡是 0 */
+    :root {
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
     html, body {
       margin: 0;
       padding: 0;
@@ -145,7 +156,7 @@
     /* ---------- 群組主頁 ---------- */
     /* 主頁可以往下滑（Figma 畫面高度 1500 - 60） */
     .screen-home {
-      height: 1440px;
+      height: calc(1440px + var(--safe-top));
       /* 照 liquidglass.dev：玻璃後面放圖片，折射才看得出來（自己畫的波浪圖，440×1440 @2x） */
       background: #212121 url(assets/home-bg.jpg) 0 0 / 100% 100% no-repeat;
     }
@@ -156,25 +167,27 @@
       left: 0;
       right: 0;
       top: 0;
-      height: 85px;
+      /* 頂部延伸到狀態列底下，多出來的高度 = 安全區 */
+      height: calc(85px + var(--safe-top));
       background: #252525;
       z-index: 5;
       /* 玻璃顏色 = 原本 Figma 的 rgba(53, 53, 53, 0.2)，疊在 #212121 上就是 #252525 */
       --lg-tint: rgba(53, 53, 53, 0.2);
       --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
+    /* 頂部裡的東西都往下讓出安全區（狀態列） */
     .group-avatar {
-      top: 0px;
+      top: var(--safe-top);
       width: 60px;
       height: 60px;
       border-radius: 30px;
     }
     .group-title {
-      top: 60px;
+      top: calc(60px + var(--safe-top));
     }
     .header-tag {
       right: 20px;
-      top: 59px;
+      top: calc(59px + var(--safe-top));
       width: 50px;
       height: 20px;
       border-radius: 5px;
@@ -205,8 +218,9 @@
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
     }
+    /* 頂部變高多少（安全區），卡片就往下移多少 */
     .leader-card {
-      top: 109px;
+      top: calc(109px + var(--safe-top));
       height: 150px;
     }
     .leader-avatar {
@@ -248,7 +262,7 @@
       --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
     .rank-card {
-      top: 283px;
+      top: calc(283px + var(--safe-top));
       height: 406px;
     }
     .rank-header {
@@ -279,7 +293,8 @@
       position: fixed;
       left: 19px;
       right: 19px;
-      bottom: 29px;
+      /* 一般是 29px（Figma）；有底部橫桿的 iPhone 在主畫面 App 裡，至少讓出橫桿的安全區 */
+      bottom: max(29px, var(--safe-bottom));
       height: 70px;
       display: grid;
       grid-template-columns: repeat(5, 1fr);
@@ -363,19 +378,20 @@
     }
 
     /* ---------- VIDEO ---------- */
+    /* VIDEO 頁最上面的標題和計時也讓出狀態列 */
     .call-title {
       left: 20px;
-      top: 15px;
+      top: calc(15px + var(--safe-top));
     }
     .call-clock {
       left: 21.5px;
-      top: 35.5px;
+      top: calc(35.5px + var(--safe-top));
       width: 9px;
       height: 9px;
     }
     .call-timer {
       left: 33px;
-      top: 34px;
+      top: calc(34px + var(--safe-top));
     }
     .call-glow {
       left: 20px;
@@ -417,7 +433,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </div>
-    <div class="abs version-label t12 nowrap">ESN v1.0.2</div>
+    <div class="abs version-label t12 nowrap">ESN v1.0.3</div>
     <button class="login-button" id="loginButton" type="button">登入</button>
     <img class="abs social shadow" style="left: 20px;" src="assets/login-line.png" alt="LINE 登入">
     <img class="abs social shadow" style="left: 80px;" src="assets/login-google.jpg" alt="Google 登入">
