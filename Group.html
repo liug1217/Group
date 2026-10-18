@@ -1186,7 +1186,7 @@
       <div class="abs center-x t15 nowrap text-shadow" style="top: 16px;">選擇你的身分</div>
       <div class="abs picker-grid" id="memberPicker" role="radiogroup" aria-label="選擇你的身分"></div>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.2.0</div>
+    <div class="abs version-label t12 nowrap">ESN v1.2.1</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1781,8 +1781,18 @@
       if (id === 'videoScreen') resetCall();
     }
 
-    // ----- 聊天資料：連得到這台電腦的伺服器（server.py）就用伺服器，大家互傳；
-    //       連不到（例如 GitHub 網站）就只存在這支手機 -----
+    // ----- 聊天資料：連到聊天伺服器（server.py，在你的電腦上跑）就大家互傳；
+    //       連不到就只存在這支手機 -----
+    // 聊天伺服器的 https 網址（通道網址，例如 https://xxxx.trycloudflare.com）。
+    // GitHub 網站會直接連這裡；從伺服器自己的網址打開時會自動用同一個網址。
+    const CHAT_SERVER = 'https://node.tailfdfee1.ts.net:8443';
+    const chatBase = () => {
+      // GitHub 網站（或直接開檔案）→ 連 CHAT_SERVER；從伺服器自己的網址打開 → 用同網址
+      if (location.protocol === 'file:' || location.hostname.endsWith('github.io')) {
+        return CHAT_SERVER ? CHAT_SERVER.replace(/\/+$/, '') : null;
+      }
+      return '';
+    };
     const GROUP_DEFAULT = [
       { from: 'fan', text: '歡迎加入 ★Bi_藍冰團★！', time: '20:01' },
       { from: 'chen', text: '週六團戰練習大家記得上線', time: '20:03' },
@@ -1793,13 +1803,18 @@
       online: false,
       rooms: {},
       async init() {
-        if (location.protocol === 'file:' || location.hostname.endsWith('github.io')) return;
+        const base = chatBase();
+        if (base === null) {
+          updateChatStatus(false);
+          return;
+        }
+        this.base = base;
         try {
-          const ping = await fetch('api/ping', { cache: 'no-store' });
+          const ping = await fetch(`${base}/api/ping`, { cache: 'no-store' });
           if (!ping.ok) return;
-          this.rooms = await (await fetch('api/messages', { cache: 'no-store' })).json();
+          this.rooms = await (await fetch(`${base}/api/messages`, { cache: 'no-store' })).json();
           this.online = true;
-          const events = new EventSource('api/events');
+          const events = new EventSource(`${base}/api/events`);
           events.onmessage = (event) => {
             const { room, msg } = JSON.parse(event.data);
             const list = (this.rooms[room] ||= []);
@@ -1820,7 +1835,7 @@
       },
       async send(room, text) {
         if (this.online) {
-          const res = await fetch('api/messages', {
+          const res = await fetch(`${this.base}/api/messages`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ room, from: ME.id, text }),
