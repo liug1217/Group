@@ -12,11 +12,25 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Group">
   <title>Group</title>
+  <script>
+    // iOS 舊版的主畫面 App 不一定支援 display-mode 媒體查詢，用 navigator.standalone 補判斷
+    if (window.navigator.standalone) document.documentElement.classList.add('is-standalone');
+  </script>
   <style>
     /* 安全區高度：系統依機型給的值；一般 Safari 分頁裡是 0 */
     :root {
       --safe-top: env(safe-area-inset-top, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    /* 加入主畫面（全螢幕）時狀態列蓋在畫面上：頂部至少讓出 Figma 原本的 60px。
+       iOS 26 直立模式有時 safe-area-inset-top 會是 0（WebKit Bug 306465），所以不能只靠 env() */
+    @media (display-mode: standalone), (display-mode: fullscreen) {
+      :root {
+        --safe-top: max(env(safe-area-inset-top, 0px), 60px);
+      }
+    }
+    :root.is-standalone {
+      --safe-top: max(env(safe-area-inset-top, 0px), 60px);
     }
     html, body {
       margin: 0;
@@ -69,6 +83,10 @@
     }
 
     /* ---------- 登入 ---------- */
+    /* 跟主頁一樣：玻璃後面放有淡圖案的背景，折射才看得出來 */
+    .screen-login {
+      background: #212121 url(assets/home-bg.jpg) 0 0 / 100% auto no-repeat;
+    }
     .field {
       position: absolute;
       left: 20px;
@@ -77,6 +95,8 @@
       border-radius: 25px;
       background: rgba(65, 65, 65, 0.2);
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      --lg-tint: rgba(65, 65, 65, 0.2);
+      --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
     .field input {
       position: absolute;
@@ -117,25 +137,41 @@
       width: 20px;
       height: 13px;
     }
+    /* 登入按鈕：玻璃外殼（<lg-panel>）+ 裡面一個透明的原生按鈕 */
     .login-button {
       position: absolute;
       left: 20px;
       right: 20px;
       top: 480px;
       height: 50px;
-      border: 0;
       border-radius: 25px;
       background: #2949CB;
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      transition: transform 0.15s ease;
+      --lg-tint: #2949CB;
+      --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+    .login-button:active {
+      transform: scale(0.97);
+    }
+    .login-button > .lg-panel__body {
+      position: absolute;
+      inset: 0;
+    }
+    .login-button__el {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      border: 0;
+      border-radius: 25px;
+      background: transparent;
       color: #FFFFFF;
       font: inherit;
       font-size: 15px;
       text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
       cursor: pointer;
-      transition: transform 0.15s ease;
-    }
-    .login-button:active {
-      transform: scale(0.97);
     }
     /* 版本號（登入按鈕上方） */
     .version-label {
@@ -437,20 +473,22 @@
 <body>
 
   <!-- 登入畫面 -->
-  <section class="screen screen-login" id="loginScreen">
-    <div class="field field-account">
+  <section class="screen screen-login" id="loginScreen" data-lg-backdrop="">
+    <lg-panel class="field field-account glass" radius="25">
       <img class="abs icon-user" src="assets/icon-user.svg" alt="">
       <input type="text" placeholder="帳號" aria-label="帳號" autocomplete="username">
-    </div>
-    <div class="field field-password">
+    </lg-panel>
+    <lg-panel class="field field-password glass" radius="25">
       <img class="abs icon-lock" src="assets/icon-lock.svg" alt="">
       <input type="password" id="passwordInput" placeholder="密碼" aria-label="密碼" autocomplete="current-password">
       <button class="eye-button" id="eyeButton" type="button" aria-label="顯示密碼">
         <img src="assets/icon-eye.svg" alt="">
       </button>
-    </div>
-    <div class="abs version-label t12 nowrap">ESN v1.0.4</div>
-    <button class="login-button" id="loginButton" type="button">登入</button>
+    </lg-panel>
+    <div class="abs version-label t12 nowrap">ESN v1.0.5</div>
+    <lg-panel class="login-button glass" radius="25">
+      <button class="login-button__el" id="loginButton" type="button">登入</button>
+    </lg-panel>
     <img class="abs social shadow" style="left: 20px;" src="assets/login-line.png" alt="LINE 登入">
     <img class="abs social shadow" style="left: 80px;" src="assets/login-google.jpg" alt="Google 登入">
     <img class="abs social shadow" style="left: 140px;" src="assets/login-facebook.png" alt="Facebook 登入">
@@ -559,30 +597,45 @@
     let timerId = null;
     let activeIndex = tabs.findIndex((tab) => tab.classList.contains('is-active'));
 
-    // iPhone Safari 會暫存玻璃濾鏡的結果：主頁從隱藏變顯示、進場動畫移動卡片後，
-    // 玻璃會停在舊位置（位移）。動畫結束、轉向或從背景回來時重建玻璃，換新的濾鏡 id 重畫。
-    const homeScreen = document.getElementById('homeScreen');
+    // iPhone Safari 會暫存玻璃濾鏡的結果：畫面從隱藏變顯示、進場動畫移動元件後，
+    // 玻璃會停在舊位置（位移）。動畫結束、轉向或從背景回來時重建看得到的玻璃，換新的濾鏡 id 重畫。
     function refreshGlass() {
-      if (homeScreen.classList.contains('is-hidden')) return;
       document.querySelectorAll('lg-panel').forEach((panel) => {
-        if (!panel.surface) return;
+        if (!panel.surface || !panel.offsetWidth) return;
         panel.surface.detach();
         panel.surface.attach();
       });
       alignGlassBackdrop();
     }
 
-    // 卡片裡的背景複本只有卡片大小（CSS 固定），這裡用 background-size / position
-    // 讓它顯示整張背景圖中、剛好在卡片後面的那一塊，折射才對得上
+    // 背景的 background-size（例如 100% auto）換成 px，給只有玻璃大小的複本用
+    function backdropSize(source, rect) {
+      const [w, h = w] = getComputedStyle(source).backgroundSize.split(' ');
+      const toPx = (value, length) => (value.endsWith('%') ? `${(parseFloat(value) / 100) * length}px` : value);
+      return `${toPx(w, rect.width)} ${toPx(h, rect.height)}`;
+    }
+
+    // 玻璃裡的背景複本只有玻璃大小（CSS 固定），這裡用 background-size / position
+    // 讓它顯示背景圖中、剛好在玻璃後面的那一塊，折射才對得上
     function alignGlassBackdrop() {
-      if (homeScreen.classList.contains('is-hidden')) return;
-      const home = homeScreen.getBoundingClientRect();
-      document.querySelectorAll('lg-panel .lg-surface__copy').forEach((copy) => {
-        const r = copy.getBoundingClientRect();
-        copy.style.backgroundSize = `${home.width}px ${home.height}px`;
-        copy.style.backgroundPosition = `${home.left - r.left}px ${home.top - r.top}px`;
+      document.querySelectorAll('lg-panel').forEach((panel) => {
+        const surface = panel.surface;
+        if (!surface || !surface.copy || !surface.source) return;
+        const source = surface.source.getBoundingClientRect();
+        if (!source.width) return; // 背景所在的畫面目前隱藏
+        const r = surface.copy.getBoundingClientRect();
+        surface.copy.style.backgroundSize = backdropSize(surface.source, source);
+        surface.copy.style.backgroundPosition = `${source.left - r.left}px ${source.top - r.top}px`;
       });
     }
+
+    // 頂部只要底部的玻璃邊：玻璃往上、左、右多延伸 60px 到螢幕外，那三邊的邊框就看不到
+    customElements.whenDefined('lg-panel').then(() => {
+      const header = document.querySelector('.header');
+      header.surface?.setDelta({ x: -60, y: -60, w: 120, h: 60 });
+      // 元件剛升級成玻璃（登入畫面一打開就看得到），對齊一次背景
+      requestAnimationFrame(alignGlassBackdrop);
+    });
     window.addEventListener('resize', () => requestAnimationFrame(alignGlassBackdrop));
     // 頂部和分頁列是固定位置，捲動時背後的那塊背景會變，要跟著對齊
     let alignFrame = 0;
@@ -593,8 +646,10 @@
         alignGlassBackdrop();
       });
     }, { passive: true });
-    homeScreen.addEventListener('animationend', (event) => {
-      if (event.target === homeScreen) refreshGlass();
+    screens.forEach((screen) => {
+      screen.addEventListener('animationend', (event) => {
+        if (event.target === screen) refreshGlass();
+      });
     });
     window.addEventListener('orientationchange', () => setTimeout(refreshGlass, 300));
     window.addEventListener('pageshow', refreshGlass);
