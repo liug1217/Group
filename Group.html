@@ -1148,6 +1148,25 @@
     /* 圓鈕到底時底色才換，換的那一下淡入 0.2 秒 */
     @property --p { syntax: '<number>'; inherits: true; initial-value: 0; }
     .setting-row .lg-switch__control { transition: --p 0.2s ease; }
+    /* iPhone 上按住時的玻璃圓鈕（CSS 版，見 cssSwitchLens） */
+    .switch-lens {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 2;
+      opacity: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.06) 45%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, 0.16) 100%),
+        color-mix(in srgb, var(--lg-track-off), var(--lg-on) calc(var(--p) * 100%));
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.75),
+        inset 0 -1px 1px rgba(255, 255, 255, 0.3),
+        inset 0 0 0 0.5px rgba(255, 255, 255, 0.45),
+        0 3px 10px rgba(0, 0, 0, 0.28);
+      -webkit-backdrop-filter: blur(1.5px) saturate(1.8) brightness(1.1);
+      backdrop-filter: blur(1.5px) saturate(1.8) brightness(1.1);
+    }
     .logout-btn {
       position: absolute;
       left: 20px;
@@ -1210,7 +1229,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.4.3</div>
+    <div class="abs version-label t12 nowrap">ESN v1.4.4</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -2296,12 +2315,13 @@
         }
       });
     }
-    // iPhone（WebKit）：折射圖（feImage）是非同步載入的，圓鈕每一幀變大小就要換一張新圖，
-    // 新圖還沒載好那幾幀就會卡、只畫一半。所以在 WebKit 上，玻璃鏡片只用兩種固定大小
-    // （平常 36×24、按住 54×36），圖算過一次就重複用，移動時只改位置；
-    // 白色圓鈕和陰影是一般 CSS，照樣平滑變大。玻璃和折射都保留。
+    // iPhone（WebKit）上開關的玻璃（用 Playwright 的 WebKit 實測過）：
+    // 開關圓鈕這麼小的 SVG 折射，WebKit 會畫錯位（按住時變透明 + 一條斜線，或往下偏、缺一角），
+    // 換大小時還要等折射圖載入，所以會卡。iPhone 上改用 CSS 畫按住時的玻璃圓鈕
+    // （半透明 + 上下亮邊 + 背景加飽和），底下是純色軌道，看起來跟折射幾乎一樣，而且不會錯位、不會卡。
+    // 電腦（Chrome）照樣用 liquidglass.dev 原本的 SVG 折射。
     const IS_WEBKIT = /AppleWebKit\//.test(navigator.userAgent) && !/Chrome\/|Chromium\/|Edg\//.test(navigator.userAgent);
-    function steadySwitchLens(sw) {
+    function cssSwitchLens(sw) {
       const lerp = (a, b, t) => a + (b - a) * t;
       const place = (node, x, y, w, h) => {
         node.style.width = `${w}px`;
@@ -2309,26 +2329,27 @@
         node.style.borderRadius = `${h / 2}px`;
         node.style.transform = `translate(${x}px, ${y}px)`;
       };
-      const lens = (pressed) => (pressed ? { w: 54, h: 36 } : { w: 36, h: 24 });
+      sw.glass?.update({ hidden: true }); // 關掉 SVG 折射層
+      sw.refract.style.display = 'none';
+      const lens = el('span', 'switch-lens');
+      lens.setAttribute('aria-hidden', 'true');
+      sw.thumb.before(lens);
       sw.render = function render() {
-        if (!this.glass) return;
-        const center = 20 + 24 * this.x;
-        const { w, h } = lens(this.p > 0.5);
+        // 跟原本一樣：按住變大、滑動時依速度拉長
+        const stretch = Math.min(10, Math.abs(this.v) * 1.6);
+        const w = lerp(36, 54, this.p) + stretch;
+        const h = lerp(24, 36, this.p) - stretch * 0.2;
+        const left = 20 + 24 * this.x - w / 2;
+        const top = 14 - h / 2;
         this.firstChild.lastChild.style.setProperty('--p', this.x.toFixed(3));
-        this.glass.update({ x: center - w / 2 + 16, y: 14 - h / 2 + 16, width: w, height: h, radius: h / 2 });
-        const tw = lerp(36, 54, this.p);
-        const th = lerp(24, 36, this.p);
-        place(this.thumb, center - tw / 2, 14 - th / 2, tw, th);
-        place(this.shadow, center - w / 2, 14 - h / 2, w, h);
+        place(this.thumb, left, top, w, h);
+        place(this.shadow, left, top, w, h);
+        place(lens, left, top, w, h);
         this.thumb.style.opacity = String(1 - this.p);
         this.shadow.style.opacity = String(this.p);
+        lens.style.opacity = String(this.p);
       };
-      // 先把「按住」那張圖算好，第一次按才不會閃
-      if (sw.glass) {
-        const { w, h } = lens(true);
-        sw.glass.update({ x: 16, y: 16, width: w, height: h, radius: h / 2 });
-        requestAnimationFrame(() => requestAnimationFrame(() => sw.render()));
-      }
+      sw.render();
     }
     // 底色不要跟著圓鈕慢慢變：圓鈕到最右邊才變綠、到最左邊才變灰（中間維持原本的顏色）
     function snapSwitchColor(sw) {
@@ -2344,7 +2365,7 @@
     }
     customElements.whenDefined('lg-switch').then(() => {
       for (const sw of [settingNotify, settingLevel]) {
-        if (IS_WEBKIT || new URLSearchParams(location.search).has('webkit')) steadySwitchLens(sw);
+        if (IS_WEBKIT || new URLSearchParams(location.search).has('webkit')) cssSwitchLens(sw);
         snapSwitchColor(sw);
         enableSwitchDrag(sw);
       }
