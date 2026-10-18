@@ -488,6 +488,23 @@
     let timerId = null;
     let activeIndex = tabs.findIndex((tab) => tab.classList.contains('is-active'));
 
+    // iPhone Safari 會暫存玻璃濾鏡的結果：主頁從隱藏變顯示、進場動畫移動卡片後，
+    // 玻璃會停在舊位置（位移）。動畫結束、轉向或從背景回來時重建玻璃，換新的濾鏡 id 重畫。
+    const homeScreen = document.getElementById('homeScreen');
+    function refreshGlass() {
+      if (homeScreen.classList.contains('is-hidden')) return;
+      document.querySelectorAll('lg-panel').forEach((panel) => {
+        if (!panel.surface) return;
+        panel.surface.detach();
+        panel.surface.attach();
+      });
+    }
+    homeScreen.addEventListener('animationend', (event) => {
+      if (event.target === homeScreen) refreshGlass();
+    });
+    window.addEventListener('orientationchange', () => setTimeout(refreshGlass, 300));
+    window.addEventListener('pageshow', refreshGlass);
+
     function showScreen(id) {
       const current = document.querySelector('.screen:not(.is-hidden)');
       if (current && current.id === id) return;
