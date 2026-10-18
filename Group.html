@@ -299,6 +299,15 @@
       height: 100% !important;
       transform: none !important;
     }
+    /* 頂部玻璃裡的卡片鏡像（跟玻璃一樣大，不超出） */
+    .header-mirror {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
     /* <lg-panel>（.glass）載入後由玻璃畫底色和陰影；載入失敗時維持各自原本的樣式 */
     .glass:defined {
       background: none;
@@ -455,15 +464,26 @@
     .tab.is-active {
       color: #007AFF;
     }
-    .tab img {
+    .tab img,
+    .tab .tab-icon {
       position: absolute;
       left: 50%;
       top: 14px;
       transform: translateX(-50%);
-      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.25s ease;
     }
-    .tab.is-active img {
+    .tab.is-active img,
+    .tab.is-active .tab-icon {
       transform: translateX(-50%) scale(1.12);
+    }
+    /* 分頁圖示用遮罩：圖檔只決定形狀，顏色跟著文字（選取時一起變藍） */
+    .tab .tab-icon {
+      display: block;
+      width: var(--size);
+      height: var(--size);
+      background-color: currentColor;
+      -webkit-mask: var(--icon) center / contain no-repeat;
+      mask: var(--icon) center / contain no-repeat;
     }
     .tab span {
       position: absolute;
@@ -542,7 +562,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.0.7</div>
+    <div class="abs version-label t12 nowrap">ESN v1.0.8</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button">登入</button>
     </lg-panel>
@@ -555,9 +575,9 @@
   <!-- 群組主頁 -->
   <!-- data-lg-backdrop：玻璃折射主頁自己的 CSS 背景（背景圖），Safari / Firefox 也能真的折射 -->
   <section class="screen screen-home is-hidden" id="homeScreen" data-lg-backdrop="">
-    <!-- 頂部固定在畫面上、卡片會捲到它底下：backdrop="none" 讓玻璃透出底下真正的內容
-         （Chrome 會折射；iPhone Safari 會是毛玻璃，這是 Safari 的限制） -->
-    <lg-panel class="header glass shadow" radius="0" backdrop="none">
+    <!-- 頂部是真正的玻璃（折射主頁背景）；捲到它底下的卡片由 JS 即時畫進玻璃裡（drawHeaderMirror），
+         iPhone Safari 也看得到被折射的卡片，不會變毛玻璃 -->
+    <lg-panel class="header glass shadow" radius="0">
       <img class="avatar group-avatar center-x" src="assets/group-avatar.jpg" alt="">
       <div class="abs group-title center-x t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
       <lg-panel class="abs header-tag glass shadow" radius="5"></lg-panel>
@@ -631,16 +651,16 @@
     <lg-panel class="tab-pill glass" id="tabPill" radius="30" backdrop="#tabSurface"></lg-panel>
     <!-- 一開始就是主頁，所以預設選「主頁」；「我的」還沒有畫面，先不連 -->
     <button class="tab is-active" data-target="homeScreen" type="button">
-      <img src="assets/icon-home.svg" alt="" width="20" height="20"><span>主頁</span>
+      <i class="tab-icon" style="--icon: url(assets/icon-home.svg); --size: 20px;"></i><span>主頁</span>
     </button>
     <button class="tab" type="button">
-      <img src="assets/icon-chat.svg" alt="" width="19" height="19"><span>聊天</span>
+      <i class="tab-icon" style="--icon: url(assets/icon-chat.svg); --size: 19px;"></i><span>聊天</span>
     </button>
     <button class="tab" data-target="videoScreen" type="button">
-      <img src="assets/icon-video.svg" alt="" width="21" height="21"><span>VIDEO</span>
+      <i class="tab-icon" style="--icon: url(assets/icon-video.svg); --size: 21px;"></i><span>VIDEO</span>
     </button>
     <button class="tab" type="button">
-      <img src="assets/icon-bell.svg" alt="" width="21" height="21"><span>通知</span>
+      <i class="tab-icon" style="--icon: url(assets/icon-bell.svg); --size: 21px;"></i><span>通知</span>
     </button>
     <button class="tab" type="button">
       <img class="tab-avatar" src="assets/member-3.jpg" alt=""><span>我的</span>
@@ -688,6 +708,92 @@
         surface.copy.style.backgroundSize = backdropSize(surface.source, source);
         surface.copy.style.backgroundPosition = `${source.left - r.left}px ${source.top - r.top}px`;
       });
+      drawHeaderMirror();
+    }
+
+    // ---------- 頂部玻璃裡的「卡片鏡像」 ----------
+    // iPhone Safari 的玻璃只能折射事先給它的畫面，讀不到正在捲動的網頁。
+    // 所以把剛好在頂部底下的卡片（底色、頭像、文字、分隔線）畫到一張跟玻璃一樣大的 canvas，
+    // 放在玻璃層裡，玻璃就會真的折射卡片。canvas 不超出玻璃，不會造成 Safari 位移。
+    const mirrorCanvas = document.createElement('canvas');
+    mirrorCanvas.className = 'header-mirror';
+    mirrorCanvas.setAttribute('aria-hidden', 'true');
+    let mirrorKey = '';
+
+    function roundedRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x, y, w, h, Math.min(r, w / 2, h / 2));
+      else ctx.rect(x, y, w, h);
+    }
+
+    function drawMirrorNode(ctx, el, view) {
+      if (el.classList.contains('lg-surface')) return; // 玻璃自己的裝飾層不用畫
+      const rect = el.getBoundingClientRect();
+      if (rect.bottom < view.top || rect.top > view.bottom || !rect.width) return;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden' || cs.display === 'none') return;
+      const radius = parseFloat(cs.borderTopLeftRadius) || 0;
+      // 底色：玻璃元件用它的玻璃顏色（--lg-tint），其他用 background-color
+      const tint = el.tagName === 'LG-PANEL' ? cs.getPropertyValue('--lg-tint').trim() : '';
+      const fill = tint || cs.backgroundColor;
+      if (fill && fill !== 'transparent' && fill !== 'rgba(0, 0, 0, 0)') {
+        ctx.fillStyle = fill;
+        roundedRect(ctx, rect.left, rect.top, rect.width, rect.height, radius);
+        ctx.fill();
+      }
+      if (parseFloat(cs.borderBottomWidth) > 0 && cs.borderBottomStyle !== 'none') {
+        ctx.fillStyle = cs.borderBottomColor;
+        ctx.fillRect(rect.left, rect.bottom - parseFloat(cs.borderBottomWidth), rect.width, parseFloat(cs.borderBottomWidth));
+      }
+      if (el.tagName === 'IMG' && el.complete && el.naturalWidth) {
+        ctx.save();
+        roundedRect(ctx, rect.left, rect.top, rect.width, rect.height, radius);
+        ctx.clip();
+        ctx.drawImage(el, rect.left, rect.top, rect.width, rect.height);
+        ctx.restore();
+      }
+      for (const child of el.childNodes) {
+        if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) {
+          const range = document.createRange();
+          range.selectNodeContents(child);
+          const tr = range.getBoundingClientRect();
+          ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+          ctx.fillStyle = cs.color;
+          ctx.textBaseline = 'middle';
+          ctx.fillText(child.textContent.trim(), tr.left, tr.top + tr.height / 2);
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+          drawMirrorNode(ctx, child, view);
+        }
+      }
+    }
+
+    function drawHeaderMirror() {
+      const header = document.querySelector('.header');
+      const surface = header?.surface;
+      if (!surface || !surface.copy || !header.offsetWidth) return;
+      const layer = surface.layer;
+      if (mirrorCanvas.parentNode !== layer) layer.append(mirrorCanvas);
+      const view = layer.getBoundingClientRect();
+      const cards = [...document.querySelectorAll('#homeScreen .card')];
+      // 卡片位置沒變就不用重畫（避免每次捲動都讓玻璃重畫）
+      const key = cards.map((c) => Math.round(c.getBoundingClientRect().top)).join('|') + `|${view.width}x${view.height}`;
+      if (key === mirrorKey) return;
+      mirrorKey = key;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = Math.round(view.width * dpr);
+      const h = Math.round(view.height * dpr);
+      if (mirrorCanvas.width !== w || mirrorCanvas.height !== h) {
+        mirrorCanvas.width = w;
+        mirrorCanvas.height = h;
+      }
+      const ctx = mirrorCanvas.getContext('2d');
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      // 用畫面座標畫：位移成玻璃層的左上角
+      ctx.setTransform(dpr, 0, 0, dpr, -view.left * dpr, -view.top * dpr);
+      cards.forEach((card) => drawMirrorNode(ctx, card, view));
+      // 換新的濾鏡 id，Safari 才會重新折射新的畫面
+      surface.glass?.flush();
     }
 
     // 頂部只要底部的玻璃邊：玻璃往上、左、右多延伸 60px 到螢幕外，那三邊的邊框就看不到
@@ -845,11 +951,17 @@
     }
 
     async function preload() {
+      // 所有圖片：頁面上的 <img>、背景圖、分頁圖示（遮罩用的 SVG）
+      const iconUrls = [...document.querySelectorAll('.tab-icon')]
+        .map((el) => el.style.getPropertyValue('--icon').match(/url\((.*)\)/)?.[1])
+        .filter(Boolean)
+        .map((src) => new URL(src, location.href).href);
       const urls = [...new Set([
         ...[...document.images].map((img) => img.src),
         new URL('assets/home-bg.jpg', location.href).href,
+        ...iconUrls,
       ])];
-      const total = urls.length + 2;
+      const total = urls.length + 3;
       let done = 0;
       const tick = () => {
         done += 1;
@@ -860,6 +972,9 @@
         img.onload = img.onerror = () => { tick(); resolve(); };
         img.src = url;
       })));
+      // 頁面上的圖片也先解碼好（包含還沒顯示的畫面），進畫面時不會一張一張跳出來
+      await Promise.all([...document.images].map((img) => img.decode().catch(() => {})));
+      tick();
       await Promise.race([customElements.whenDefined('lg-panel'), wait(4000)]);
       tick();
       await warmGlass();
