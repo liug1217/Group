@@ -187,6 +187,65 @@
       width: 20px;
       height: 13px;
     }
+    /* 登入：選擇自己是哪一個成員 */
+    .login-picker {
+      top: 270px;
+      height: 156px;
+    }
+    .picker-grid {
+      left: 0;
+      right: 0;
+      top: 56px;
+      height: 92px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+    }
+    .picker-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #FFFFFF;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .picker-item img {
+      width: 48px;
+      height: 48px;
+      border-radius: 24px;
+      object-fit: cover;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      outline: 2px solid transparent;
+      outline-offset: 2px;
+      transition: outline-color 0.2s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .picker-item[aria-checked="true"] img {
+      outline-color: #4D8DFF;
+      transform: scale(1.08);
+    }
+    .picker-item[aria-checked="true"] span {
+      color: #4D8DFF;
+    }
+    .picker-item span {
+      max-width: 64px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .login-button__el:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+    /* 聊天列表上的連線狀態 */
+    .chat-status {
+      top: calc(64px + var(--safe-top));
+      color: rgba(255, 255, 255, 0.55);
+    }
+
     /* 登入按鈕：玻璃外殼（<lg-panel>）+ 裡面一個透明的原生按鈕 */
     .login-button {
       position: absolute;
@@ -198,7 +257,8 @@
       background: #2949CB;
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
       transition: transform 0.15s ease;
-      --lg-tint: #2949CB;
+      /* 半透明的同色藍，玻璃的折射和亮邊才看得出來（完全不透明就看不出玻璃） */
+      --lg-tint: rgba(41, 73, 203, 0.6);
       --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
     .login-button:active {
@@ -556,12 +616,16 @@
       height: 200px;
       border-radius: 30px;
       overflow: hidden;
-      filter: blur(25px);
+      /* 模糊只在框裡面：模糊加在裡面的圖片上，框本身裁切，邊緣是清楚的圓角 */
+      isolation: isolate;
     }
     .call-glow img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      filter: blur(25px);
+      /* 放大一點，模糊後邊緣才不會透出空白 */
+      transform: scale(1.25);
     }
     .call-avatar {
       top: 343px;
@@ -603,7 +667,8 @@
     }
     .call-btn.is-end {
       background: #E5484D;
-      --lg-tint: #E5484D;
+      /* 半透明的同色紅，看得出玻璃 */
+      --lg-tint: rgba(229, 72, 77, 0.6);
     }
     .call-btn > .lg-panel__body {
       position: absolute;
@@ -1115,20 +1180,15 @@
 
   <!-- 登入畫面 -->
   <section class="screen screen-login" id="loginScreen" data-lg-backdrop="">
-    <lg-panel class="field field-account glass" radius="25">
-      <img class="abs icon-user" src="assets/icon-user.svg" alt="">
-      <input type="text" placeholder="帳號" aria-label="帳號" autocomplete="username">
+    <!-- 選擇自己是哪一個成員 -->
+    <lg-panel class="card glass login-picker" radius="35">
+      <div class="abs rank-header shadow"></div>
+      <div class="abs center-x t15 nowrap text-shadow" style="top: 16px;">選擇你的身分</div>
+      <div class="abs picker-grid" id="memberPicker" role="radiogroup" aria-label="選擇你的身分"></div>
     </lg-panel>
-    <lg-panel class="field field-password glass" radius="25">
-      <img class="abs icon-lock" src="assets/icon-lock.svg" alt="">
-      <input type="password" id="passwordInput" placeholder="密碼" aria-label="密碼" autocomplete="current-password">
-      <button class="eye-button" id="eyeButton" type="button" aria-label="顯示密碼">
-        <img src="assets/icon-eye.svg" alt="">
-      </button>
-    </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.1.2</div>
+    <div class="abs version-label t12 nowrap">ESN v1.2.0</div>
     <lg-panel class="login-button glass" radius="25">
-      <button class="login-button__el" id="loginButton" type="button">登入</button>
+      <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
     <img class="abs social shadow" style="left: 20px;" src="assets/login-line.png" alt="LINE 登入">
     <img class="abs social shadow" style="left: 80px;" src="assets/login-google.jpg" alt="Google 登入">
@@ -1263,6 +1323,7 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
       <div class="abs page-title center-x t20 nowrap text-shadow" id="chatTitle">聊天</div>
+      <div class="abs chat-status center-x t10 nowrap" id="chatStatus"></div>
     </lg-panel>
     <!-- 聊天列表：群組聊天室 + 每個成員（全螢幕，沒有卡片） -->
     <div class="chat-threads" id="chatThreads">
@@ -1299,10 +1360,10 @@
       <div class="abs page-title center-x t20 nowrap text-shadow">我的</div>
     </lg-panel>
     <lg-panel class="card glass me-card" radius="35">
-      <img class="avatar leader-avatar" src="assets/member-3.jpg" alt="">
-      <div class="abs t15 nowrap text-shadow" style="left: 130px; top: 40px;">劉 O 佑</div>
-      <div class="abs t15 nowrap text-shadow" style="left: 130px; top: 58px;">Bi_liug1217</div>
-      <div class="abs t12 nowrap text-shadow me-level" style="left: 130px; top: 82px;">Roblox競爭者等級 : 87</div>
+      <img class="avatar leader-avatar" id="meAvatar" src="assets/member-3.jpg" alt="">
+      <div class="abs t15 nowrap text-shadow" id="meName" style="left: 130px; top: 40px;">劉 O 佑</div>
+      <div class="abs t15 nowrap text-shadow" id="meRoblox" style="left: 130px; top: 58px;">Bi_liug1217</div>
+      <div class="abs t12 nowrap text-shadow me-level" id="meLevel" style="left: 130px; top: 82px;">Roblox競爭者等級 : 87</div>
     </lg-panel>
     <lg-panel class="card glass bio-card" radius="35">
       <div class="abs rank-header shadow"></div>
@@ -1347,7 +1408,7 @@
       <i class="tab-icon" style="--icon: url(assets/icon-bell.svg); --size: 21px;"></i><i class="tab-badge" id="notifyBadge" hidden></i><span>通知</span>
     </button>
     <button class="tab" data-target="meScreen" type="button">
-      <img class="tab-avatar" src="assets/member-3.jpg" alt=""><span>我的</span>
+      <img class="tab-avatar" id="tabAvatar" src="assets/member-3.jpg" alt=""><span>我的</span>
     </button>
   </lg-panel>
 
@@ -1399,11 +1460,6 @@
     // iPhone Safari 的玻璃只能折射事先給它的畫面，讀不到正在捲動的網頁。
     // 所以把剛好在頂部底下的卡片（底色、頭像、文字、分隔線）畫到一張跟玻璃一樣大的 canvas，
     // 放在玻璃層裡，玻璃就會真的折射卡片。canvas 不超出玻璃，不會造成 Safari 位移。
-    const mirrorCanvas = document.createElement('canvas');
-    mirrorCanvas.className = 'header-mirror';
-    mirrorCanvas.setAttribute('aria-hidden', 'true');
-    let mirrorKey = '';
-
     function roundedRect(ctx, x, y, w, h, r) {
       ctx.beginPath();
       if (ctx.roundRect) ctx.roundRect(x, y, w, h, Math.min(r, w / 2, h / 2));
@@ -1451,33 +1507,80 @@
       }
     }
 
-    function drawHeaderMirror() {
-      const header = document.querySelector('.header');
-      const surface = header?.surface;
-      if (!surface || !surface.copy || !header.offsetWidth) return;
+    // 每個固定玻璃（頂部、底部分頁列）各自一張鏡像 canvas
+    const mirrors = new Map();
+    const mirrorBg = new Image();
+    mirrorBg.src = 'assets/home-bg.jpg';
+
+    // 把某一頁的背景（底色 + 背景圖，照它的 background-size）畫進鏡像
+    function drawScreenBackground(ctx, screen) {
+      const r = screen.getBoundingClientRect();
+      const cs = getComputedStyle(screen);
+      ctx.fillStyle = cs.backgroundColor;
+      ctx.fillRect(r.left, r.top, r.width, r.height);
+      if (cs.backgroundImage === 'none' || !mirrorBg.complete || !mirrorBg.naturalWidth) return;
+      const [sizeW, sizeH = 'auto'] = cs.backgroundSize.split(' ');
+      const w = sizeW.endsWith('%') ? (r.width * parseFloat(sizeW)) / 100 : r.width;
+      const h = sizeH === 'auto'
+        ? (w * mirrorBg.naturalHeight) / mirrorBg.naturalWidth
+        : sizeH.endsWith('%') ? (r.height * parseFloat(sizeH)) / 100 : r.height;
+      ctx.drawImage(mirrorBg, r.left, r.top, w, h);
+    }
+
+    function drawMirror(host, { key, sources, background }) {
+      const surface = host?.surface;
+      if (!surface || !surface.copy || !host.offsetWidth) return;
+      let state = mirrors.get(host);
+      if (!state) {
+        const canvas = document.createElement('canvas');
+        canvas.className = 'header-mirror';
+        canvas.setAttribute('aria-hidden', 'true');
+        state = { canvas, key: '' };
+        mirrors.set(host, state);
+      }
       const layer = surface.layer;
-      if (mirrorCanvas.parentNode !== layer) layer.append(mirrorCanvas);
+      if (state.canvas.parentNode !== layer) layer.append(state.canvas);
       const view = layer.getBoundingClientRect();
-      const cards = [...document.querySelectorAll('#homeScreen .card')];
-      // 卡片位置沒變就不用重畫（避免每次捲動都讓玻璃重畫）
-      const key = cards.map((c) => Math.round(c.getBoundingClientRect().top)).join('|') + `|${view.width}x${view.height}`;
-      if (key === mirrorKey) return;
-      mirrorKey = key;
+      // 底下的東西沒變就不用重畫（避免每次捲動都讓玻璃重畫）
+      const fullKey = `${key}|${view.width}x${view.height}|${Math.round(view.top)}`;
+      if (fullKey === state.key) return;
+      state.key = fullKey;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = Math.round(view.width * dpr);
       const h = Math.round(view.height * dpr);
-      if (mirrorCanvas.width !== w || mirrorCanvas.height !== h) {
-        mirrorCanvas.width = w;
-        mirrorCanvas.height = h;
+      if (state.canvas.width !== w || state.canvas.height !== h) {
+        state.canvas.width = w;
+        state.canvas.height = h;
       }
-      const ctx = mirrorCanvas.getContext('2d');
+      const ctx = state.canvas.getContext('2d');
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, w, h);
       // 用畫面座標畫：位移成玻璃層的左上角
       ctx.setTransform(dpr, 0, 0, dpr, -view.left * dpr, -view.top * dpr);
-      cards.forEach((card) => drawMirrorNode(ctx, card, view));
+      if (background) drawScreenBackground(ctx, background);
+      sources.forEach((node) => drawMirrorNode(ctx, node, view));
       // 換新的濾鏡 id，Safari 才會重新折射新的畫面
       surface.glass?.flush();
+    }
+
+    function drawHeaderMirror() {
+      // 主頁頂部：捲到它底下的主頁卡片
+      const header = document.querySelector('.header');
+      const homeCards = [...document.querySelectorAll('#homeScreen .card')];
+      drawMirror(header, {
+        key: homeCards.map((c) => Math.round(c.getBoundingClientRect().top)).join('|'),
+        sources: homeCards,
+      });
+      // 底部分頁列：目前這一頁的背景和內容（每一頁都適用，包含頁面裡面的捲動）
+      if (tabBar.hidden) return;
+      const screen = document.querySelector('.screen:not(.is-hidden)');
+      if (!screen) return;
+      const scrollers = [document.getElementById('chatThreads'), document.getElementById('chatList')];
+      drawMirror(tabBar, {
+        key: [screen.id, screen.className, Math.round(window.scrollY), ...scrollers.map((s) => Math.round(s?.scrollTop || 0)), screen.querySelectorAll('*').length].join('|'),
+        sources: [...screen.children].filter((child) => !child.matches('.header, .page-header')),
+        background: screen,
+      });
     }
 
     // 頂部只要底部的玻璃邊：玻璃往上、左、右多延伸 60px 到螢幕外，那三邊的邊框就看不到
@@ -1489,15 +1592,17 @@
       requestAnimationFrame(alignGlassBackdrop);
     });
     window.addEventListener('resize', () => requestAnimationFrame(alignGlassBackdrop));
-    // 頂部和分頁列是固定位置，捲動時背後的那塊背景會變，要跟著對齊
+    // 頂部和分頁列是固定位置，捲動時背後的東西會變，要跟著對齊、重畫鏡像。
+    // capture: true 才收得到頁面裡面的捲動（聊天列表、對話）
     let alignFrame = 0;
-    window.addEventListener('scroll', () => {
+    const requestAlign = () => {
       if (alignFrame) return;
       alignFrame = requestAnimationFrame(() => {
         alignFrame = 0;
         alignGlassBackdrop();
       });
-    }, { passive: true });
+    };
+    window.addEventListener('scroll', requestAlign, { passive: true, capture: true });
     screens.forEach((screen) => {
       screen.addEventListener('animationend', (event) => {
         if (event.target === screen) refreshGlass();
@@ -1528,13 +1633,10 @@
     }
 
     document.getElementById('loginButton').addEventListener('click', () => {
+      if (!pickedMember) return;
+      setMe(pickedMember);
       showScreen('homeScreen');
       placePill(activeIndex);
-    });
-
-    const passwordInput = document.getElementById('passwordInput');
-    document.getElementById('eyeButton').addEventListener('click', () => {
-      passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
     });
 
     // ---------- 底部分頁：點擊或左右滑動 ----------
@@ -1618,7 +1720,17 @@
         }
       },
     };
-    const ME = { name: '劉 O 佑', avatar: 'assets/member-3.jpg' };
+    // 成員（跟主頁排名表一樣）；登入時選自己是哪一個
+    const MEMBERS = [
+      { id: 'fan', name: '帆～', roblox: 'Bi_wuda0823', level: 180, avatar: 'assets/member-5.jpg', tag: '群主' },
+      { id: 'chen', name: '陳柏安', roblox: 'Bi_koimpkj', level: 207, avatar: 'assets/member-1.jpg' },
+      { id: 'zhang', name: '張 O 寧', roblox: 'Bi_VIP1124', level: 159, avatar: 'assets/member-2.jpg' },
+      { id: 'liu', name: '劉 O 佑', roblox: 'Bi_liug1217', level: 87, avatar: 'assets/member-3.jpg' },
+      { id: 'si', name: '劉思妤', roblox: 'Bi_Robbyg309bbb', level: 128, avatar: 'assets/member-4.jpg' },
+    ];
+    const memberById = (id) => MEMBERS.find((m) => m.id === id);
+    let ME = memberById(store.get('me', '')) || null;
+    let pickedMember = ME;
     const nowTime = () => new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
 
     function el(tag, className, text) {
@@ -1628,60 +1740,158 @@
       return node;
     }
 
+    // ----- 登入：選擇身分 -----
+    const memberPicker = document.getElementById('memberPicker');
+    const loginButtonEl = document.getElementById('loginButton');
+    function renderPicker() {
+      memberPicker.replaceChildren(...MEMBERS.map((m) => {
+        const item = el('button', 'picker-item');
+        item.type = 'button';
+        item.setAttribute('role', 'radio');
+        item.setAttribute('aria-checked', String(pickedMember?.id === m.id));
+        const img = el('img');
+        img.src = m.avatar;
+        img.alt = '';
+        item.append(img, el('span', '', m.name));
+        item.addEventListener('click', () => {
+          pickedMember = m;
+          renderPicker();
+        });
+        return item;
+      }));
+      loginButtonEl.disabled = !pickedMember;
+    }
+    renderPicker();
+
+    // 登入後：「我的」頁、分頁列頭像、聊天都換成這個人
+    function setMe(member) {
+      ME = member;
+      store.set('me', member.id);
+      document.getElementById('meAvatar').src = member.avatar;
+      document.getElementById('meName').textContent = member.name;
+      document.getElementById('meRoblox').textContent = member.roblox;
+      document.getElementById('meLevel').textContent = `Roblox競爭者等級 : ${member.level}`;
+      document.getElementById('tabAvatar').src = member.avatar;
+      renderThreadList();
+    }
+
     // 切到某個頁面時要做的事
     function onScreenShown(id) {
       if (id === 'chatScreen') showThreadList();
       if (id === 'videoScreen') resetCall();
     }
 
-    // ----- 聊天：列表（群組 + 成員）→ 對話；每個對話分開保存 -----
+    // ----- 聊天資料：連得到這台電腦的伺服器（server.py）就用伺服器，大家互傳；
+    //       連不到（例如 GitHub 網站）就只存在這支手機 -----
+    const GROUP_DEFAULT = [
+      { from: 'fan', text: '歡迎加入 ★Bi_藍冰團★！', time: '20:01' },
+      { from: 'chen', text: '週六團戰練習大家記得上線', time: '20:03' },
+      { from: 'si', text: '收到～', time: '20:05' },
+    ];
+    const dmRoom = (a, b) => `dm:${[a, b].sort().join('-')}`;
+    const chat = {
+      online: false,
+      rooms: {},
+      async init() {
+        if (location.protocol === 'file:' || location.hostname.endsWith('github.io')) return;
+        try {
+          const ping = await fetch('api/ping', { cache: 'no-store' });
+          if (!ping.ok) return;
+          this.rooms = await (await fetch('api/messages', { cache: 'no-store' })).json();
+          this.online = true;
+          const events = new EventSource('api/events');
+          events.onmessage = (event) => {
+            const { room, msg } = JSON.parse(event.data);
+            const list = (this.rooms[room] ||= []);
+            if (!list.some((m) => m.id === msg.id)) list.push(msg);
+            onChatUpdate(room);
+          };
+          events.onopen = () => updateChatStatus(true);
+          events.onerror = () => updateChatStatus(false);
+        } catch {
+          // 沒有伺服器：離線模式
+        }
+        updateChatStatus(this.online);
+        renderThreadList();
+      },
+      get(room, defaults = []) {
+        if (this.online) return this.rooms[room] || [];
+        return store.get(`chat.${room}`, defaults);
+      },
+      async send(room, text) {
+        if (this.online) {
+          const res = await fetch('api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ room, from: ME.id, text }),
+          });
+          if (!res.ok) throw new Error(`send failed: ${res.status}`);
+          const msg = await res.json();
+          const list = (this.rooms[room] ||= []);
+          if (!list.some((m) => m.id === msg.id)) list.push(msg);
+          onChatUpdate(room);
+          return;
+        }
+        const list = this.get(room, []).concat({ from: ME.id, text, time: nowTime() }).slice(-100);
+        store.set(`chat.${room}`, list);
+        onChatUpdate(room);
+      },
+    };
+
+    // 訊息的寄件人：新格式用 from（成員 id），舊格式有 name / avatar / me
+    function senderOf(m) {
+      const member = memberById(m.from);
+      return {
+        name: member?.name || m.name || '成員',
+        avatar: member?.avatar || m.avatar || 'assets/group-avatar.jpg',
+        isMe: m.from ? m.from === ME?.id : !!m.me,
+      };
+    }
+
+    // ----- 聊天：列表（群組 + 其他成員）→ 對話 -----
     const chatScreen = document.getElementById('chatScreen');
     const chatTitle = document.getElementById('chatTitle');
+    const chatStatus = document.getElementById('chatStatus');
     const chatBack = document.getElementById('chatBack');
-    const chatThreads = document.getElementById('chatThreads');
     const chatThreadRows = document.getElementById('chatThreadRows');
     const chatList = document.getElementById('chatList');
     const chatForm = document.getElementById('chatForm');
     const chatText = document.getElementById('chatText');
     const chatSend = document.getElementById('chatSend');
-    const THREADS = [
-      {
-        id: 'group',
-        name: '★Bi_藍冰團★《Roblox》', // 跟主頁頂部一樣
-        avatar: 'assets/group-avatar.jpg',
-        messages: [
-          { name: '帆～', avatar: 'assets/member-5.jpg', text: '歡迎加入 ★Bi_藍冰團★！', time: '20:01' },
-          { name: '陳柏安', avatar: 'assets/member-1.jpg', text: '週六團戰練習大家記得上線', time: '20:03' },
-          { name: '劉思妤', avatar: 'assets/member-4.jpg', text: '收到～', time: '20:05' },
-        ],
-      },
-      {
-        id: 'fan',
-        name: '帆～',
-        tag: '群主', // 主頁最上面那張團長卡片
-        avatar: 'assets/member-5.jpg',
-        messages: [{ name: '帆～', avatar: 'assets/member-5.jpg', text: '有任何問題都可以問我～', time: '19:40' }],
-      },
-      { id: 'chen', name: '陳柏安', avatar: 'assets/member-1.jpg', messages: [] },
-      { id: 'zhang', name: '張 O 寧', avatar: 'assets/member-2.jpg', messages: [] },
-      { id: 'liu', name: '劉思妤', avatar: 'assets/member-4.jpg', messages: [] },
-    ];
     const THREAD_ROW = 66;
     let currentThread = null;
     let chatMessages = [];
 
-    // 以前只有一個群組聊天室時存在 esn.chat，搬到群組對話
-    const threadMessages = (thread) => store.get(`chat.${thread.id}`, thread.id === 'group' ? store.get('chat', thread.messages) : thread.messages);
+    function updateChatStatus(connected) {
+      chatStatus.textContent = chat.online
+        ? (connected ? '● 已連線到伺服器，訊息大家都看得到' : '○ 伺服器連線中斷，重新連線中…')
+        : '離線模式：訊息只存在這支手機';
+    }
+
+    function threads() {
+      const list = [{ room: 'group', name: '★Bi_藍冰團★《Roblox》', avatar: 'assets/group-avatar.jpg', defaults: GROUP_DEFAULT }];
+      MEMBERS.filter((m) => m.id !== ME?.id).forEach((m) => {
+        list.push({
+          room: dmRoom(ME?.id || 'guest', m.id),
+          name: m.name,
+          tag: m.tag,
+          avatar: m.avatar,
+          defaults: m.id === 'fan' ? [{ from: 'fan', text: '有任何問題都可以問我～', time: '19:40' }] : [],
+        });
+      });
+      return list;
+    }
 
     function renderThreadList() {
       const nodes = [];
-      THREADS.forEach((thread, i) => {
+      const list = threads();
+      list.forEach((thread, i) => {
         if (i > 0) {
           const line = el('div', 'abs divider shadow');
           line.style.top = `${i * THREAD_ROW}px`;
           nodes.push(line);
         }
-        const messages = threadMessages(thread);
+        const messages = chat.get(thread.room, thread.defaults);
         const last = messages[messages.length - 1];
         const row = el('button', 'abs thread-row');
         row.type = 'button';
@@ -1691,13 +1901,17 @@
         avatar.alt = '';
         const name = el('span', 'thread-name', thread.name);
         if (thread.tag) name.append(el('span', 'thread-tag', thread.tag));
-        const preview = last ? `${last.me ? '我' : last.name}：${last.text}` : '還沒有訊息，打聲招呼吧！';
+        let preview = '還沒有訊息，打聲招呼吧！';
+        if (last) {
+          const sender = senderOf(last);
+          preview = `${sender.isMe ? '我' : sender.name}：${last.text}`;
+        }
         row.append(avatar, name, el('span', 'thread-preview', preview), el('span', 'thread-time', last ? last.time : ''));
         row.addEventListener('click', () => openThread(thread));
         nodes.push(row);
       });
       chatThreadRows.replaceChildren(...nodes);
-      chatThreadRows.style.height = `${THREADS.length * THREAD_ROW}px`;
+      chatThreadRows.style.height = `${list.length * THREAD_ROW}px`;
     }
 
     function showThreadList() {
@@ -1705,6 +1919,7 @@
       chatScreen.classList.remove('is-thread');
       if (!chatScreen.classList.contains('is-hidden')) tabBar.hidden = false;
       chatTitle.textContent = '聊天';
+      chatStatus.hidden = false;
       chatBack.hidden = true;
       renderThreadList();
       requestAnimationFrame(alignGlassBackdrop);
@@ -1712,10 +1927,11 @@
 
     function openThread(thread) {
       currentThread = thread;
-      chatMessages = threadMessages(thread);
+      chatMessages = chat.get(thread.room, thread.defaults);
       chatScreen.classList.add('is-thread');
       tabBar.hidden = true; // 聊天室裡不顯示底部分頁列
       chatTitle.textContent = thread.name;
+      chatStatus.hidden = true;
       chatBack.hidden = false;
       chatText.value = '';
       chatSend.disabled = true;
@@ -1724,18 +1940,29 @@
     }
     chatBack.addEventListener('click', showThreadList);
 
+    // 有新訊息（自己送的或伺服器推來的）
+    function onChatUpdate(room) {
+      if (currentThread?.room === room) {
+        chatMessages = chat.get(room, currentThread.defaults);
+        renderChat();
+      } else if (!chatScreen.classList.contains('is-thread')) {
+        renderThreadList();
+      }
+    }
+
     function renderChat() {
       if (!chatMessages.length) {
         chatList.replaceChildren(el('div', 'chat-empty', '還沒有訊息，打聲招呼吧！'));
         return;
       }
       chatList.replaceChildren(...chatMessages.map((m) => {
-        const row = el('div', m.me ? 'msg is-me' : 'msg');
+        const sender = senderOf(m);
+        const row = el('div', sender.isMe ? 'msg is-me' : 'msg');
         const avatar = el('img');
-        avatar.src = m.avatar;
+        avatar.src = sender.avatar;
         avatar.alt = '';
         const body = el('div');
-        body.append(el('div', 'msg-name', m.name), el('div', 'msg-bubble', m.text), el('div', 'msg-time', m.time));
+        body.append(el('div', 'msg-name', sender.name), el('div', 'msg-bubble', m.text), el('div', 'msg-time', m.time));
         row.append(avatar, body);
         return row;
       }));
@@ -1745,18 +1972,23 @@
     chatText.addEventListener('input', () => {
       chatSend.disabled = !chatText.value.trim();
     });
-    chatForm.addEventListener('submit', (event) => {
+    chatForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       const text = chatText.value.trim();
-      if (!text || !currentThread) return;
-      chatMessages.push({ me: true, name: ME.name, avatar: ME.avatar, text, time: nowTime() });
-      chatMessages = chatMessages.slice(-100);
-      store.set(`chat.${currentThread.id}`, chatMessages);
+      if (!text || !currentThread || !ME) return;
       chatText.value = '';
       chatSend.disabled = true;
-      renderChat();
+      try {
+        await chat.send(currentThread.room, text);
+      } catch (error) {
+        console.warn('訊息送不出去', error);
+        chatText.value = text;
+        chatSend.disabled = false;
+      }
     });
+    if (ME) setMe(ME);
     renderThreadList();
+    chat.init();
 
     // ----- VIDEO：麥克風、鏡頭、掛斷 -----
     const callStatus = document.getElementById('callStatus');
