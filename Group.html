@@ -149,7 +149,8 @@
       /* 照 liquidglass.dev：玻璃後面放圖片，折射才看得出來（自己畫的波浪圖，440×1440 @2x） */
       background: #212121 url(assets/home-bg.jpg) 0 0 / 100% 100% no-repeat;
     }
-    /* 頂部固定，往下滑時不會跟著捲走；底色用不透明的 #252525（= header 疊在背景上的顏色），內容才不會透出來 */
+    /* 頂部固定，往下滑時不會跟著捲走；底色用不透明的 #252525（= header 疊在背景上的顏色），內容才不會透出來。
+       改成玻璃後，玻璃層本身不透明（背景複本），一樣不會透出捲到下面的卡片 */
     .header {
       position: fixed;
       left: 0;
@@ -158,6 +159,9 @@
       height: 85px;
       background: #252525;
       z-index: 5;
+      /* 玻璃顏色 = 原本 Figma 的 rgba(53, 53, 53, 0.2)，疊在 #212121 上就是 #252525 */
+      --lg-tint: rgba(53, 53, 53, 0.2);
+      --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
     .group-avatar {
       top: 0px;
@@ -187,17 +191,19 @@
       --lg-tint: rgba(65, 65, 65, 0.2);
       --lg-shadow-2: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-    /* 玻璃裡的背景複本只有卡片大小，用 background-position 對齊整張背景圖（JS 設定）。
-       複本超出卡片時，iPhone Safari 算濾鏡範圍會把它算進去，玻璃會往右下位移 */
-    .card .lg-surface__copy {
+    /* 玻璃裡的背景複本只有玻璃大小，用 background-position 對齊整張背景圖（JS 設定）。
+       複本超出玻璃時，iPhone Safari 算濾鏡範圍會把它算進去，玻璃會往右下位移 */
+    lg-panel .lg-surface__copy {
       width: 100% !important;
       height: 100% !important;
       transform: none !important;
     }
-    /* <lg-panel> 載入後由玻璃畫底色和陰影；載入失敗時維持上面的樣式 */
-    .card:defined {
+    /* <lg-panel>（.glass）載入後由玻璃畫底色和陰影；載入失敗時維持各自原本的樣式 */
+    .glass:defined {
       background: none;
       box-shadow: none;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
     }
     .leader-card {
       top: 109px;
@@ -220,6 +226,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      --lg-tint: rgba(99, 99, 99, 0.2);
+      --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
     .bio-label {
       left: 240px;
@@ -236,6 +244,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      --lg-tint: rgba(99, 99, 99, 0.2);
+      --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
     .rank-card {
       top: 283px;
@@ -283,9 +293,18 @@
       user-select: none;
       -webkit-user-select: none;
       z-index: 10;
+      --lg-tint: rgba(242, 242, 247, 0.8);
+      --lg-shadow-2: 1.25px 0px 0px -0.75px #D0D0D0, -1.25px 0px 0px -0.75px #D0D0D0, 0px 0px 0px 0.5px #E8E8E8, 0px 8px 15px 0px rgba(0, 0, 0, 0.02);
     }
     .tab-bar[hidden] {
       display: none;
+    }
+    /* <lg-panel> 會把分頁按鈕包進 .lg-panel__body，五等分排版要放在這一層 */
+    .tab-bar > .lg-panel__body {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
     }
     /* 選取底色：用 transform 移動，點擊跟滑動都有動畫 */
     .tab-pill {
@@ -398,7 +417,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </div>
-    <div class="abs version-label t12 nowrap">ESN v1.0.1</div>
+    <div class="abs version-label t12 nowrap">ESN v1.0.2</div>
     <button class="login-button" id="loginButton" type="button">登入</button>
     <img class="abs social shadow" style="left: 20px;" src="assets/login-line.png" alt="LINE 登入">
     <img class="abs social shadow" style="left: 80px;" src="assets/login-google.jpg" alt="Google 登入">
@@ -409,26 +428,26 @@
   <!-- 群組主頁 -->
   <!-- data-lg-backdrop：玻璃折射主頁自己的 CSS 背景（背景圖），Safari / Firefox 也能真的折射 -->
   <section class="screen screen-home is-hidden" id="homeScreen" data-lg-backdrop="">
-    <div class="header shadow">
+    <lg-panel class="header glass shadow" radius="0">
       <img class="avatar group-avatar center-x" src="assets/group-avatar.jpg" alt="">
       <div class="abs group-title center-x t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
       <div class="abs header-tag shadow"></div>
-    </div>
+    </lg-panel>
 
     <!-- 團長卡片 -->
-    <lg-panel class="card leader-card" radius="35">
+    <lg-panel class="card glass leader-card" radius="35">
       <img class="avatar leader-avatar" src="assets/member-5.jpg" alt="">
       <div class="abs t15 nowrap text-shadow" style="left: 130px; top: 35px;">帆～</div>
       <div class="abs t15 nowrap text-shadow" style="left: 130px; top: 53px;">Bi_wuda0823</div>
       <div class="abs t12 nowrap text-shadow" style="left: 130px; top: 71px;">Roblox競爭者等級</div>
       <div class="abs t12 nowrap text-shadow" style="left: 130px; top: 86px;">180</div>
       <div class="abs bio-label t12 nowrap">個人簡介 :</div>
-      <div class="abs bio-box shadow"><span class="t30">無</span></div>
-      <div class="abs leader-badge shadow"><span class="t12">團長</span></div>
+      <lg-panel class="abs bio-box glass shadow" radius="10"><span class="t30">無</span></lg-panel>
+      <lg-panel class="abs leader-badge glass shadow" radius="8"><span class="t12">團長</span></lg-panel>
     </lg-panel>
 
     <!-- 排名表 -->
-    <lg-panel class="card rank-card" radius="35">
+    <lg-panel class="card glass rank-card" radius="35">
       <div class="abs rank-header shadow"></div>
       <div class="abs t15 nowrap text-shadow" style="left: 60px; top: 16px;">競爭者</div>
       <div class="abs center-x t20 nowrap text-shadow" style="top: 13px;">排名表</div>
@@ -476,7 +495,8 @@
     <div class="abs call-name center-x t15 nowrap text-shadow">帆～</div>
   </section>
 
-  <nav class="tab-bar" id="tabBar" hidden>
+  <!-- 分頁列在主頁外面，用 backdrop 指定折射主頁的背景 -->
+  <lg-panel class="tab-bar glass" id="tabBar" role="navigation" radius="35" backdrop="#homeScreen" hidden>
     <div class="tab-pill" id="tabPill"></div>
     <button class="tab" data-target="homeScreen" type="button">
       <img src="assets/icon-home.svg" alt="" width="20" height="20"><span>主頁</span>
@@ -493,7 +513,7 @@
     <button class="tab is-active" data-target="homeScreen" type="button">
       <img class="tab-avatar" src="assets/member-3.jpg" alt=""><span>我的</span>
     </button>
-  </nav>
+  </lg-panel>
 
   <!-- Liquid Glass：liquidglass.dev v1.0.0（MIT，gentpan），檔案放在 assets/lib -->
   <script type="module" src="assets/lib/components.js"></script>
@@ -522,6 +542,7 @@
     // 卡片裡的背景複本只有卡片大小（CSS 固定），這裡用 background-size / position
     // 讓它顯示整張背景圖中、剛好在卡片後面的那一塊，折射才對得上
     function alignGlassBackdrop() {
+      if (homeScreen.classList.contains('is-hidden')) return;
       const home = homeScreen.getBoundingClientRect();
       document.querySelectorAll('lg-panel .lg-surface__copy').forEach((copy) => {
         const r = copy.getBoundingClientRect();
@@ -530,6 +551,15 @@
       });
     }
     window.addEventListener('resize', () => requestAnimationFrame(alignGlassBackdrop));
+    // 頂部和分頁列是固定位置，捲動時背後的那塊背景會變，要跟著對齊
+    let alignFrame = 0;
+    window.addEventListener('scroll', () => {
+      if (alignFrame) return;
+      alignFrame = requestAnimationFrame(() => {
+        alignFrame = 0;
+        alignGlassBackdrop();
+      });
+    }, { passive: true });
     homeScreen.addEventListener('animationend', (event) => {
       if (event.target === homeScreen) refreshGlass();
     });
