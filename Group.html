@@ -174,20 +174,31 @@
       background: rgba(65, 65, 65, 0.2);
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
-    /* Liquid Glass（WebGL）載入後由 shader 畫玻璃，拿掉原本的底色跟陰影；載入失敗就維持上面的樣式 */
+    /* Liquid Glass：移植自 liquid-glass-studio 的 WebGL2 shader，畫在全螢幕的 #glassCanvas（z-index 1），
+       卡片（z-index 2）透明、內容疊在玻璃上面。不支援 WebGL2 時維持上面的半透明樣式 */
+    .card {
+      z-index: 2;
+    }
     .glass-ready .card {
       background: transparent;
       box-shadow: none;
     }
-    /* shader 的 canvas 是 z-index: -1，卡片要自成一層，canvas 才不會被壓到背景後面 */
-    .card {
-      isolation: isolate;
-    }
-    /* 玻璃後面的背景：root 本身不會被擷取，所以背景要放在子元素 */
-    .home-bg {
-      position: absolute;
+    #glassCanvas {
+      position: fixed;
       inset: 0;
-      background: #212121 url(assets/home-bg.jpg) center top / cover no-repeat;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+      /* 跟主頁進場動畫一起淡入 */
+      animation: glass-in 0.3s ease;
+    }
+    @keyframes glass-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    #glassCanvas[hidden] {
+      display: none;
     }
     .leader-card {
       top: 109px;
@@ -397,7 +408,6 @@
 
   <!-- 群組主頁 -->
   <section class="screen screen-home is-hidden" id="homeScreen">
-    <div class="home-bg"></div>
     <div class="header shadow">
       <img class="avatar group-avatar center-x" src="assets/group-avatar.jpg" alt="">
       <div class="abs group-title center-x t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
@@ -484,11 +494,10 @@
     </button>
   </nav>
 
-  <script type="module">
-    import { LiquidGlass } from 'https://cdn.jsdelivr.net/npm/@ybouane/liquidglass@1.0.3/dist/index.js';
+  <canvas id="glassCanvas" hidden></canvas>
 
+  <script type="module">
     const screens = document.querySelectorAll('.screen');
-    const homeScreen = document.getElementById('homeScreen');
     const tabBar = document.getElementById('tabBar');
     const tabPill = document.getElementById('tabPill');
     const tabs = [...tabBar.querySelectorAll('.tab')];
@@ -496,53 +505,397 @@
     let timerId = null;
     let activeIndex = tabs.findIndex((tab) => tab.classList.contains('is-active'));
 
-    // ---------- Liquid Glass 卡片（WebGL shader） ----------
-    let glass = null;
+    // ---------- Liquid Glass 卡片 ----------
+    // Shader 移植自 liquid-glass-studio（fragment-main.glsl 的 STEP 9 + fragment-bg.glsl 的陰影），
+    // 參數全部是 studio 的預設值。
+    // https://github.com/iyinchao/liquid-glass-studio
+    // MIT License, Copyright (c) 2024 Charles Yin
+    //
+    // 卡片後面是純色背景，所以背景直接在 shader 裡算（底色 - 陰影），不用另外拍背景貼圖；
+    // 折射、色散、菲涅耳亮邊、眩光的算法跟原版一樣。
+    const homeScreen = document.getElementById('homeScreen');
+    const glassCanvas = document.getElementById('glassCanvas');
+    const glassCards = [...homeScreen.querySelectorAll('.card')];
 
-    async function startGlass() {
-      if (glass || homeScreen.classList.contains('is-hidden')) return;
-      try {
-        glass = await LiquidGlass.init({
-          root: homeScreen,
-          glassElements: homeScreen.querySelectorAll('.card'),
-          defaults: {
-            cornerRadius: 35,
-            zRadius: 30,
-            refraction: 0.69,
-            blurAmount: 0.12,
-            chromAberration: 0.05,
-            edgeHighlight: 0.12,
-            specular: 0.25,
-            fresnel: 1,
-            saturation: 0.2,
-            shadowOpacity: 0.3,
-          },
-        });
-        homeScreen.classList.add('glass-ready');
-      } catch (error) {
-        console.warn('Liquid Glass 無法啟用，改用一般卡片', error);
+    const GLASS = {
+      bgColor: [0x21 / 255, 0x21 / 255, 0x21 / 255],
+      radius: 35,               // 角的大小（CSS px）；studio 公式是短邊一半的 80%，排名表會變 160px
+      roundness: 5,             // studio 預設：超橢圓角
+      refThickness: 20,
+      refDistance: 0.05,
+      refFactor: 1.4,
+      refDispersion: 7,
+      refFresnelRange: 30,
+      refFresnelHardness: 20 / 100,
+      refFresnelFactor: 20 / 100,
+      glareRange: 30,
+      glareHardness: 20 / 100,
+      glareFactor: 90 / 100,
+      glareConvergence: 50 / 100,
+      glareOppositeFactor: 80 / 100,
+      glareAngle: (-45 * Math.PI) / 180,
+      tint: [1, 1, 1, 0],       // studio 預設：白色、透明度 0
+      shadowExpand: 25,
+      shadowFactor: 15 / 100,
+      shadowOffsetY: -10,       // studio shadowPosition (0, -10)：影子往下 10px
+    };
+
+    const GLASS_VERTEX = `#version 300 es
+in vec2 a_position;
+void main() {
+  gl_Position = vec4(a_position, 0.0, 1.0);
+}`;
+
+    const GLASS_FRAGMENT = `#version 300 es
+precision highp float;
+
+#define PI (3.14159265359)
+#define MAX_SHAPES 4
+
+const float N_R = 1.0 - 0.02;
+const float N_G = 1.0;
+const float N_B = 1.0 + 0.02;
+
+uniform vec2 u_resolution;   // device px
+uniform float u_dpr;
+uniform int u_count;
+uniform vec4 u_rects[MAX_SHAPES]; // CSS px，原點在左下（跟 gl_FragCoord 同方向）
+uniform float u_radius;
+uniform float u_roundness;
+uniform vec3 u_bgColor;
+uniform vec4 u_tint;
+uniform float u_refThickness;
+uniform float u_refDistance;
+uniform float u_refFactor;
+uniform float u_refDispersion;
+uniform float u_refFresnelRange;
+uniform float u_refFresnelFactor;
+uniform float u_refFresnelHardness;
+uniform float u_glareRange;
+uniform float u_glareConvergence;
+uniform float u_glareOppositeFactor;
+uniform float u_glareFactor;
+uniform float u_glareHardness;
+uniform float u_glareAngle;
+uniform float u_shadowExpand;
+uniform float u_shadowFactor;
+uniform float u_shadowOffsetY;
+
+out vec4 fragColor;
+
+// ---- lib/math.glsl ----
+float safeAsin(float x) {
+  return asin(clamp(x, -1.0, 1.0));
+}
+
+// ---- lib/sdf.glsl（改成直接用 CSS px 計算）----
+float superellipseCornerSDF(vec2 p, float r, float n) {
+  p = abs(p);
+  float v = pow(pow(p.x, n) + pow(p.y, n), 1.0 / n);
+  return v - r;
+}
+
+float roundedRectSDF(vec2 p, vec2 center, float width, float height, float cr, float n) {
+  p -= center;
+  vec2 d = abs(p) - vec2(width, height) * 0.5;
+  float dist;
+  if (d.x > -cr && d.y > -cr) {
+    vec2 cornerCenter = sign(p) * (vec2(width, height) * 0.5 - vec2(cr));
+    vec2 cornerP = p - cornerCenter;
+    dist = superellipseCornerSDF(cornerP, cr, n);
+  } else {
+    dist = min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
+  }
+  return dist;
+}
+
+float mainSDF(vec2 p) {
+  float d = 1e5;
+  for (int i = 0; i < MAX_SHAPES; i++) {
+    if (i >= u_count) break;
+    vec4 r = u_rects[i];
+    d = min(d, roundedRectSDF(p, r.xy + r.zw * 0.5, r.z, r.w, min(u_radius, min(r.z, r.w) * 0.5), u_roundness));
+  }
+  return d;
+}
+
+// 原版 getNormal：SDF 梯度 * 1.414 * 1000，SDF 以畫布高度為單位
+vec2 getNormal(vec2 p) {
+  float h = 0.5;
+  vec2 grad = vec2(
+    mainSDF(p + vec2(h, 0.0)) - mainSDF(p - vec2(h, 0.0)),
+    mainSDF(p + vec2(0.0, h)) - mainSDF(p - vec2(0.0, h))
+  ) / (2.0 * h);
+  return grad / (u_resolution.y / u_dpr) * 1.414213562 * 1000.0 / u_dpr;
+}
+
+// ---- lib/color.glsl ----
+const vec3 D65_WHITE = vec3(0.95045592705, 1.0, 1.08905775076);
+vec3 WHITE = D65_WHITE;
+const mat3 RGB_TO_XYZ_M = mat3(
+  0.4124, 0.3576, 0.1805,
+  0.2126, 0.7152, 0.0722,
+  0.0193, 0.1192, 0.9505
+);
+const mat3 XYZ_TO_RGB_M = mat3(
+   3.2406255, -1.537208 , -0.4986286,
+  -0.9689307,  1.8757561,  0.0415175,
+   0.0557101, -0.2040211,  1.0569959
+);
+float UNCOMPAND_SRGB(float a) {
+  return a > 0.04045 ? pow((a + 0.055) / 1.055, 2.4) : a / 12.92;
+}
+float COMPAND_RGB(float a) {
+  return a <= 0.0031308 ? 12.92 * a : 1.055 * pow(a, 0.41666666666) - 0.055;
+}
+vec3 SRGB_TO_RGB(vec3 srgb) {
+  return vec3(UNCOMPAND_SRGB(srgb.x), UNCOMPAND_SRGB(srgb.y), UNCOMPAND_SRGB(srgb.z));
+}
+vec3 RGB_TO_SRGB(vec3 rgb) {
+  return vec3(COMPAND_RGB(rgb.x), COMPAND_RGB(rgb.y), COMPAND_RGB(rgb.z));
+}
+float XYZ_TO_LAB_F(float x) {
+  return x > 0.00885645167 ? pow(x, 0.333333333) : 7.78703703704 * x + 0.13793103448;
+}
+vec3 XYZ_TO_LAB(vec3 xyz) {
+  vec3 s = xyz / WHITE;
+  s = vec3(XYZ_TO_LAB_F(s.x), XYZ_TO_LAB_F(s.y), XYZ_TO_LAB_F(s.z));
+  return vec3(116.0 * s.y - 16.0, 500.0 * (s.x - s.y), 200.0 * (s.y - s.z));
+}
+vec3 SRGB_TO_LCH(vec3 srgb) {
+  vec3 Lab = XYZ_TO_LAB(SRGB_TO_RGB(srgb) * RGB_TO_XYZ_M);
+  return vec3(Lab.x, sqrt(dot(Lab.yz, Lab.yz)), atan(Lab.z, Lab.y) * 57.2957795131);
+}
+float LAB_TO_XYZ_F(float x) {
+  return x > 0.206897 ? x * x * x : 0.12841854934 * (x - 0.137931034);
+}
+vec3 LCH_TO_SRGB(vec3 LCh) {
+  vec3 lab = vec3(LCh.x, LCh.y * cos(LCh.z * 0.01745329251), LCh.y * sin(LCh.z * 0.01745329251));
+  float w = (lab.x + 16.0) / 116.0;
+  vec3 xyz = WHITE * vec3(LAB_TO_XYZ_F(w + lab.y / 500.0), LAB_TO_XYZ_F(w), LAB_TO_XYZ_F(w - lab.z / 200.0));
+  return RGB_TO_SRGB(xyz * XYZ_TO_RGB_M);
+}
+
+float vec2ToAngle(vec2 v) {
+  float angle = atan(v.y, v.x);
+  if (angle < 0.0) angle += 2.0 * PI;
+  return angle;
+}
+
+// ---- fragment-bg.glsl：背景 + 卡片陰影（原版是先畫進貼圖，這裡直接算）----
+vec3 bgAt(vec2 p) {
+  float d = mainSDF(p - vec2(0.0, u_shadowOffsetY));
+  float shadow = exp(-1.0 / u_shadowExpand * abs(d)) * 0.6 * u_shadowFactor;
+  return u_bgColor - vec3(shadow);
+}
+
+// 原版 getTextureDispersion（blurEdge = true，只取模糊背景；blurRadius 預設 1 ≈ 不模糊）
+vec4 getDispersion(vec2 p, vec2 offset, float factor) {
+  return vec4(
+    bgAt(p + offset * (1.0 - (N_R - 1.0) * factor)).r,
+    bgAt(p + offset * (1.0 - (N_G - 1.0) * factor)).g,
+    bgAt(p + offset * (1.0 - (N_B - 1.0) * factor)).b,
+    1.0
+  );
+}
+
+void main() {
+  vec2 p = gl_FragCoord.xy / u_dpr;   // CSS px
+  float merged = mainSDF(p);          // CSS px，原版的 merged * u_resolution1x.y
+  vec4 bg = vec4(bgAt(p), 1.0);
+  vec4 outColor;
+
+  if (merged < 0.005 * u_resolution.y / u_dpr) {
+    float nmerged = -merged;
+
+    float x_R_ratio = 1.0 - nmerged / u_refThickness;
+    float thetaI = safeAsin(pow(x_R_ratio, 2.0));
+    float thetaT = safeAsin(1.0 / u_refFactor * sin(thetaI));
+    float edgeFactor = -1.0 * tan(thetaT - thetaI);
+    if (nmerged >= u_refThickness) {
+      edgeFactor = 0.0;
+    }
+
+    if (edgeFactor <= 0.0) {
+      outColor = bg;
+      outColor = mix(outColor, vec4(u_tint.rgb, 1.0), u_tint.a * 0.8);
+    } else {
+      vec2 normal = getNormal(p);
+      // 原版的 uv 位移換算成 CSS px：-normal * edgeFactor * refDistance * dpr * 畫布高度（device px）/ dpr
+      vec2 offset = -normal * edgeFactor * u_refDistance * u_resolution.y;
+      vec4 blurredPixel = getDispersion(p, offset, u_refDispersion);
+
+      // basic tint
+      outColor = mix(blurredPixel, vec4(u_tint.rgb, 1.0), u_tint.a * 0.8);
+
+      // add fresnel
+      float fresnelFactor = clamp(
+        pow(1.0 + merged / 1500.0 * pow(500.0 / u_refFresnelRange, 2.0) + u_refFresnelHardness, 5.0),
+        0.0, 1.0
+      );
+      vec3 fresnelTintLCH = SRGB_TO_LCH(mix(vec3(1.0), u_tint.rgb, u_tint.a * 0.5));
+      fresnelTintLCH.x += 20.0 * fresnelFactor * u_refFresnelFactor;
+      fresnelTintLCH.x = clamp(fresnelTintLCH.x, 0.0, 100.0);
+      outColor = mix(
+        outColor,
+        vec4(LCH_TO_SRGB(fresnelTintLCH), 1.0),
+        fresnelFactor * u_refFresnelFactor * 0.7 * length(normal)
+      );
+
+      // add glare
+      float glareGeoFactor = clamp(
+        pow(1.0 + merged / 1500.0 * pow(500.0 / u_glareRange, 2.0) + u_glareHardness, 5.0),
+        0.0, 1.0
+      );
+      float glareAngle = (vec2ToAngle(normalize(normal)) - PI / 4.0 + u_glareAngle) * 2.0;
+      int glareFarside = 0;
+      if (
+        glareAngle > PI * (2.0 - 0.5) && glareAngle < PI * (4.0 - 0.5) ||
+        glareAngle < PI * (0.0 - 0.5)
+      ) {
+        glareFarside = 1;
       }
+      float glareAngleFactor =
+        (0.5 + sin(glareAngle) * 0.5) *
+        (glareFarside == 1 ? 1.2 * u_glareOppositeFactor : 1.2) *
+        u_glareFactor;
+      glareAngleFactor = clamp(pow(glareAngleFactor, 0.1 + u_glareConvergence * 2.0), 0.0, 1.0);
+
+      vec3 glareTintLCH = SRGB_TO_LCH(mix(blurredPixel.rgb, u_tint.rgb, u_tint.a * 0.5));
+      glareTintLCH.x += 150.0 * glareAngleFactor * glareGeoFactor;
+      glareTintLCH.y += 30.0 * glareAngleFactor * glareGeoFactor;
+      glareTintLCH.x = clamp(glareTintLCH.x, 0.0, 120.0);
+      outColor = mix(
+        outColor,
+        vec4(LCH_TO_SRGB(glareTintLCH), 1.0),
+        glareAngleFactor * glareGeoFactor * length(normal)
+      );
+    }
+  } else {
+    outColor = bg;
+  }
+
+  // smooth（原版 ±0.001 畫布高度，約 1px）
+  outColor = mix(outColor, bg, smoothstep(-1.0, 1.0, merged));
+  fragColor = vec4(clamp(outColor.rgb, 0.0, 1.0), 1.0);
+}`;
+
+    function createGlassRenderer(canvas) {
+      const gl = canvas.getContext('webgl2', { antialias: false, premultipliedAlpha: false });
+      if (!gl) return null;
+      const compile = (type, source) => {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+          throw new Error(gl.getShaderInfoLog(shader));
+        }
+        return shader;
+      };
+      const program = gl.createProgram();
+      gl.attachShader(program, compile(gl.VERTEX_SHADER, GLASS_VERTEX));
+      gl.attachShader(program, compile(gl.FRAGMENT_SHADER, GLASS_FRAGMENT));
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        throw new Error(gl.getProgramInfoLog(program));
+      }
+      gl.useProgram(program);
+
+      const buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+      const position = gl.getAttribLocation(program, 'a_position');
+      gl.enableVertexAttribArray(position);
+      gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+
+      const u = (name) => gl.getUniformLocation(program, name);
+      gl.uniform3fv(u('u_bgColor'), GLASS.bgColor);
+      gl.uniform4fv(u('u_tint'), GLASS.tint);
+      gl.uniform1f(u('u_radius'), GLASS.radius);
+      gl.uniform1f(u('u_roundness'), GLASS.roundness);
+      gl.uniform1f(u('u_refThickness'), GLASS.refThickness);
+      gl.uniform1f(u('u_refDistance'), GLASS.refDistance);
+      gl.uniform1f(u('u_refFactor'), GLASS.refFactor);
+      gl.uniform1f(u('u_refDispersion'), GLASS.refDispersion);
+      gl.uniform1f(u('u_refFresnelRange'), GLASS.refFresnelRange);
+      gl.uniform1f(u('u_refFresnelHardness'), GLASS.refFresnelHardness);
+      gl.uniform1f(u('u_refFresnelFactor'), GLASS.refFresnelFactor);
+      gl.uniform1f(u('u_glareRange'), GLASS.glareRange);
+      gl.uniform1f(u('u_glareHardness'), GLASS.glareHardness);
+      gl.uniform1f(u('u_glareFactor'), GLASS.glareFactor);
+      gl.uniform1f(u('u_glareConvergence'), GLASS.glareConvergence);
+      gl.uniform1f(u('u_glareOppositeFactor'), GLASS.glareOppositeFactor);
+      gl.uniform1f(u('u_glareAngle'), GLASS.glareAngle);
+      gl.uniform1f(u('u_shadowExpand'), GLASS.shadowExpand);
+      gl.uniform1f(u('u_shadowFactor'), GLASS.shadowFactor);
+      gl.uniform1f(u('u_shadowOffsetY'), GLASS.shadowOffsetY);
+      const uResolution = u('u_resolution');
+      const uDpr = u('u_dpr');
+      const uCount = u('u_count');
+      const uRects = u('u_rects');
+
+      return function render() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+          canvas.width = Math.round(width * dpr);
+          canvas.height = Math.round(height * dpr);
+        }
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        // 卡片位置換成左下原點（跟 gl_FragCoord 一樣）
+        const rects = new Float32Array(16);
+        glassCards.forEach((card, i) => {
+          const r = card.getBoundingClientRect();
+          rects.set([r.left, height - r.bottom, r.width, r.height], i * 4);
+        });
+        gl.uniform2f(uResolution, canvas.width, canvas.height);
+        gl.uniform1f(uDpr, canvas.width / width);
+        gl.uniform1i(uCount, glassCards.length);
+        gl.uniform4fv(uRects, rects);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      };
     }
 
-    function stopGlass() {
-      if (!glass) return;
-      glass.destroy();
-      glass = null;
-      homeScreen.classList.remove('glass-ready');
+    let renderGlass = null;
+    try {
+      renderGlass = createGlassRenderer(glassCanvas);
+    } catch (error) {
+      console.warn('Liquid Glass 無法啟用，改用一般卡片', error);
     }
+    if (renderGlass) homeScreen.classList.add('glass-ready');
 
-    // 等進場動畫結束（位置固定）才擷取背景
-    homeScreen.addEventListener('animationend', (event) => {
-      if (event.target === homeScreen) startGlass();
-    });
+    // 主頁顯示時，捲動 / 縮放 / 進場動畫期間每一幀重畫
+    let glassFrame = 0;
+    function requestGlassRender() {
+      if (!renderGlass || glassFrame) return;
+      glassFrame = requestAnimationFrame(() => {
+        glassFrame = 0;
+        if (!homeScreen.classList.contains('is-hidden')) renderGlass();
+      });
+    }
+    function syncGlassVisibility() {
+      const show = !!renderGlass && !homeScreen.classList.contains('is-hidden');
+      glassCanvas.hidden = !show;
+      if (!show) return;
+      // 進場動畫會移動卡片，動畫期間持續重畫
+      const until = performance.now() + 400;
+      const loop = () => {
+        renderGlass();
+        if (performance.now() < until) requestAnimationFrame(loop);
+      };
+      loop();
+    }
+    window.addEventListener('scroll', requestGlassRender, { passive: true });
+    window.addEventListener('resize', requestGlassRender);
 
     function showScreen(id) {
       const current = document.querySelector('.screen:not(.is-hidden)');
       if (current && current.id === id) return;
-      if (id !== 'homeScreen') stopGlass();
       screens.forEach((screen) => screen.classList.toggle('is-hidden', screen.id !== id));
       tabBar.hidden = id === 'loginScreen';
       window.scrollTo(0, 0);
+      syncGlassVisibility();
 
       clearInterval(timerId);
       if (id === 'videoScreen') {
