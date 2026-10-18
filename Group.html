@@ -174,6 +174,21 @@
       background: rgba(65, 65, 65, 0.2);
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
     }
+    /* Liquid Glass（WebGL）載入後由 shader 畫玻璃，拿掉原本的底色跟陰影；載入失敗就維持上面的樣式 */
+    .glass-ready .card {
+      background: transparent;
+      box-shadow: none;
+    }
+    /* shader 的 canvas 是 z-index: -1，卡片要自成一層，canvas 才不會被壓到背景後面 */
+    .card {
+      isolation: isolate;
+    }
+    /* 玻璃後面的背景：root 本身不會被擷取，所以背景要放在子元素 */
+    .home-bg {
+      position: absolute;
+      inset: 0;
+      background: #212121 url(assets/home-bg.jpg) center top / cover no-repeat;
+    }
     .leader-card {
       top: 109px;
       height: 150px;
@@ -382,6 +397,7 @@
 
   <!-- 群組主頁 -->
   <section class="screen screen-home is-hidden" id="homeScreen">
+    <div class="home-bg"></div>
     <div class="header shadow">
       <img class="avatar group-avatar center-x" src="assets/group-avatar.jpg" alt="">
       <div class="abs group-title center-x t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
@@ -468,8 +484,11 @@
     </button>
   </nav>
 
-  <script>
+  <script type="module">
+    import { LiquidGlass } from 'https://cdn.jsdelivr.net/npm/@ybouane/liquidglass@1.0.3/dist/index.js';
+
     const screens = document.querySelectorAll('.screen');
+    const homeScreen = document.getElementById('homeScreen');
     const tabBar = document.getElementById('tabBar');
     const tabPill = document.getElementById('tabPill');
     const tabs = [...tabBar.querySelectorAll('.tab')];
@@ -477,9 +496,50 @@
     let timerId = null;
     let activeIndex = tabs.findIndex((tab) => tab.classList.contains('is-active'));
 
+    // ---------- Liquid Glass 卡片（WebGL shader） ----------
+    let glass = null;
+
+    async function startGlass() {
+      if (glass || homeScreen.classList.contains('is-hidden')) return;
+      try {
+        glass = await LiquidGlass.init({
+          root: homeScreen,
+          glassElements: homeScreen.querySelectorAll('.card'),
+          defaults: {
+            cornerRadius: 35,
+            zRadius: 30,
+            refraction: 0.69,
+            blurAmount: 0.12,
+            chromAberration: 0.05,
+            edgeHighlight: 0.12,
+            specular: 0.25,
+            fresnel: 1,
+            saturation: 0.2,
+            shadowOpacity: 0.3,
+          },
+        });
+        homeScreen.classList.add('glass-ready');
+      } catch (error) {
+        console.warn('Liquid Glass 無法啟用，改用一般卡片', error);
+      }
+    }
+
+    function stopGlass() {
+      if (!glass) return;
+      glass.destroy();
+      glass = null;
+      homeScreen.classList.remove('glass-ready');
+    }
+
+    // 等進場動畫結束（位置固定）才擷取背景
+    homeScreen.addEventListener('animationend', (event) => {
+      if (event.target === homeScreen) startGlass();
+    });
+
     function showScreen(id) {
       const current = document.querySelector('.screen:not(.is-hidden)');
       if (current && current.id === id) return;
+      if (id !== 'homeScreen') stopGlass();
       screens.forEach((screen) => screen.classList.toggle('is-hidden', screen.id !== id));
       tabBar.hidden = id === 'loginScreen';
       window.scrollTo(0, 0);
