@@ -522,6 +522,7 @@
       z-index: 10;
       --lg-tint: rgba(255, 255, 255, 0.5);
       --lg-shadow-2: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0px 8px 15px 0px rgba(0, 0, 0, 0.12);
+      --lens-hole: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='106' height='74'%3E%3Crect width='106' height='74' rx='37' fill='black'/%3E%3C/svg%3E");
     }
     .tab-bar[hidden] {
       display: none;
@@ -571,7 +572,9 @@
       /* 位置（translate）由 JS 用彈簧動畫每一幀設定；出現 / 消失的縮放用獨立的 scale，以鏡片中心縮放。
          消失：平順地縮小淡出 */
       scale: 0.6;
-      transition: opacity 0.28s ease, scale 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+      /* 淡出完再整個藏起來（visibility），iPhone 才不會殘留最後一張畫面（例如 VIDEO 一直是藍色） */
+      visibility: hidden;
+      transition: opacity 0.28s ease, scale 0.32s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.32s;
       will-change: translate, scale, opacity;
       /* 外面的陰影放在沒有濾鏡的外框，才不會被鏡片裁掉 */
       box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
@@ -592,15 +595,30 @@
     .tab-lens.is-on {
       opacity: 1;
       scale: 1;
-      transition: opacity 0.16s ease, scale 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      visibility: visible;
+      transition: opacity 0.16s ease, scale 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s;
+    }
+    /* 鏡片出現時，真的分頁圖示在鏡片底下挖一個洞（鏡片形狀），鏡片裡只看到藍色那一份 */
+    .tab-bar.is-dragging > .lg-panel__body {
+      -webkit-mask-image: linear-gradient(#000, #000), var(--lens-hole);
+      mask-image: linear-gradient(#000, #000), var(--lens-hole);
+      -webkit-mask-size: 100% 100%, 106px 74px;
+      mask-size: 100% 100%, 106px 74px;
+      -webkit-mask-position: 0 0, var(--hole-x, -999px) var(--hole-y, 0px);
+      mask-position: 0 0, var(--hole-x, -999px) var(--hole-y, 0px);
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
     }
     .tab-lens__row {
       position: absolute;
       left: 0;
       top: 0;
       border-radius: 1000px;
-      /* 分頁列的灰（白色 50% 疊在深色背景上 ≈ rgb(148, 148, 148)），讓鏡片裡看起來跟底下一樣 */
-      background: rgb(148, 148, 148);
+      /* 透明：鏡片裡看到的是底下真正的分頁列顏色（每一頁背景不同，分頁列顏色也不同），
+         底下真的圖示在鏡片範圍會被挖掉（見 .tab-bar.is-dragging），不會出現兩份 */
+      background: transparent;
     }
     .tab-lens__row .tab-lens__tabs {
       position: absolute;
@@ -874,18 +892,6 @@
       inset: 0;
       pointer-events: none;
       background: linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.6) 100%);
-    }
-    .shorts-top {
-      position: absolute;
-      left: 50%;
-      top: calc(14px + var(--safe-top));
-      transform: translateX(-50%);
-      z-index: 3;
-      font-size: 17px;
-      font-weight: 600;
-      color: #FFFFFF;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-      pointer-events: none;
     }
     /* 右邊一排：頭像、愛心、分享、音樂唱片（在分頁列上面） */
     .short-side {
@@ -1543,7 +1549,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.7.0</div>
+    <div class="abs version-label t12 nowrap">ESN v1.7.1</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1672,7 +1678,6 @@
   <section class="screen screen-videos is-hidden" id="videosScreen" data-lg-backdrop="">
     <!-- 短影音：上下滑，一次一部，看得到的那部自動播放 -->
     <div class="shorts" id="shorts" aria-label="短影音"></div>
-    <div class="shorts-top nowrap">短影音</div>
     <div class="shorts-toast" id="shortsToast" aria-live="polite"></div>
   </section>
 
@@ -2105,6 +2110,9 @@
       // 複本反方向移，跟底下真的分頁列對齊
       // 鏡片裡面用一般 2D 移動（不要 translate3d / will-change 另開圖層，WebKit 的濾鏡碰到會畫錯）
       tabLensRow.style.transform = `translate(${lensBar.left - lx}px, ${lensBar.top - ly}px)`;
+      // 底下真的分頁圖示挖洞的位置（相對分頁列）
+      tabBar.style.setProperty('--hole-x', `${lx - lensBar.left}px`);
+      tabBar.style.setProperty('--hole-y', `${ly - lensBar.top}px`);
     }
 
     function stepLens(now) {
