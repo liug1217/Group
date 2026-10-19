@@ -50,14 +50,16 @@
       min-height: 100vh;
       background: #212121;
       overflow: hidden;
-      animation: screen-in 0.3s ease;
+      animation: screen-in 0.22s ease;
     }
     .screen.is-hidden {
       display: none;
     }
+    /* 切換頁面：只淡入、不移動。用 transform 移動的話，動畫中頁面裡固定的頂部會跟著跑、
+       玻璃的折射也會對不準（iPhone 上看起來像從上往下掉再彈回去） */
     @keyframes screen-in {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: none; }
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
 
     /* ---------- 載入畫面：圖片和玻璃都準備好才進入 ---------- */
@@ -1280,7 +1282,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.5.3</div>
+    <div class="abs version-label t12 nowrap">ESN v1.5.4</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
