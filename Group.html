@@ -767,29 +767,26 @@
     .call-name {
       top: 501px;
     }
-    /* 通話按鈕：麥克風、鏡頭、掛斷（玻璃圓鈕） */
+    /* 通話按鈕：麥克風、鏡頭、翻轉、分享螢幕、掛斷（玻璃圓鈕，下面有小字） */
     .call-controls {
       position: absolute;
       left: 0;
       right: 0;
       top: calc(590px + var(--safe-top));
+      z-index: 3;
       display: flex;
       justify-content: center;
-      gap: 28px;
+      gap: 16px;
     }
     .call-btn {
       position: relative;
-      width: 60px;
-      height: 60px;
-      border-radius: 30px;
+      width: 56px;
+      height: 56px;
+      border-radius: 28px;
       background: rgba(65, 65, 65, 0.2);
       box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-      transition: transform 0.15s ease;
       --lg-tint: rgba(65, 65, 65, 0.2);
       --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
-    }
-    .call-btn:active {
-      transform: scale(0.94);
     }
     .call-btn.is-off {
       background: rgba(255, 255, 255, 0.75);
@@ -800,6 +797,13 @@
       background: #E5484D;
       /* 半透明的同色紅，看得出玻璃 */
       --lg-tint: rgba(229, 72, 77, 0.6);
+    }
+    .call-btn.is-accept {
+      background: #30D158;
+      --lg-tint: rgba(48, 209, 88, 0.6);
+    }
+    .call-btn.is-disabled {
+      opacity: 0.4;
     }
     .call-btn > .lg-panel__body {
       position: absolute;
@@ -812,14 +816,14 @@
       place-items: center;
       padding: 0;
       border: 0;
-      border-radius: 30px;
+      border-radius: 50%;
       background: transparent;
       color: inherit;
       cursor: pointer;
     }
     .call-btn svg {
-      width: 26px;
-      height: 26px;
+      width: 24px;
+      height: 24px;
     }
     .call-btn .icon-off {
       display: none;
@@ -830,9 +834,236 @@
     .call-btn.is-off .icon-off {
       display: block;
     }
+    .call-btn-label {
+      position: absolute;
+      left: 50%;
+      top: 62px;
+      transform: translateX(-50%);
+      font-size: 11px;
+      white-space: nowrap;
+      color: rgba(255, 255, 255, 0.85);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+      pointer-events: none;
+    }
     .call-status {
       top: calc(530px + var(--safe-top));
-      color: rgba(255, 255, 255, 0.6);
+      color: rgba(255, 255, 255, 0.75);
+    }
+    /* 撥打中：「撥打中…」的點點會動 */
+    .call-status.is-dialing::after {
+      content: '';
+      display: inline-block;
+      width: 1.2em;
+      text-align: left;
+      animation: dial-dots 1.2s steps(4) infinite;
+    }
+    @keyframes dial-dots {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+    }
+    /* 撥打中 / 來電：頭像外面一圈一圈往外擴散 */
+    .call-rings {
+      position: absolute;
+      top: 343px;
+      width: 151px;
+      height: 150px;
+      pointer-events: none;
+    }
+    .call-rings i {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.55);
+      opacity: 0;
+    }
+    .call-rings.is-on i {
+      animation: call-ring 2.4s ease-out infinite;
+    }
+    .call-rings.is-on i:nth-child(2) {
+      animation-delay: 0.8s;
+    }
+    .call-rings.is-on i:nth-child(3) {
+      animation-delay: 1.6s;
+    }
+    @keyframes call-ring {
+      0% { opacity: 0.8; transform: scale(1); }
+      100% { opacity: 0; transform: scale(1.9); }
+    }
+    /* 撥打中頭像輕輕呼吸 */
+    .call-avatar.is-dialing {
+      animation: call-breathe 1.6s ease-in-out infinite;
+    }
+    @keyframes call-breathe {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50% { transform: translateX(-50%) scale(1.05); }
+    }
+    /* 對方的視訊：接通後全螢幕；自己的：右上角小框 */
+    .call-remote {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #000000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .call-remote.is-on {
+      opacity: 1;
+    }
+    /* 對方在分享螢幕：整個畫面顯示，不要裁切 */
+    .call-remote.is-contain {
+      object-fit: contain;
+    }
+    .call-local {
+      position: absolute;
+      right: 16px;
+      top: calc(56px + var(--safe-top));
+      z-index: 2;
+      width: 96px;
+      height: 128px;
+      border-radius: 16px;
+      object-fit: cover;
+      background: #000000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      display: none;
+    }
+    .call-local.is-on {
+      display: block;
+    }
+    .call-local.is-mirror {
+      transform: scaleX(-1);
+    }
+    /* 視訊接通後，頭像那些藏起來 */
+    .screen-video.has-remote-video .call-glow,
+    .screen-video.has-remote-video .call-avatar,
+    .screen-video.has-remote-video .call-rings,
+    .screen-video.has-remote-video .call-name {
+      display: none;
+    }
+    .call-title,
+    .call-clock,
+    .call-timer,
+    .call-status {
+      z-index: 2;
+    }
+
+    /* ---------- 來電畫面 ---------- */
+    .incoming {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      background: #212121 url(assets/home-bg.jpg) 0 0 / 100% auto no-repeat;
+      color: #FFFFFF;
+      animation: screen-in 0.22s ease;
+    }
+    .incoming[hidden] {
+      display: none;
+    }
+    .incoming-glow {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      opacity: 0.55;
+    }
+    .incoming-glow img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: blur(40px);
+      transform: scale(1.3);
+    }
+    .incoming-rings,
+    .incoming-avatar {
+      position: absolute;
+      left: 50%;
+      top: calc(150px + var(--safe-top));
+      width: 130px;
+      height: 130px;
+      margin-left: -65px;
+    }
+    .incoming-avatar {
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      animation: call-breathe-plain 1.6s ease-in-out infinite;
+    }
+    @keyframes call-breathe-plain {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .incoming-name {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(304px + var(--safe-top));
+      text-align: center;
+    }
+    .incoming-kind {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(336px + var(--safe-top));
+      text-align: center;
+      color: rgba(255, 255, 255, 0.75);
+    }
+    .incoming-actions {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: calc(90px + var(--safe-bottom));
+      display: flex;
+      justify-content: space-around;
+    }
+    .incoming-action {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .incoming-btn {
+      width: 72px;
+      height: 72px;
+      border-radius: 36px;
+    }
+    .incoming-btn svg {
+      width: 30px;
+      height: 30px;
+    }
+    /* 接聽鈕輕輕晃 */
+    .incoming-btn.is-accept {
+      animation: accept-wiggle 1.2s ease-in-out infinite;
+    }
+    @keyframes accept-wiggle {
+      0%, 60%, 100% { rotate: 0deg; }
+      70% { rotate: -12deg; }
+      80% { rotate: 12deg; }
+      90% { rotate: -8deg; }
+    }
+
+    /* 全站小提示 */
+    .app-toast {
+      position: fixed;
+      left: 50%;
+      top: calc(70px + var(--safe-top));
+      z-index: 400;
+      max-width: calc(100% - 40px);
+      padding: 10px 16px;
+      border-radius: 18px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #FFFFFF;
+      font-size: 13px;
+      text-align: center;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+    .app-toast.is-on {
+      opacity: 1;
     }
 
     /* ---------- 其他頁面共用：背景、頂部標題 ---------- */
@@ -1574,7 +1805,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.7.2</div>
+    <div class="abs version-label t12 nowrap">ESN v1.8.0</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1671,33 +1902,84 @@
 
   <!-- VIDEO -->
   <section class="screen screen-video is-hidden" id="videoScreen" data-lg-backdrop="">
+    <!-- 對方的畫面（視訊接通後全螢幕），自己的畫面在右上角小框 -->
+    <video class="call-remote" id="remoteVideo" autoplay playsinline></video>
+    <video class="call-local" id="localVideo" autoplay playsinline muted></video>
     <div class="abs call-title t12 nowrap text-shadow" id="callTitle">視訊通話</div>
     <img class="abs call-clock" src="assets/icon-clock.svg" alt="">
     <div class="abs call-timer t10 nowrap" id="callTimer">00:00</div>
     <div class="abs call-glow shadow"><img id="callGlow" src="assets/member-5.jpg" alt=""></div>
+    <!-- 撥打中：頭像外面一圈一圈擴散 -->
+    <div class="call-rings center-x" id="callRings" aria-hidden="true"><i></i><i></i><i></i></div>
     <img class="avatar call-avatar center-x" id="callAvatar" src="assets/member-5.jpg" alt="">
     <div class="abs call-name center-x t15 nowrap text-shadow" id="callName">帆～</div>
     <div class="abs call-status center-x t12 nowrap" id="callStatus"></div>
     <div class="call-controls">
-      <lg-panel class="call-btn glass" id="micBtn" radius="30">
+      <lg-panel class="call-btn glass" id="micBtn" radius="28">
         <button type="button" aria-label="麥克風" aria-pressed="false">
           <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/></svg>
           <svg class="icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l20 20"/><path d="M15 9.3V5a3 3 0 0 0-5.7-1.3"/><path d="M9 9v2a3 3 0 0 0 5.1 2.1"/><path d="M19 10v1a7 7 0 0 1-1.1 3.8"/><path d="M5 10v1a7 7 0 0 0 11.3 5.5"/><path d="M12 18v4"/></svg>
         </button>
+        <span class="call-btn-label">靜音</span>
       </lg-panel>
-      <lg-panel class="call-btn glass" id="camBtn" radius="30">
+      <lg-panel class="call-btn glass" id="camBtn" radius="28">
         <button type="button" aria-label="鏡頭" aria-pressed="false">
           <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10l5-3v10l-5-3"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
           <svg class="icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l20 20"/><path d="M16 10l5-3v10l-2-1.2"/><path d="M14 18H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h1"/><path d="M9 6h5a2 2 0 0 1 2 2v3"/></svg>
         </button>
+        <span class="call-btn-label">鏡頭</span>
       </lg-panel>
-      <lg-panel class="call-btn glass is-end" id="endBtn" radius="30">
+      <lg-panel class="call-btn glass" id="flipBtn" radius="28">
+        <button type="button" aria-label="翻轉鏡頭">
+          <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><path d="M9.5 13.5a3 3 0 0 0 5.2 1"/><path d="M14.5 11.5a3 3 0 0 0-5.2-1"/><path d="M14.7 16.5v-2h-2"/><path d="M9.3 8.5v2h2"/></svg>
+        </button>
+        <span class="call-btn-label">翻轉</span>
+      </lg-panel>
+      <lg-panel class="call-btn glass" id="shareBtn" radius="28">
+        <button type="button" aria-label="分享螢幕" aria-pressed="false">
+          <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M12 14V8"/><path d="M9 10.5 12 7.5l3 3"/></svg>
+          <svg class="icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M9 8l6 6"/><path d="M15 8l-6 6"/></svg>
+        </button>
+        <span class="call-btn-label">分享螢幕</span>
+      </lg-panel>
+      <lg-panel class="call-btn glass is-end" id="endBtn" radius="28">
         <button type="button" aria-label="掛斷">
           <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14.5c5-4.7 13-4.7 18 0l-2.2 2.6-3.3-1.6v-2.6a10 10 0 0 0-7 0v2.6l-3.3 1.6z"/></svg>
         </button>
+        <span class="call-btn-label">掛斷</span>
       </lg-panel>
     </div>
   </section>
+
+  <!-- 來電：全螢幕蓋在任何頁面上，接聽 / 拒接 -->
+  <section class="incoming" id="incoming" data-lg-backdrop="" hidden>
+    <div class="incoming-glow"><img id="incomingGlow" src="assets/member-5.jpg" alt=""></div>
+    <div class="call-rings is-on incoming-rings" aria-hidden="true"><i></i><i></i><i></i></div>
+    <img class="incoming-avatar" id="incomingAvatar" src="assets/member-5.jpg" alt="">
+    <div class="incoming-name t20 nowrap text-shadow" id="incomingName">帆～</div>
+    <div class="incoming-kind t15 nowrap" id="incomingKind">邀請你視訊通話</div>
+    <div class="incoming-actions">
+      <div class="incoming-action">
+        <lg-panel class="call-btn incoming-btn glass is-end" id="declineBtn" radius="36">
+          <button type="button" aria-label="拒接">
+            <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14.5c5-4.7 13-4.7 18 0l-2.2 2.6-3.3-1.6v-2.6a10 10 0 0 0-7 0v2.6l-3.3 1.6z"/></svg>
+          </button>
+        </lg-panel>
+        <span class="t12">拒接</span>
+      </div>
+      <div class="incoming-action">
+        <lg-panel class="call-btn incoming-btn glass is-accept" id="acceptBtn" radius="36">
+          <button type="button" aria-label="接聽">
+            <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>
+          </button>
+        </lg-panel>
+        <span class="t12">接聽</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 全站小提示（例如群組還不能打電話） -->
+  <div class="app-toast" id="appToast" aria-live="polite"></div>
 
   <!-- VIDEO（底部中間）：之後放影片；通話改在聊天室裡 -->
   <section class="screen screen-videos is-hidden" id="videosScreen" data-lg-backdrop="">
@@ -1827,7 +2109,6 @@
     const tabPill = document.getElementById('tabPill');
     const tabs = [...tabBar.querySelectorAll('.tab')];
     const callTimer = document.getElementById('callTimer');
-    let timerId = null;
     let activeIndex = tabs.findIndex((tab) => tab.classList.contains('is-active'));
 
     // iPhone Safari 會暫存玻璃濾鏡的結果：畫面從隱藏變顯示、進場動畫移動元件後，
@@ -2027,17 +2308,6 @@
       window.scrollTo(0, 0);
       onScreenShown(id);
 
-      clearInterval(timerId);
-      if (id === 'videoScreen') {
-        let seconds = 0;
-        callTimer.textContent = '00:00';
-        timerId = setInterval(() => {
-          seconds += 1;
-          const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
-          const ss = String(seconds % 60).padStart(2, '0');
-          callTimer.textContent = `${mm}:${ss}`;
-        }, 1000);
-      }
     }
 
     document.getElementById('loginButton').addEventListener('click', () => {
@@ -2421,7 +2691,13 @@
           const events = new EventSource(`${base}/api/events`);
           let dropped = false;
           events.onmessage = (event) => {
-            const { room, msg } = JSON.parse(event.data);
+            const payload = JSON.parse(event.data);
+            // 通話訊號（響鈴、接聽、連線資料）交給通話
+            if (payload.signal) {
+              onCallSignal(payload.signal);
+              return;
+            }
+            const { room, msg } = payload;
             const list = (this.rooms[room] ||= []);
             if (!list.some((m) => m.id === msg.id)) list.push(msg);
             onChatUpdate(room);
@@ -2463,6 +2739,16 @@
       get(room, defaults = []) {
         if (this.online) return this.rooms[room] || [];
         return store.get(`chat.${room}`, defaults);
+      },
+      // 通話訊號：透過伺服器轉給對方（伺服器不存）
+      async signal(to, type, data, callId) {
+        if (!this.online || !ME) throw new Error('offline');
+        const res = await fetch(`${this.base}/api/signal`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from: ME.id, to, type, call: callId, data: data ?? null }),
+        });
+        if (!res.ok) throw new Error(`signal failed: ${res.status}`);
       },
       async send(room, text) {
         if (this.online) {
@@ -2673,54 +2959,558 @@
     renderThreadList();
     chat.init();
 
-    // ----- VIDEO：麥克風、鏡頭、掛斷 -----
+    // ----- 通話：真的語音 / 視訊通話（WebRTC，兩個人直接連線） -----
+    // 響鈴、接聽、拒接、掛斷，和連線用的資料（offer / answer / ice），都透過聊天伺服器轉給對方（/api/signal）。
+    // 聲音（撥出的嘟嘟聲、來電鈴聲、接通、掛斷）都是用 Web Audio 自己合成的，不用音檔。
     const callStatus = document.getElementById('callStatus');
     const micBtn = document.getElementById('micBtn');
     const camBtn = document.getElementById('camBtn');
+    const flipBtn = document.getElementById('flipBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const remoteVideo = document.getElementById('remoteVideo');
+    const localVideo = document.getElementById('localVideo');
+    const callRings = document.getElementById('callRings');
+    const callAvatarEl = document.getElementById('callAvatar');
+    const videoScreenEl = document.getElementById('videoScreen');
+    const incoming = document.getElementById('incoming');
+    const appToast = document.getElementById('appToast');
+    const ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+    // 對方的畫面是橫的（分享螢幕、橫拿手機）就整個顯示、不裁切；直的就填滿螢幕
+    remoteVideo.addEventListener('resize', () => {
+      remoteVideo.classList.toggle('is-contain', remoteVideo.videoWidth > remoteVideo.videoHeight);
+    });
 
-    function updateCallStatus() {
-      const parts = [];
-      if (micBtn.classList.contains('is-off')) parts.push('麥克風已關閉');
-      if (camBtn.classList.contains('is-off')) parts.push('鏡頭已關閉');
-      callStatus.textContent = parts.join('・');
+    let appToastTimer = 0;
+    function toast(text, ms = 2200) {
+      appToast.textContent = text;
+      appToast.classList.add('is-on');
+      clearTimeout(appToastTimer);
+      appToastTimer = setTimeout(() => appToast.classList.remove('is-on'), ms);
+    }
+
+    // ---------- 聲音（自己調的） ----------
+    let audioCtx = null;
+    function audio() {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!audioCtx && AC) audioCtx = new AC();
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+    // 手機要使用者碰過畫面才能出聲：第一次碰畫面就先把聲音打開（之後來電鈴聲才響得出來）
+    document.addEventListener('pointerdown', () => audio(), { once: true, passive: true });
+
+    // 一個音：正弦波 + 一點三角波，像木琴一樣快速變小聲
+    function note(freq, at, length = 0.35, volume = 0.18) {
+      const ctx = audio();
+      if (!ctx) return;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.0001, at);
+      gain.gain.exponentialRampToValueAtTime(volume, at + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + length);
+      gain.connect(ctx.destination);
+      [['sine', 1], ['triangle', 0.35]].forEach(([type, mix]) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        g.gain.value = mix;
+        osc.connect(g).connect(gain);
+        osc.start(at);
+        osc.stop(at + length + 0.05);
+      });
+    }
+    // 一段旋律，每隔 every 秒重複；回傳停止用的函式
+    function loopMelody(notes, every, volume) {
+      let stopped = false;
+      let timer = 0;
+      const play = () => {
+        const ctx = audio();
+        if (stopped || !ctx) return;
+        const t = ctx.currentTime + 0.05;
+        notes.forEach(([freq, offset, length]) => note(freq, t + offset, length, volume));
+        timer = setTimeout(play, every * 1000);
+      };
+      play();
+      return () => {
+        stopped = true;
+        clearTimeout(timer);
+      };
+    }
+    const TONES = {
+      // 撥出：輕輕的「叮—咚」，每 2.4 秒一次
+      ringback: () => loopMelody([[659.3, 0, 0.5], [523.3, 0.42, 0.7]], 2.4, 0.12),
+      // 來電：活潑的上行琶音，每 1.6 秒一次
+      ringtone: () => loopMelody([[784, 0, 0.18], [988, 0.14, 0.18], [1175, 0.28, 0.18], [1568, 0.42, 0.4], [1175, 0.7, 0.18], [1568, 0.84, 0.45]], 1.6, 0.16),
+    };
+    function chime(kind) {
+      const ctx = audio();
+      if (!ctx) return;
+      const t = ctx.currentTime + 0.02;
+      if (kind === 'connect') [[784, 0], [1175, 0.12]].forEach(([f, o]) => note(f, t + o, 0.3, 0.14));
+      else [[880, 0], [659.3, 0.14], [440, 0.28]].forEach(([f, o]) => note(f, t + o, 0.3, 0.12));
+    }
+
+    // ---------- 通話狀態 ----------
+    const call = {
+      state: 'idle', // idle → dialing（撥出等對方接）/ ringing（來電）→ connecting → active
+      id: '',
+      peer: null,
+      thread: null,
+      mode: 'video',
+      role: '',
+      pc: null,
+      local: null, // 自己的麥克風 / 鏡頭
+      camTrack: null,
+      screenTrack: null,
+      facing: 'user',
+      remote: null,
+      pendingIce: [],
+      stopTone: null,
+      timers: [],
+      seconds: 0,
+      tick: 0,
+    };
+
+    function peerOf(thread) {
+      if (!thread?.room?.startsWith('dm:')) return null;
+      const ids = thread.room.slice(3).split('-');
+      return memberById(ids.find((id) => id !== ME?.id));
+    }
+    function threadWith(memberId) {
+      return threads().find((t) => t.room === dmRoom(ME.id, memberId));
+    }
+    function setStatus(text, dialing = false) {
+      callStatus.textContent = text;
+      callStatus.classList.toggle('is-dialing', dialing);
+    }
+    function stopTone() {
+      call.stopTone?.();
+      call.stopTone = null;
+      if (navigator.vibrate) navigator.vibrate(0);
+    }
+    function later(fn, ms) {
+      const t = setTimeout(fn, ms);
+      call.timers.push(t);
+      return t;
+    }
+    function sendSignal(type, data) {
+      if (!call.peer) return Promise.resolve();
+      return chat.signal(call.peer.id, type, data, call.id).catch(() => {});
+    }
+
+    function setButton(btn, off) {
+      btn.classList.toggle('is-off', off);
+      btn.querySelector('button').setAttribute('aria-pressed', String(off));
+    }
+    function updateButtons() {
+      const audioTrack = call.local?.getAudioTracks()[0];
+      setButton(micBtn, !!audioTrack && !audioTrack.enabled);
+      setButton(camBtn, !call.camTrack || !call.camTrack.enabled);
+      setButton(shareBtn, !!call.screenTrack);
+      flipBtn.classList.toggle('is-disabled', !call.camTrack);
+    }
+
+    // 自己的小框：分享螢幕時顯示分享的畫面，不然顯示鏡頭
+    function showLocalPreview() {
+      const track = call.screenTrack || (call.camTrack?.enabled ? call.camTrack : null);
+      if (track) {
+        localVideo.srcObject = new MediaStream([track]);
+        localVideo.classList.add('is-on');
+        localVideo.classList.toggle('is-mirror', !call.screenTrack && call.facing === 'user');
+        localVideo.play().catch(() => {});
+      } else {
+        localVideo.srcObject = null;
+        localVideo.classList.remove('is-on');
+      }
+    }
+
+    function videoSender() {
+      return call.pc?.getTransceivers().find((t) => t.receiver.track?.kind === 'video')?.sender || null;
+    }
+    async function sendVideo(track) {
+      const sender = videoSender();
+      if (sender) await sender.replaceTrack(track).catch(() => {});
+    }
+
+    async function getLocalMedia(withVideo) {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error('no media');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true },
+        video: withVideo ? { facingMode: call.facing, width: { ideal: 1280 }, height: { ideal: 720 } } : false,
+      });
+      call.local = stream;
+      call.camTrack = stream.getVideoTracks()[0] || null;
+      showLocalPreview();
+      updateButtons();
+    }
+
+    // 通話畫面（撥出 / 接聽都用這一頁）
+    function openCallScreen() {
+      const member = call.peer;
+      document.getElementById('callTitle').textContent = call.mode === 'voice' ? '語音通話' : '視訊通話';
+      document.getElementById('callName').textContent = member.name;
+      callAvatarEl.src = member.avatar;
+      document.getElementById('callGlow').src = member.avatar;
+      document.getElementById('callTimer').textContent = '00:00';
+      videoScreenEl.classList.remove('has-remote-video');
+      remoteVideo.classList.remove('is-on', 'is-contain');
+      showScreen('videoScreen');
+    }
+    function setRinging(on) {
+      callRings.classList.toggle('is-on', on);
+      callAvatarEl.classList.toggle('is-dialing', on);
+    }
+
+    // 建立連線：兩邊都有一個聲音和一個影像通道（語音通話先不放影像，之後開鏡頭 / 分享螢幕用 replaceTrack，不用重新連線）
+    function createPeer() {
+      const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+      call.pc = pc;
+      call.remote = new MediaStream();
+      remoteVideo.srcObject = call.remote;
+      pc.onicecandidate = (event) => {
+        if (event.candidate) sendSignal('ice', event.candidate.toJSON());
+      };
+      pc.ontrack = (event) => {
+        const track = event.track;
+        call.remote.addTrack(track);
+        remoteVideo.play().catch(() => {});
+        if (track.kind === 'video') {
+          const update = () => {
+            const live = !track.muted && track.readyState === 'live';
+            remoteVideo.classList.toggle('is-on', live);
+            videoScreenEl.classList.toggle('has-remote-video', live);
+          };
+          track.addEventListener('mute', update);
+          track.addEventListener('unmute', update);
+          track.addEventListener('ended', update);
+          update();
+        }
+      };
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === 'connected') onConnected();
+        if (pc.connectionState === 'failed') {
+          setStatus('連線失敗：兩邊的網路沒辦法直接連上');
+          later(() => endCall(false), 2500);
+        }
+      };
+      return pc;
+    }
+    function addLocalTracks(pc) {
+      const audioTrack = call.local?.getAudioTracks()[0];
+      if (audioTrack) pc.addTrack(audioTrack, call.local);
+      else pc.addTransceiver('audio', { direction: 'sendrecv' });
+      if (call.camTrack) pc.addTrack(call.camTrack, call.local);
+      else pc.addTransceiver('video', { direction: 'sendrecv' });
+    }
+    async function flushIce() {
+      const list = call.pendingIce;
+      call.pendingIce = [];
+      for (const candidate of list) await call.pc.addIceCandidate(candidate).catch(() => {});
+    }
+
+    function onConnected() {
+      if (call.state === 'active') return;
+      call.state = 'active';
+      stopTone();
+      setRinging(false);
+      chime('connect');
+      setStatus('');
+      call.seconds = 0;
+      clearInterval(call.tick);
+      call.tick = setInterval(() => {
+        call.seconds += 1;
+        const mm = String(Math.floor(call.seconds / 60)).padStart(2, '0');
+        const ss = String(call.seconds % 60).padStart(2, '0');
+        document.getElementById('callTimer').textContent = `${mm}:${ss}`;
+      }, 1000);
+    }
+
+    // ---------- 撥出 ----------
+    async function startCall(thread, mode) {
+      const peer = peerOf(thread);
+      if (!peer) {
+        toast('群組通話還不支援，請到私人聊天室打給對方');
+        return;
+      }
+      if (!chat.online) {
+        toast('要連到聊天伺服器才能打電話');
+        return;
+      }
+      if (call.state !== 'idle') return;
+      Object.assign(call, { state: 'dialing', id: `${Date.now()}-${ME.id}`, peer, thread, mode, role: 'caller', facing: 'user', pendingIce: [] });
+      openCallScreen();
+      setRinging(true);
+      setStatus('撥打中', true);
+      call.stopTone = TONES.ringback();
+      try {
+        await getLocalMedia(mode === 'video');
+      } catch {
+        setStatus(mode === 'video' ? '沒辦法使用麥克風 / 鏡頭（請在瀏覽器允許）' : '沒辦法使用麥克風（請在瀏覽器允許）');
+        later(() => endCall(false), 2500);
+        return;
+      }
+      if (call.state !== 'dialing') return;
+      sendSignal('ring', { mode });
+      // 30 秒沒人接就掛掉
+      later(() => {
+        if (call.state !== 'dialing') return;
+        sendSignal('end');
+        setStatus('無人接聽');
+        stopTone();
+        later(() => endCall(false), 1500);
+      }, 30000);
+    }
+
+    // 對方接了：開始連線（撥出的這邊送 offer）
+    async function onAccepted() {
+      if (call.state !== 'dialing') return;
+      call.state = 'connecting';
+      stopTone();
+      setRinging(false);
+      setStatus('連線中', true);
+      const pc = createPeer();
+      addLocalTracks(pc);
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      sendSignal('offer', pc.localDescription.toJSON());
+    }
+
+    // ---------- 來電 ----------
+    function showIncoming(peer, mode) {
+      document.getElementById('incomingAvatar').src = peer.avatar;
+      document.getElementById('incomingGlow').src = peer.avatar;
+      document.getElementById('incomingName').textContent = peer.name;
+      document.getElementById('incomingKind').textContent = mode === 'voice' ? '邀請你語音通話' : '邀請你視訊通話';
+      incoming.hidden = false;
+      call.stopTone = TONES.ringtone();
+      if (navigator.vibrate) navigator.vibrate([400, 300, 400, 300, 400, 300, 400, 300, 400]);
+    }
+    function hideIncoming() {
+      incoming.hidden = true;
+    }
+
+    async function acceptCall() {
+      if (call.state !== 'ringing') return;
+      call.state = 'connecting';
+      stopTone();
+      hideIncoming();
+      openCallScreen();
+      setStatus('連線中', true);
+      try {
+        await getLocalMedia(call.mode === 'video');
+      } catch {
+        // 沒有麥克風權限也接起來：只聽對方的
+        call.local = null;
+        call.camTrack = null;
+        toast('沒辦法使用麥克風 / 鏡頭，對方會聽不到你（請在瀏覽器允許）', 3500);
+      }
+      sendSignal('accept');
+    }
+    function declineCall() {
+      if (call.state !== 'ringing') return;
+      sendSignal('decline');
+      endCall(false);
+    }
+
+    // 收到對方的 offer（接聽的這邊）：回 answer
+    async function onOffer(description) {
+      if (call.state !== 'connecting' || call.role !== 'callee') return;
+      const pc = createPeer();
+      await pc.setRemoteDescription(description);
+      // 兩個通道都設成「收也送」，之後才能開鏡頭 / 分享螢幕
+      pc.getTransceivers().forEach((t) => { t.direction = 'sendrecv'; });
+      const audioTrack = call.local?.getAudioTracks()[0];
+      const transceivers = pc.getTransceivers();
+      const audioT = transceivers.find((t) => t.receiver.track?.kind === 'audio');
+      const videoT = transceivers.find((t) => t.receiver.track?.kind === 'video');
+      if (audioTrack && audioT) await audioT.sender.replaceTrack(audioTrack);
+      if (call.camTrack && videoT) await videoT.sender.replaceTrack(call.camTrack);
+      if (call.local) transceivers.forEach((t) => t.sender.setStreams?.(call.local));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      sendSignal('answer', pc.localDescription.toJSON());
+      await flushIce();
+    }
+
+    // ---------- 收到訊號 ----------
+    async function onCallSignal(sig) {
+      if (!ME || sig.to !== ME.id) return;
+      const from = memberById(sig.from);
+      if (!from) return;
+      if (sig.type === 'ring') {
+        if (call.state !== 'idle') {
+          chat.signal(sig.from, 'busy', null, sig.call).catch(() => {});
+          return;
+        }
+        const mode = sig.data?.mode === 'voice' ? 'voice' : 'video';
+        Object.assign(call, { state: 'ringing', id: sig.call, peer: from, thread: threadWith(from.id), mode, role: 'callee', facing: 'user', pendingIce: [] });
+        showIncoming(from, mode);
+        // 對方 35 秒後會自己掛掉；保險起見這邊也收起來
+        later(() => {
+          if (call.state === 'ringing') endCall(false);
+        }, 35000);
+        return;
+      }
+      if (sig.call !== call.id || sig.from !== call.peer?.id) return;
+      switch (sig.type) {
+        case 'accept':
+          onAccepted();
+          break;
+        case 'offer':
+          await onOffer(sig.data);
+          break;
+        case 'answer':
+          if (call.pc && !call.pc.currentRemoteDescription) {
+            await call.pc.setRemoteDescription(sig.data);
+            await flushIce();
+          }
+          break;
+        case 'ice':
+          if (call.pc?.remoteDescription) await call.pc.addIceCandidate(sig.data).catch(() => {});
+          else call.pendingIce.push(sig.data);
+          break;
+        case 'decline':
+          stopTone();
+          setRinging(false);
+          setStatus('對方拒接');
+          later(() => endCall(false), 1500);
+          break;
+        case 'busy':
+          stopTone();
+          setRinging(false);
+          setStatus('對方忙線中');
+          later(() => endCall(false), 1500);
+          break;
+        case 'end':
+          if (call.state === 'ringing') {
+            toast(`${from.name} 的來電未接`);
+            endCall(false);
+          } else {
+            setStatus('通話結束');
+            stopTone();
+            later(() => endCall(false), 900);
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
+    // ---------- 掛斷 / 收尾 ----------
+    function endCall(tellPeer = true) {
+      if (call.state === 'idle') return;
+      if (tellPeer) sendSignal('end');
+      const wasInCall = call.state !== 'ringing';
+      stopTone();
+      if (call.state === 'active' || call.state === 'connecting') chime('end');
+      call.timers.forEach(clearTimeout);
+      call.timers = [];
+      clearInterval(call.tick);
+      call.pc?.close();
+      call.local?.getTracks().forEach((t) => t.stop());
+      call.screenTrack?.stop();
+      remoteVideo.srcObject = null;
+      localVideo.srcObject = null;
+      remoteVideo.classList.remove('is-on', 'is-contain');
+      localVideo.classList.remove('is-on');
+      videoScreenEl.classList.remove('has-remote-video');
+      setRinging(false);
+      setStatus('');
+      hideIncoming();
+      const thread = call.thread;
+      Object.assign(call, { state: 'idle', id: '', peer: null, thread: null, role: '', pc: null, local: null, camTrack: null, screenTrack: null, remote: null, pendingIce: [] });
+      updateButtons();
+      // 掛斷回到那個聊天室
+      if (wasInCall && !videoScreenEl.classList.contains('is-hidden')) {
+        showScreen('chatScreen');
+        if (thread) openThread(thread);
+      }
     }
     function resetCall() {
-      [micBtn, camBtn].forEach((btn) => {
-        btn.classList.remove('is-off');
-        btn.querySelector('button').setAttribute('aria-pressed', 'false');
-      });
-      updateCallStatus();
-    }
-    [micBtn, camBtn].forEach((btn) => {
-      btn.querySelector('button').addEventListener('click', (event) => {
-        const off = btn.classList.toggle('is-off');
-        event.currentTarget.setAttribute('aria-pressed', String(off));
-        updateCallStatus();
-      });
-    });
-    // 通話從聊天室發起：右上角的語音 / 視訊按鈕；掛斷回到原本的聊天室
-    let callReturnThread = null;
-    function startCall(thread, mode) {
-      callReturnThread = thread;
-      document.getElementById('callTitle').textContent = mode === 'voice' ? '語音通話' : '視訊通話';
-      document.getElementById('callName').textContent = thread.name;
-      document.getElementById('callAvatar').src = thread.avatar;
-      document.getElementById('callGlow').src = thread.avatar;
-      showScreen('videoScreen');
-      if (mode === 'voice') {
-        camBtn.classList.add('is-off');
-        camBtn.querySelector('button').setAttribute('aria-pressed', 'true');
+      if (call.state === 'idle') {
+        setStatus('');
+        updateButtons();
       }
-      updateCallStatus();
     }
-    document.querySelector('#endBtn button').addEventListener('click', () => {
-      const thread = callReturnThread;
-      callReturnThread = null;
-      showScreen('chatScreen');
-      if (thread) openThread(thread);
+
+    // ---------- 按鈕 ----------
+    micBtn.querySelector('button').addEventListener('click', () => {
+      const track = call.local?.getAudioTracks()[0];
+      if (!track) return;
+      track.enabled = !track.enabled;
+      updateButtons();
     });
+    camBtn.querySelector('button').addEventListener('click', async () => {
+      if (call.state === 'idle') return;
+      if (call.camTrack) {
+        call.camTrack.enabled = !call.camTrack.enabled;
+        if (!call.screenTrack) await sendVideo(call.camTrack.enabled ? call.camTrack : null);
+      } else {
+        // 語音通話中開鏡頭
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: call.facing } });
+          call.camTrack = stream.getVideoTracks()[0];
+          if (!call.screenTrack) await sendVideo(call.camTrack);
+        } catch {
+          toast('沒辦法使用鏡頭（請在瀏覽器允許）');
+        }
+      }
+      showLocalPreview();
+      updateButtons();
+    });
+    flipBtn.querySelector('button').addEventListener('click', async () => {
+      if (!call.camTrack) return;
+      const facing = call.facing === 'user' ? 'environment' : 'user';
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: facing } } });
+        const track = stream.getVideoTracks()[0];
+        call.camTrack.stop();
+        track.enabled = call.camTrack.enabled;
+        call.camTrack = track;
+        call.facing = facing;
+        if (!call.screenTrack) await sendVideo(track);
+        showLocalPreview();
+      } catch {
+        toast('這支裝置沒有另一個鏡頭');
+      }
+    });
+    shareBtn.querySelector('button').addEventListener('click', async () => {
+      if (call.state === 'idle') return;
+      if (call.screenTrack) {
+        stopScreenShare();
+        return;
+      }
+      if (!navigator.mediaDevices?.getDisplayMedia) {
+        toast('這支手機不能分享螢幕（iPhone / Android 的瀏覽器不支援），請用電腦', 3500);
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        call.screenTrack = stream.getVideoTracks()[0];
+        call.screenTrack.addEventListener('ended', stopScreenShare);
+        await sendVideo(call.screenTrack);
+        showLocalPreview();
+        updateButtons();
+        toast('正在分享螢幕');
+      } catch {
+        // 取消選擇
+      }
+    });
+    async function stopScreenShare() {
+      if (!call.screenTrack) return;
+      call.screenTrack.stop();
+      call.screenTrack = null;
+      await sendVideo(call.camTrack?.enabled ? call.camTrack : null);
+      showLocalPreview();
+      updateButtons();
+    }
+    document.querySelector('#endBtn button').addEventListener('click', () => endCall(true));
+    document.querySelector('#acceptBtn button').addEventListener('click', acceptCall);
+    document.querySelector('#declineBtn button').addEventListener('click', declineCall);
+    window.addEventListener('pagehide', () => endCall(true));
     document.getElementById('voiceCallBtn').addEventListener('click', () => currentThread && startCall(currentThread, 'voice'));
     document.getElementById('videoCallBtn').addEventListener('click', () => currentThread && startCall(currentThread, 'video'));
+    updateButtons();
 
     // ----- 通知：已讀 / 全部已讀、底部未讀數量 -----
     const NOTIFICATIONS = [

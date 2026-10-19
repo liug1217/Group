@@ -39,6 +39,9 @@ DATA_FILE = os.path.join(DATA_DIR, 'chat-data.json')
 MEMBER_IDS = {'fan', 'zhang', 'liu', 'si'}
 MAX_TEXT = 300
 MAX_PER_ROOM = 500
+# 通話（WebRTC）的訊號：只轉傳給對方，不存檔
+SIGNAL_TYPES = {'ring', 'accept', 'decline', 'busy', 'end', 'offer', 'answer', 'ice'}
+MAX_SIGNAL = 65536
 
 # 允許哪些網站連這台伺服器（GitHub 網站 + 本機測試）。要加別的網址就加在這裡，
 # 或用環境變數 ESN_ORIGINS="https://a.com,https://b.com"
@@ -162,7 +165,10 @@ class Handler(SimpleHTTPRequestHandler):
         return self.send_error(404)
 
     def do_POST(self):
-        if urlparse(self.path).path != '/api/messages':
+        path = urlparse(self.path).path
+        if path == '/api/signal':
+            return self.handle_signal()
+        if path != '/api/messages':
             return self.send_error(404)
         try:
             length = int(self.headers.get('Content-Length', '0'))
@@ -194,6 +200,24 @@ class Handler(SimpleHTTPRequestHandler):
             save_rooms()
         broadcast({'room': room, 'msg': msg})
         return self.send_json(200, msg)
+
+    # 通話訊號（響鈴、接聽、拒接、掛斷、WebRTC 的 offer / answer / ice）：
+    # 透過同一條 Server-Sent Events 推給大家，網頁只理會「to 是自己」的
+    def handle_signal(self):
+        try:
+            length = int(self.headers.get('Content-Length', '0'))
+            if length > MAX_SIGNAL:
+                return self.send_json(413, {'error': 'too large'})
+            data = json.loads(self.rfile.read(length) or b'{}')
+        except (ValueError, json.JSONDecodeError):
+            return self.send_json(400, {'error': 'bad json'})
+        sender = str(data.get('from', ''))
+        target = str(data.get('to', ''))
+        kind = str(data.get('type', ''))
+        if sender not in MEMBER_IDS or target not in MEMBER_IDS or sender == target or kind not in SIGNAL_TYPES:
+            return self.send_json(400, {'error': 'invalid signal'})
+        broadcast({'signal': {'from': sender, 'to': target, 'type': kind, 'call': str(data.get('call', ''))[:40], 'data': data.get('data')}})
+        return self.send_json(200, {'ok': True})
 
     # Server-Sent Events：新訊息即時推給每支連著的手機
     def stream_events(self):
