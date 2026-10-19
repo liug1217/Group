@@ -1280,7 +1280,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.5.2</div>
+    <div class="abs version-label t12 nowrap">ESN v1.5.3</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1888,13 +1888,9 @@
       return lensBar.left + TAB_PAD + ((lensBar.width - TAB_PAD * 2) / tabs.length) * (index + 0.5);
     }
 
-    // 長按才會出現鏡片（約 0.3 秒，手指沒有亂動）；之後才能左右滑。沒長按就只是點一下。
-    const LONG_PRESS_MS = 280;
+    // 按住往左右滑超過 6px 就出現鏡片跟著手指；沒滑就是點一下
     let dragStartX = null;
-    let dragStartY = null;
     let dragging = false;
-    let pressMoved = false;
-    let pressTimer = 0;
     let lensTimer = 0;
 
     function startLensDrag(clientX) {
@@ -1903,34 +1899,23 @@
       ensureLensGlass();
       lensBar = tabBar.getBoundingClientRect();
       buildLensRow();
-      // 從按住的分頁長出來，之後用彈簧跟著手指
-      lensTo(tabCenter(indexAt(clientX)), true);
+      // 從目前選的分頁長出來，之後用彈簧跟著手指
+      lensTo(tabCenter(activeIndex), true);
       tabBar.classList.add('is-dragging');
       tabLens.classList.add('is-on');
-      haptic?.();
     }
 
     tabBar.addEventListener('pointerdown', (event) => {
       dragStartX = event.clientX;
-      dragStartY = event.clientY;
       dragging = false;
-      pressMoved = false;
       try { tabBar.setPointerCapture(event.pointerId); } catch {}
-      clearTimeout(pressTimer);
-      pressTimer = setTimeout(() => {
-        if (dragStartX !== null && !pressMoved) startLensDrag(dragStartX);
-      }, LONG_PRESS_MS);
     });
 
     tabBar.addEventListener('pointermove', (event) => {
       if (dragStartX === null) return;
       if (!dragging) {
-        // 還沒長按完就動了：當作一般滑動，不出現鏡片
-        if (Math.hypot(event.clientX - dragStartX, event.clientY - dragStartY) > 10) {
-          pressMoved = true;
-          clearTimeout(pressTimer);
-        }
-        return;
+        if (Math.abs(event.clientX - dragStartX) < 6) return;
+        startLensDrag(dragStartX);
       }
       lensTo(event.clientX);
     });
@@ -1939,9 +1924,8 @@
       if (dragStartX === null) return;
       const index = indexAt(event.clientX);
       dragStartX = null;
-      clearTimeout(pressTimer);
       if (!dragging) {
-        if (!pressMoved) selectTab(index); // 單純點一下（沒長按、也沒亂滑）
+        selectTab(index); // 單純點一下
         return;
       }
       dragging = false;
@@ -1956,7 +1940,6 @@
 
     tabBar.addEventListener('pointerup', endDrag);
     tabBar.addEventListener('pointercancel', () => {
-      clearTimeout(pressTimer);
       dragStartX = null;
       dragging = false;
       tabLens.classList.remove('is-on');
@@ -1965,7 +1948,7 @@
     });
 
     // 鍵盤（Enter / 空白鍵）操作分頁。手指 / 滑鼠的點擊已經由上面的 pointer 事件處理，
-    // 這裡只管鍵盤（detail 是 0），免得長按滑動後又被 click 切回原本按住的分頁
+    // 這裡只管鍵盤（detail 是 0），免得滑動後又被 click 切回原本按下的分頁
     tabs.forEach((tab, i) => tab.addEventListener('click', (event) => {
       if (event.detail === 0) selectTab(i);
     }));
