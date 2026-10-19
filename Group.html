@@ -304,7 +304,9 @@
     .screen-home {
       height: calc(1440px + var(--safe-top));
       /* 照 liquidglass.dev：玻璃後面放圖片，折射才看得出來（自己畫的波浪圖，440×1440 @2x） */
-      background: #212121 url(assets/home-bg.jpg) 0 0 / 100% 100% no-repeat;
+      /* 跟其他分頁一樣用 100% auto（照圖片比例），每一頁的背景圖案位置才會一致；
+         原本 100% 100% 會被拉長，跟其他頁對不起來 */
+      background: #212121 url(assets/home-bg.jpg) 0 0 / 100% auto no-repeat;
     }
     /* 頂部固定，往下滑時不會跟著捲走；底色用不透明的 #252525（= header 疊在背景上的顏色），內容才不會透出來。
        改成玻璃後，玻璃層本身不透明（背景複本），一樣不會透出捲到下面的卡片 */
@@ -424,6 +426,17 @@
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+    /* 「我的」卡片：個人簡介有寫字時，小字置中、最多 4 行 */
+    .bio-text {
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      padding: 0 8px;
+      text-align: center;
+      line-height: 16px;
+      word-break: break-all;
     }
     .rank-card {
       top: calc(283px + var(--safe-top));
@@ -1090,6 +1103,22 @@
       font-size: 11px;
       color: rgba(255, 255, 255, 0.45);
     }
+    /* 聊天室的未讀數量（跟分頁列的紅點同色） */
+    .thread-unread {
+      position: absolute;
+      right: 20px;
+      top: 34px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      background: #E5484D;
+      color: #FFFFFF;
+      font-size: 11px;
+      line-height: 18px;
+      text-align: center;
+      box-sizing: border-box;
+    }
     .chat-empty {
       margin: auto;
       color: rgba(255, 255, 255, 0.5);
@@ -1298,7 +1327,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.6.1</div>
+    <div class="abs version-label t12 nowrap">ESN v1.6.2</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1487,11 +1516,16 @@
     <lg-panel class="page-header glass shadow" radius="0">
       <div class="abs page-title center-x t20 nowrap text-shadow">我的</div>
     </lg-panel>
+    <!-- 跟主頁的團長卡片一樣：頭像、名字、帳號、等級，右邊個人簡介，右上角身分標籤 -->
     <lg-panel class="card glass me-card" radius="35">
       <img class="avatar leader-avatar" id="meAvatar" src="assets/member-3.jpg" alt="">
-      <div class="abs t15 nowrap text-shadow" id="meName" style="left: 130px; top: 40px;">劉 O 佑</div>
-      <div class="abs t15 nowrap text-shadow" id="meRoblox" style="left: 130px; top: 58px;">Bi_liug1217</div>
-      <div class="abs t12 nowrap text-shadow me-level" id="meLevel" style="left: 130px; top: 82px;">Roblox競爭者等級 : 87</div>
+      <div class="abs t15 nowrap text-shadow" id="meName" style="left: 130px; top: 35px;">劉 O 佑</div>
+      <div class="abs t15 nowrap text-shadow" id="meRoblox" style="left: 130px; top: 53px;">Bi_liug1217</div>
+      <div class="abs t12 nowrap text-shadow me-level" style="left: 130px; top: 71px;">Roblox競爭者等級</div>
+      <div class="abs t12 nowrap text-shadow me-level" id="meLevel" style="left: 130px; top: 86px;">87</div>
+      <div class="abs bio-label t12 nowrap">個人簡介 :</div>
+      <lg-panel class="abs bio-box glass shadow" radius="10"><span class="t30" id="meBioShow">無</span></lg-panel>
+      <lg-panel class="abs leader-badge glass shadow" radius="8"><span class="t12" id="meRole">成員</span></lg-panel>
     </lg-panel>
     <lg-panel class="card glass bio-card" radius="35">
       <div class="abs rank-header shadow"></div>
@@ -1528,7 +1562,7 @@
       <i class="tab-icon" style="--icon: url(assets/tab-house.svg); --w: 27.6px; --h: 24.3px; --top: 11.5px;"></i><span>主頁</span>
     </button>
     <button class="tab" data-target="chatScreen" type="button">
-      <i class="tab-icon" style="--icon: url(assets/tab-chat.svg); --w: 25.4px; --h: 23.8px; --top: 12.7px;"></i><span>聊天</span>
+      <i class="tab-icon" style="--icon: url(assets/tab-chat.svg); --w: 25.4px; --h: 23.8px; --top: 12.7px;"></i><i class="tab-badge" id="chatBadge" hidden></i><span>聊天</span>
     </button>
     <button class="tab" data-target="videosScreen" type="button">
       <i class="tab-icon" style="--icon: url(assets/tab-film.svg); --w: 26.8px; --h: 21.2px; --top: 13.4px;"></i><span>VIDEO</span>
@@ -1691,8 +1725,8 @@
       ctx.setTransform(dpr, 0, 0, dpr, -view.left * dpr, -view.top * dpr);
       if (background) drawScreenBackground(ctx, background);
       sources.forEach((node) => drawMirrorNode(ctx, node, view));
-      // 換新的濾鏡 id，Safari 才會重新折射新的畫面
-      surface.glass?.flush();
+      // 不要每次重畫都換濾鏡 id（glass.flush）：Safari 換 id 後要重新載入折射圖，
+      // 那幾幀玻璃裡的東西會突然不見再出現（捲動時一直閃）。canvas 內容變了 Safari 本來就會重畫。
     }
 
     function drawHeaderMirror() {
@@ -1833,7 +1867,7 @@
         copy.removeAttribute('data-target');
         copy.tabIndex = -1;
         copy.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'));
-        copy.querySelector('.tab-badge')?.remove();
+        // 紅點要留著：鏡片滑過「通知」「聊天」時，紅點才不會不見
         row.append(copy);
       });
       tabLensRow.replaceChildren(row);
@@ -1963,6 +1997,13 @@
       hideLens(0);
       selectTab(activeIndex);
     });
+    // 保險：放開的事件沒收到（例如被系統打斷）時，鏡片不要一直卡在畫面上
+    tabBar.addEventListener('lostpointercapture', () => {
+      if (dragStartX === null) return;
+      dragStartX = null;
+      dragging = false;
+      hideLens(0);
+    });
 
     // ---------- 其他按鈕：按下放大、放開彈回 ----------
     const POP_BUTTONS = '.login-button, .logout-btn, .call-btn, .page-back, .page-action, .chat-send, .text-btn, .eye-button';
@@ -2080,7 +2121,8 @@
       document.getElementById('meAvatar').src = member.avatar;
       document.getElementById('meName').textContent = member.name;
       document.getElementById('meRoblox').textContent = member.roblox;
-      document.getElementById('meLevel').textContent = `Roblox競爭者等級 : ${member.level}`;
+      document.getElementById('meLevel').textContent = String(member.level);
+      document.getElementById('meRole').textContent = member.tag === '群主' ? '團長' : '成員';
       document.getElementById('tabAvatar').src = member.avatar;
       renderThreadList();
     }
@@ -2120,6 +2162,8 @@
         const base = chatBase();
         if (base === null) {
           updateChatStatus('local');
+          this.ready = true;
+          renderThreadList();
           return;
         }
         this.base = base;
@@ -2168,6 +2212,7 @@
             }, 10000);
           }
         }
+        this.ready = true; // 訊息載好了，才開始算未讀（不然第一次載入會把舊訊息全算成未讀）
         renderThreadList();
       },
       get(room, defaults = []) {
@@ -2236,6 +2281,33 @@
       return list;
     }
 
+    // ----- 聊天未讀：每個聊天室記住「看過幾則」，之後別人傳的新訊息就是未讀 -----
+    const chatSeen = store.get('chatSeen', {});
+    const seenKey = (room) => `${ME?.id || 'guest'}|${room}`;
+    function unreadIn(thread) {
+      if (!chat.ready || !ME) return 0;
+      const messages = chat.get(thread.room, thread.defaults);
+      const key = seenKey(thread.room);
+      if (chatSeen[key] === undefined) {
+        // 第一次看到這個聊天室：現有的訊息都當作看過了
+        chatSeen[key] = messages.length;
+        store.set('chatSeen', chatSeen);
+      }
+      return messages.slice(chatSeen[key]).filter((m) => !senderOf(m).isMe).length;
+    }
+    function markSeen(thread) {
+      chatSeen[seenKey(thread.room)] = chat.get(thread.room, thread.defaults).length;
+      store.set('chatSeen', chatSeen);
+    }
+    // 分頁列「聊天」上的紅點：所有聊天室的未讀加起來（跟通知一樣，關掉通知提醒就不顯示）
+    function updateChatBadge() {
+      const badge = document.getElementById('chatBadge');
+      if (!badge || !chat.ready) return; // 訊息還沒載好（設定也還沒讀）就先不算
+      const total = threads().reduce((sum, thread) => sum + unreadIn(thread), 0);
+      badge.textContent = total > 99 ? '99+' : total;
+      badge.hidden = !settings.notify || total === 0;
+    }
+
     function renderThreadList() {
       const nodes = [];
       const list = threads();
@@ -2261,11 +2333,14 @@
           preview = `${sender.isMe ? '我' : sender.name}：${last.text}`;
         }
         row.append(avatar, name, el('span', 'thread-preview', preview), el('span', 'thread-time', last ? last.time : ''));
+        const unread = unreadIn(thread);
+        if (unread) row.append(el('span', 'thread-unread', unread > 99 ? '99+' : String(unread)));
         row.addEventListener('click', () => openThread(thread));
         nodes.push(row);
       });
       chatThreadRows.replaceChildren(...nodes);
       chatThreadRows.style.height = `${list.length * THREAD_ROW}px`;
+      updateChatBadge();
     }
 
     function showThreadList() {
@@ -2282,6 +2357,8 @@
     function openThread(thread) {
       currentThread = thread;
       chatMessages = chat.get(thread.room, thread.defaults);
+      markSeen(thread);
+      updateChatBadge();
       chatScreen.classList.add('is-thread');
       tabBar.hidden = true; // 聊天室裡不顯示底部分頁列
       chatTitle.textContent = thread.name;
@@ -2298,10 +2375,12 @@
     function onChatUpdate(room) {
       if (currentThread?.room === room) {
         chatMessages = chat.get(room, currentThread.defaults);
+        markSeen(currentThread); // 正在看的聊天室，新訊息直接算看過
         renderChat();
       } else if (!chatScreen.classList.contains('is-thread')) {
         renderThreadList();
       }
+      updateChatBadge();
     }
 
     function renderChat() {
@@ -2450,8 +2529,17 @@
     const settingNotify = document.getElementById('settingNotify');
     const settingLevel = document.getElementById('settingLevel');
     bioInput.value = store.get('bio', '');
+    // 上面卡片右邊的個人簡介：沒寫就是大大的「無」，有寫就顯示內容（小字、最多 4 行）
+    const meBioShow = document.getElementById('meBioShow');
+    function showMyBio() {
+      const text = store.get('bio', '');
+      meBioShow.textContent = text || '無';
+      meBioShow.className = text ? 't12 bio-text' : 't30';
+    }
+    showMyBio();
     bioSave.addEventListener('click', () => {
       store.set('bio', bioInput.value.trim());
+      showMyBio();
       bioSave.textContent = '已儲存';
       setTimeout(() => { bioSave.textContent = '儲存'; }, 1500);
     });
@@ -2462,31 +2550,37 @@
       settingLevel.toggleAttribute('checked', settings.level);
       document.body.classList.toggle('level-hidden', !settings.level);
       updateBadge();
+      updateChatBadge();
     }
-    // 震動一下：Android 用 navigator.vibrate；iPhone 不支援 vibrate，
-    // 改點一個看不到的原生 iOS 開關（<input switch>，iOS 18 以上 Safari 會震）
-    const hapticLabel = el('label');
-    hapticLabel.setAttribute('aria-hidden', 'true');
-    hapticLabel.style.cssText = 'position:fixed;left:-9999px;width:1px;height:1px;overflow:hidden;';
-    const hapticInput = el('input');
-    hapticInput.type = 'checkbox';
-    hapticInput.setAttribute('switch', '');
-    hapticInput.tabIndex = -1;
-    hapticLabel.append(hapticInput);
-    document.body.append(hapticLabel);
+    // 震動一下：Android 用 navigator.vibrate；iPhone 不支援 vibrate，只有使用者切換原生 iOS 開關
+    // （<input type="checkbox" switch>，iOS 18 以上）時系統會震。做法照 ios-haptics：
+    // 每次新做一個看不到（display: none）的開關，點它的 label 再拿掉（要在手指觸控的事件裡呼叫）
     function haptic() {
-      if (navigator.vibrate) navigator.vibrate(10);
-      else hapticLabel.click();
+      if (navigator.vibrate) {
+        navigator.vibrate(10);
+        return;
+      }
+      const label = document.createElement('label');
+      label.setAttribute('aria-hidden', 'true');
+      label.style.display = 'none';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.setAttribute('switch', '');
+      label.append(input);
+      document.head.append(label);
+      label.click();
+      label.remove();
     }
 
+    // 直接點開關是原生的 iOS 開關（有 switch 屬性），系統自己會震；滑動切換是程式切的，才自己震
     settingNotify.addEventListener('change', (event) => {
-      haptic();
+      if (!event.isTrusted) haptic();
       settings.notify = event.target.checked;
       store.set('settings', settings);
       applySettings();
     });
     settingLevel.addEventListener('change', (event) => {
-      haptic();
+      if (!event.isTrusted) haptic();
       settings.level = event.target.checked;
       store.set('settings', settings);
       applySettings();
@@ -2497,8 +2591,11 @@
     // 不靠瀏覽器的 click（手機上手指有移動時 click 常常不來或被吃掉）。
     function enableSwitchDrag(sw) {
       const input = sw.querySelector('input');
+      // 變成原生的 iOS 開關：點一下由瀏覽器自己切換，iPhone 才會震動
+      input.setAttribute('switch', '');
       let drag = null;
       let skipClick = false;
+      let clickCame = false;
       const setChecked = (on) => {
         if (on !== input.checked) {
           input.checked = on;
@@ -2530,17 +2627,24 @@
         const d = drag;
         drag = null;
         if (!d) return;
-        // 接下來的 click（如果有來）不要再切一次
+        if (!d.moved) {
+          // 點一下：讓瀏覽器原生切換（iPhone 會震）。手指抖動時 click 偶爾不來，等一下沒來就自己切
+          clickCame = false;
+          setTimeout(() => { if (!clickCame) setChecked(!d.from); }, 350);
+          return;
+        }
+        // 滑動：程式切換，接下來的 click（如果有來）不要再切一次
         skipClick = true;
         setTimeout(() => { skipClick = false; }, 500);
-        setChecked(d.moved ? d.pos > 0.5 : !d.from);
+        setChecked(d.pos > 0.5);
       });
       input.addEventListener('pointercancel', () => {
         drag = null;
         sw.xs.set(input.checked ? 1 : 0);
       });
       input.addEventListener('click', (event) => {
-        // 鍵盤（空白鍵）還是走原本的 click
+        clickCame = true;
+        // 鍵盤（空白鍵）和點一下都走原本的 click；滑動完的 click 擋掉
         if (skipClick) {
           skipClick = false;
           event.preventDefault();
