@@ -793,13 +793,8 @@
     }
 
     /* ---------- 其他頁面共用：背景、頂部標題 ---------- */
-    .videos-card {
-      top: calc(109px + var(--safe-top));
-      height: 130px;
-    }
     .screen-chat,
     .screen-notify,
-    .screen-videos,
     .screen-me {
       background: #212121 url(assets/home-bg.jpg) 0 0 / 100% auto no-repeat;
     }
@@ -837,6 +832,227 @@
       font: inherit;
       font-size: 12px;
       cursor: pointer;
+    }
+
+    /* ---------- VIDEO：短影音（像 TikTok / YouTube Shorts） ---------- */
+    .screen-videos {
+      height: 100vh;
+      height: 100dvh;
+      background: #000000;
+    }
+    .shorts {
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      scroll-snap-type: y mandatory;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+    }
+    .shorts::-webkit-scrollbar {
+      display: none;
+    }
+    .short {
+      position: relative;
+      height: 100%;
+      overflow: hidden;
+      background: #000000;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+    }
+    .short video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000000;
+    }
+    /* 上下加一點暗色漸層，白字才看得清楚 */
+    .short::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.6) 100%);
+    }
+    .shorts-top {
+      position: absolute;
+      left: 50%;
+      top: calc(14px + var(--safe-top));
+      transform: translateX(-50%);
+      z-index: 3;
+      font-size: 17px;
+      font-weight: 600;
+      color: #FFFFFF;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+    }
+    /* 右邊一排：頭像、愛心、分享、音樂唱片（在分頁列上面） */
+    .short-side {
+      position: absolute;
+      right: 10px;
+      bottom: 120px;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+    .short-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 2px solid #FFFFFF;
+      object-fit: cover;
+    }
+    .short-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: #FFFFFF;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+      cursor: pointer;
+    }
+    .short-btn svg {
+      width: 34px;
+      height: 34px;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+    }
+    .short-like.is-liked svg {
+      color: #FE2C55;
+      animation: like-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes like-pop {
+      0% { transform: scale(0.6); }
+      60% { transform: scale(1.25); }
+      100% { transform: scale(1); }
+    }
+    .short-disc {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #333333 0 30%, #111111 31% 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: disc-spin 4s linear infinite;
+      animation-play-state: paused;
+    }
+    .short.is-playing .short-disc {
+      animation-play-state: running;
+    }
+    .short-disc img {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    @keyframes disc-spin {
+      to { transform: rotate(360deg); }
+    }
+    /* 左下：誰分享的、說明、音樂來源、影片來源 */
+    .short-info {
+      position: absolute;
+      left: 14px;
+      right: 80px;
+      bottom: 112px;
+      z-index: 2;
+      color: #FFFFFF;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    }
+    .short-user {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .short-caption {
+      margin-top: 6px;
+      font-size: 14px;
+      line-height: 19px;
+    }
+    .short-music {
+      margin-top: 8px;
+      overflow: hidden;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+    .short-music span {
+      display: inline-block;
+      padding-left: 100%;
+      animation: music-scroll 9s linear infinite;
+    }
+    @keyframes music-scroll {
+      to { transform: translateX(-100%); }
+    }
+    .short-source {
+      margin-top: 4px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+    /* 進度條 */
+    .short-progress {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 100px;
+      z-index: 2;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .short-progress i {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.85);
+      transform-origin: left;
+      transform: scaleX(0);
+    }
+    /* 點兩下按讚：飄出一顆大愛心 */
+    .short-heart {
+      position: absolute;
+      z-index: 3;
+      width: 90px;
+      height: 90px;
+      margin: -45px 0 0 -45px;
+      color: #FE2C55;
+      pointer-events: none;
+      animation: big-heart 0.8s ease-out forwards;
+    }
+    .short-heart svg {
+      width: 100%;
+      height: 100%;
+    }
+    @keyframes big-heart {
+      0% { opacity: 0; transform: scale(0.4) rotate(-12deg); }
+      20% { opacity: 1; transform: scale(1.15) rotate(-12deg); }
+      45% { transform: scale(0.95) rotate(-12deg); }
+      100% { opacity: 0; transform: translateY(-60px) scale(1.1) rotate(-12deg); }
+    }
+    /* 中間的小提示（開聲音 / 暫停 / 已複製連結） */
+    .shorts-toast {
+      position: absolute;
+      left: 50%;
+      top: 45%;
+      z-index: 4;
+      padding: 8px 14px;
+      border-radius: 18px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #FFFFFF;
+      font-size: 14px;
+      transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .shorts-toast.is-on {
+      opacity: 1;
     }
 
     /* ---------- 聊天 ---------- */
@@ -1327,7 +1543,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.6.2</div>
+    <div class="abs version-label t12 nowrap">ESN v1.7.0</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1454,15 +1670,10 @@
 
   <!-- VIDEO（底部中間）：之後放影片；通話改在聊天室裡 -->
   <section class="screen screen-videos is-hidden" id="videosScreen" data-lg-backdrop="">
-    <lg-panel class="page-header glass shadow" radius="0">
-      <div class="abs page-title center-x t20 nowrap text-shadow">VIDEO</div>
-    </lg-panel>
-    <lg-panel class="card glass videos-card" radius="35">
-      <div class="abs rank-header shadow"></div>
-      <div class="abs center-x card-title t20 nowrap text-shadow">影片</div>
-      <div class="abs center-x t15 nowrap text-shadow" style="top: 70px;">影片功能即將推出</div>
-      <div class="abs center-x t12 nowrap" style="top: 98px; color: rgba(255, 255, 255, 0.6);">要打電話或視訊，請到聊天室右上角</div>
-    </lg-panel>
+    <!-- 短影音：上下滑，一次一部，看得到的那部自動播放 -->
+    <div class="shorts" id="shorts" aria-label="短影音"></div>
+    <div class="shorts-top nowrap">短影音</div>
+    <div class="shorts-toast" id="shortsToast" aria-live="polite"></div>
   </section>
 
   <!-- 聊天 -->
@@ -2131,6 +2342,7 @@
     function onScreenShown(id) {
       if (id === 'chatScreen') showThreadList();
       if (id === 'videoScreen') resetCall();
+      shortsOnShow(id === 'videosScreen');
     }
 
     // ----- 聊天資料：連到聊天伺服器（server.py，在你的電腦上跑）就大家互傳；
@@ -2522,6 +2734,238 @@
     }
     document.getElementById('readAllBtn').addEventListener('click', () => markRead(NOTIFICATIONS.map((n) => n.id)));
     renderNotify();
+
+    // ----- VIDEO：短影音 -----
+    // 影片都是可以公開使用的範例影片（Blender 開放電影 CC BY 3.0、MDN 的 CC0 範例），由團員「分享」，
+    // 下面寫出真正的來源和授權。只有 5 部，所以輪流出現、每次搭不同的說明。
+    const SHORT_VIDEOS = {
+      bunny: {
+        src: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_2MB.mp4',
+        music: '原聲 - Big Buck Bunny',
+        source: '影片：Big Buck Bunny © Blender Foundation（CC BY 3.0）',
+      },
+      sintel: {
+        src: 'https://test-videos.co.uk/vids/sintel/mp4/h264/720/Sintel_720_10s_2MB.mp4',
+        music: '原聲 - Sintel',
+        source: '影片：Sintel © Blender Foundation（CC BY 3.0）',
+      },
+      jellyfish: {
+        src: 'https://test-videos.co.uk/vids/jellyfish/mp4/h264/720/Jellyfish_720_10s_2MB.mp4',
+        music: '原聲 - Jellyfish',
+        source: '影片：Jellyfish 測試影片（test-videos.co.uk）',
+      },
+      flower: {
+        src: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+        music: '原聲 - Flower',
+        source: '影片：MDN Web Docs 範例影片（CC0）',
+      },
+      friday: {
+        src: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/friday.mp4',
+        music: '原聲 - Friday',
+        source: '影片：MDN Web Docs 範例影片（CC0）',
+      },
+    };
+    const SHORTS = [
+      { id: 's1', video: 'bunny', by: 'fan', caption: '週末團戰前先來點可愛的 🐰 #藍冰團', likes: 128 },
+      { id: 's2', video: 'sintel', by: 'zhang', caption: '這個畫面太帥了吧 #動畫 #推薦', likes: 342 },
+      { id: 's3', video: 'jellyfish', by: 'si', caption: '看水母放鬆一下～', likes: 89 },
+      { id: 's4', video: 'flower', by: 'liu', caption: '花開了 🌸', likes: 56 },
+      { id: 's5', video: 'friday', by: 'fan', caption: '星期五了！今晚上線打團 #Roblox', likes: 211 },
+      { id: 's6', video: 'sintel', by: 'si', caption: '有人看過這部嗎？', likes: 97 },
+      { id: 's7', video: 'bunny', by: 'zhang', caption: '這隻兔子好像我們團長 😂', likes: 430 },
+      { id: 's8', video: 'jellyfish', by: 'liu', caption: '深海 ASMR #放鬆', likes: 64 },
+      { id: 's9', video: 'friday', by: 'si', caption: '週五晚上的心情', likes: 73 },
+      { id: 's10', video: 'flower', by: 'zhang', caption: '慢動作好療癒', likes: 118 },
+      { id: 's11', video: 'bunny', by: 'liu', caption: '經典動畫回顧 #推薦', likes: 155 },
+      { id: 's12', video: 'sintel', by: 'fan', caption: '下次團戰就要這種氣勢 ⚔️', likes: 506 },
+    ];
+    const shortsEl = document.getElementById('shorts');
+    const shortsToast = document.getElementById('shortsToast');
+    const shortsLiked = new Set(store.get('shortsLiked', []));
+    let shortsMuted = true; // 手機規定：要先靜音才能自動播放，點一下畫面再開聲音
+    let shortsVisible = false;
+    let currentShort = null;
+
+    const ICON_HEART = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21.35 10.55 20C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
+    const ICON_SHARE = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 4.5v3.6C6.6 8.9 3.7 13.3 3 18.5c2.3-3.4 5.5-4.9 10-4.9v3.7l7.5-6.4L13 4.5z"/></svg>';
+
+    let toastTimer = 0;
+    function shortsSay(text) {
+      shortsToast.textContent = text;
+      shortsToast.classList.add('is-on');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => shortsToast.classList.remove('is-on'), 900);
+    }
+
+    function likeCount(item) {
+      return item.likes + (shortsLiked.has(item.id) ? 1 : 0);
+    }
+
+    function setLiked(item, card, liked) {
+      if (liked) shortsLiked.add(item.id);
+      else shortsLiked.delete(item.id);
+      store.set('shortsLiked', [...shortsLiked]);
+      const btn = card.querySelector('.short-like');
+      btn.classList.toggle('is-liked', liked);
+      btn.querySelector('span').textContent = likeCount(item);
+      btn.setAttribute('aria-pressed', String(liked));
+      if (liked) haptic();
+    }
+
+    function bigHeart(card, x, y) {
+      const heart = document.createElement('div');
+      heart.className = 'short-heart';
+      heart.innerHTML = ICON_HEART;
+      const r = card.getBoundingClientRect();
+      heart.style.left = `${x - r.left}px`;
+      heart.style.top = `${y - r.top}px`;
+      card.append(heart);
+      heart.addEventListener('animationend', () => heart.remove());
+    }
+
+    async function shareShort(item) {
+      const url = `${location.origin}${location.pathname}#short-${item.id}`;
+      const member = memberById(item.by);
+      const data = { title: '★Bi_藍冰團★ 短影音', text: `${member?.name || ''}：${item.caption}`, url };
+      try {
+        if (navigator.share) {
+          await navigator.share(data);
+          return;
+        }
+        await navigator.clipboard.writeText(url);
+        shortsSay('已複製連結');
+      } catch {
+        // 使用者取消分享
+      }
+    }
+
+    function buildShorts() {
+      const cards = SHORTS.map((item) => {
+        const info = SHORT_VIDEOS[item.video];
+        const member = memberById(item.by);
+        const card = el('article', 'short');
+        card.id = `short-${item.id}`;
+        const video = el('video');
+        video.src = info.src;
+        video.muted = true;
+        video.loop = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.preload = 'metadata';
+        const progress = el('div', 'short-progress');
+        const bar = el('i');
+        progress.append(bar);
+        video.addEventListener('timeupdate', () => {
+          if (video.duration) bar.style.transform = `scaleX(${video.currentTime / video.duration})`;
+        });
+
+        const side = el('div', 'short-side');
+        const avatar = el('img', 'short-avatar');
+        avatar.src = member?.avatar || 'assets/group-avatar.jpg';
+        avatar.alt = member?.name || '';
+        const like = el('button', 'short-btn short-like');
+        like.type = 'button';
+        like.setAttribute('aria-label', '按讚');
+        like.innerHTML = `${ICON_HEART}<span></span>`;
+        like.querySelector('span').textContent = likeCount(item);
+        like.classList.toggle('is-liked', shortsLiked.has(item.id));
+        like.addEventListener('click', (event) => {
+          event.stopPropagation();
+          setLiked(item, card, !shortsLiked.has(item.id));
+        });
+        const share = el('button', 'short-btn short-share');
+        share.type = 'button';
+        share.setAttribute('aria-label', '分享');
+        share.innerHTML = `${ICON_SHARE}<span>分享</span>`;
+        share.addEventListener('click', (event) => {
+          event.stopPropagation();
+          shareShort(item);
+        });
+        const disc = el('div', 'short-disc');
+        const discImg = el('img');
+        discImg.src = member?.avatar || 'assets/group-avatar.jpg';
+        discImg.alt = '';
+        disc.append(discImg);
+        side.append(avatar, like, share, disc);
+
+        const infoBox = el('div', 'short-info');
+        const user = el('div', 'short-user', `@${member?.roblox || 'member'}`);
+        const caption = el('div', 'short-caption', `${member?.name || ''} 分享：${item.caption}`);
+        const music = el('div', 'short-music');
+        music.append(el('span', '', `♫ ${info.music}　　♫ ${info.music}`));
+        const source = el('div', 'short-source', info.source);
+        infoBox.append(user, caption, music, source);
+
+        card.append(video, progress, side, infoBox);
+
+        // 點一下：靜音中就開聲音，不然暫停 / 繼續；點兩下：按讚 + 大愛心
+        let lastTap = 0;
+        let tapTimer = 0;
+        card.addEventListener('click', (event) => {
+          const now = performance.now();
+          if (now - lastTap < 300) {
+            clearTimeout(tapTimer);
+            lastTap = 0;
+            if (!shortsLiked.has(item.id)) setLiked(item, card, true);
+            bigHeart(card, event.clientX, event.clientY);
+            return;
+          }
+          lastTap = now;
+          tapTimer = setTimeout(() => {
+            if (shortsMuted) {
+              shortsMuted = false;
+              video.muted = false;
+              shortsSay('🔊 已開啟聲音');
+            } else if (video.paused) {
+              video.play().catch(() => {});
+              shortsSay('▶ 播放');
+            } else {
+              video.pause();
+              shortsSay('❚❚ 暫停');
+            }
+          }, 300);
+        });
+        return card;
+      });
+      shortsEl.replaceChildren(...cards);
+    }
+
+    function playShort(card) {
+      if (currentShort && currentShort !== card) {
+        currentShort.querySelector('video').pause();
+        currentShort.classList.remove('is-playing');
+      }
+      currentShort = card;
+      if (!card || !shortsVisible) return;
+      const video = card.querySelector('video');
+      video.muted = shortsMuted;
+      video.play().then(() => card.classList.add('is-playing')).catch(() => {});
+    }
+
+    // 滑到哪一部就播哪一部（六成以上在畫面裡）
+    const shortsObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.6) playShort(entry.target);
+      });
+    }, { root: shortsEl, threshold: [0.6] });
+
+    buildShorts();
+    shortsEl.querySelectorAll('.short').forEach((card) => shortsObserver.observe(card));
+
+    // 切到 VIDEO 才播放，離開就全部暫停
+    function shortsOnShow(visible) {
+      shortsVisible = visible;
+      if (!visible) {
+        shortsEl.querySelectorAll('video').forEach((video) => video.pause());
+        shortsEl.querySelectorAll('.short.is-playing').forEach((card) => card.classList.remove('is-playing'));
+        return;
+      }
+      playShort(currentShort || shortsEl.querySelector('.short'));
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) shortsOnShow(false);
+      else if (!document.getElementById('videosScreen').classList.contains('is-hidden')) shortsOnShow(true);
+    });
 
     // ----- 我的：個人簡介、設定、登出 -----
     const bioInput = document.getElementById('bioInput');
