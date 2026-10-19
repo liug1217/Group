@@ -538,10 +538,6 @@
     .tab-bar.is-dragging .tab-pill {
       opacity: 0;
     }
-    /* 放開時膠囊直接跳到新分頁（藏在鏡片後面），不要在淡入時還看到它滑過去 */
-    .tab-pill.no-anim {
-      transition: none;
-    }
 
     /* ---------- 滑動時的玻璃鏡片（iOS 26 / Threads 那種） ----------
        比選取膠囊大（106×74，上下超出分頁列）、很透明；鏡片本身固定大小，靠 transform 移動和縮放，
@@ -553,7 +549,7 @@
       width: 106px;
       height: 74px;
       border-radius: 37px;
-      overflow: hidden;
+      /* 不要 overflow: hidden：iPhone（WebKit）的 SVG 折射放在會裁切的容器裡會畫錯位（跟「我的」頁開關同一個 bug） */
       z-index: 11;
       pointer-events: none;
       opacity: 0;
@@ -565,11 +561,11 @@
       box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
     }
     /* 鏡片本體（有折射濾鏡）：幾乎透明，只有一圈亮邊，上緣比較亮 */
+    /* 圓角裁切交給 createGlass 的 clip-path（clip: true），不用 overflow: hidden */
     .tab-lens__glass {
       position: absolute;
       inset: 0;
       border-radius: inherit;
-      overflow: hidden;
       background: rgba(255, 255, 255, 0.04);
       box-shadow:
         inset 0 0 0 1px rgba(255, 255, 255, 0.7),
@@ -587,7 +583,6 @@
       border-radius: 1000px;
       /* 分頁列的灰（白色 50% 疊在深色背景上 ≈ rgb(148, 148, 148)），讓鏡片裡看起來跟底下一樣 */
       background: rgb(148, 148, 148);
-      will-change: transform;
     }
     .tab-lens__row .tab-lens__tabs {
       position: absolute;
@@ -1285,7 +1280,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.5.1</div>
+    <div class="abs version-label t12 nowrap">ESN v1.5.2</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1831,7 +1826,7 @@
     // 鏡片位置用彈簧動畫：手指只改目標，每一幀往目標靠近，看起來順、不會一格一格跳。
     // 分頁列的位置在開始滑的時候量一次就好，每一幀不用再量。
     let lensBar = null;
-    const lensMotion = { x: 0, v: 0, target: 0, frame: 0, last: 0, onRest: null };
+    const lensMotion = { x: 0, v: 0, target: 0, frame: 0, last: 0 };
 
     function lensLimits() {
       const slot = (lensBar.width - TAB_PAD * 2) / tabs.length;
@@ -1843,7 +1838,8 @@
       const ly = lensBar.top + lensBar.height / 2 - LENS_H / 2;
       tabLens.style.transform = `translate3d(${lx}px, ${ly}px, 0)`;
       // 複本反方向移，跟底下真的分頁列對齊
-      tabLensRow.style.transform = `translate3d(${lensBar.left - lx}px, ${lensBar.top - ly}px, 0)`;
+      // 鏡片裡面用一般 2D 移動（不要 translate3d / will-change 另開圖層，WebKit 的濾鏡碰到會畫錯）
+      tabLensRow.style.transform = `translate(${lensBar.left - lx}px, ${lensBar.top - ly}px)`;
     }
 
     function stepLens(now) {
@@ -1856,20 +1852,11 @@
         lensMotion.x += lensMotion.v * h;
         dt -= h;
       }
-      // 放開後：鏡片已經到分頁附近（2px 內、速度慢下來）就先收尾，不用等彈簧完全停
-      if (lensMotion.onRest && Math.abs(lensMotion.x - lensMotion.target) < 2 && Math.abs(lensMotion.v) < 80) {
-        const done = lensMotion.onRest;
-        lensMotion.onRest = null;
-        done();
-      }
       if (Math.abs(lensMotion.v) < 4 && Math.abs(lensMotion.x - lensMotion.target) < 0.3) {
         lensMotion.x = lensMotion.target;
         lensMotion.v = 0;
         lensMotion.frame = 0;
         applyLens();
-        const done = lensMotion.onRest;
-        lensMotion.onRest = null;
-        done?.();
         return;
       }
       applyLens();
@@ -1913,7 +1900,6 @@
     function startLensDrag(clientX) {
       dragging = true;
       clearTimeout(lensTimer);
-      lensMotion.onRest = null;
       ensureLensGlass();
       lensBar = tabBar.getBoundingClientRect();
       buildLensRow();
@@ -1959,24 +1945,13 @@
         return;
       }
       dragging = false;
-      // 膠囊先直接跳到新分頁（藏在鏡片後面）
-      tabPill.classList.add('no-anim');
-      placePill(index);
-      tabPill.getBoundingClientRect();
-      tabPill.classList.remove('no-anim');
-      // 鏡片彈到那個分頁、停穩之後：鏡片淡出變回膠囊，再切頁面（切頁面很吃效能，放到動畫後面才不會卡）
-      let finished = false;
-      const finish = () => {
-        if (finished) return;
-        finished = true;
-        clearTimeout(lensTimer);
+      // 放開：馬上切過去（跟之前一樣），鏡片彈到那個分頁，然後縮回成灰色膠囊
+      lensTo(tabCenter(index));
+      selectTab(index);
+      lensTimer = setTimeout(() => {
         tabLens.classList.remove('is-on');
         tabBar.classList.remove('is-dragging');
-        requestAnimationFrame(() => selectTab(index));
-      };
-      lensMotion.onRest = finish;
-      lensTo(tabCenter(index));
-      lensTimer = setTimeout(finish, 350); // 保險：彈簧太久沒停也照樣收尾
+      }, 260);
     }
 
     tabBar.addEventListener('pointerup', endDrag);
@@ -1984,7 +1959,6 @@
       clearTimeout(pressTimer);
       dragStartX = null;
       dragging = false;
-      lensMotion.onRest = null;
       tabLens.classList.remove('is-on');
       tabBar.classList.remove('is-dragging');
       selectTab(activeIndex);
