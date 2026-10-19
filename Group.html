@@ -533,7 +533,7 @@
       border-radius: 27px;
       background: rgba(0, 0, 0, 0.12);
       transform: translateX(var(--pill-x, 0px));
-      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.28s ease;
       pointer-events: none;
     }
     /* 按住滑動時：灰色膠囊藏起來，換玻璃鏡片 */
@@ -555,10 +555,11 @@
       z-index: 11;
       pointer-events: none;
       opacity: 0;
-      /* 位置（transform）由 JS 用彈簧動畫每一幀設定；出現 / 消失的縮放用獨立的 scale，才不會互相干擾 */
-      scale: 0.8;
-      transition: opacity 0.18s ease, scale 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
-      will-change: transform, opacity;
+      /* 位置（translate）由 JS 用彈簧動畫每一幀設定；出現 / 消失的縮放用獨立的 scale，以鏡片中心縮放。
+         消失：平順地縮小淡出 */
+      scale: 0.6;
+      transition: opacity 0.28s ease, scale 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: translate, scale, opacity;
       /* 外面的陰影放在沒有濾鏡的外框，才不會被鏡片裁掉 */
       box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
     }
@@ -574,9 +575,11 @@
         inset 0 2px 2px rgba(255, 255, 255, 0.75),
         inset 0 -2px 2px rgba(255, 255, 255, 0.35);
     }
+    /* 出現：從 0.6 倍彈出來，稍微超過一點再回到原本大小 */
     .tab-lens.is-on {
       opacity: 1;
       scale: 1;
+      transition: opacity 0.16s ease, scale 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .tab-lens__row {
       position: absolute;
@@ -601,11 +604,11 @@
     /* 其他按鈕：按下去放大、放開彈回來（iOS 26 玻璃按鈕的感覺）。用獨立的 scale，不會蓋掉原本的 transform；
        整排的列表（聊天室、通知、選成員）放大少一點 */
     .press-pop {
-      transition: scale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: scale 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .press-pop.is-pressed {
-      scale: 1.08;
-      transition: scale 0.14s ease-out;
+      scale: 1.06;
+      transition: scale 0.25s cubic-bezier(0.25, 1.2, 0.5, 1);
     }
     .press-pop.is-row.is-pressed {
       scale: 1.025;
@@ -1295,7 +1298,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.6.0</div>
+    <div class="abs version-label t12 nowrap">ESN v1.6.1</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1851,7 +1854,9 @@
     function applyLens() {
       const lx = lensMotion.x - LENS_W / 2;
       const ly = lensBar.top + lensBar.height / 2 - LENS_H / 2;
-      tabLens.style.transform = `translate3d(${lx}px, ${ly}px, 0)`;
+      // 用 translate（不是 transform）：scale 才會以鏡片自己的中心縮放。
+      // 用 transform 的話縮放中心在螢幕左上角，鏡片縮小時會往上飄
+      tabLens.style.translate = `${lx}px ${ly}px`;
       // 複本反方向移，跟底下真的分頁列對齊
       // 鏡片裡面用一般 2D 移動（不要 translate3d / will-change 另開圖層，WebKit 的濾鏡碰到會畫錯）
       tabLensRow.style.transform = `translate(${lensBar.left - lx}px, ${lensBar.top - ly}px)`;
@@ -1948,7 +1953,7 @@
       // 放開：馬上切過去，鏡片彈到那個分頁，然後縮小變回灰色膠囊
       lensTo(tabCenter(index));
       selectTab(index);
-      hideLens(220);
+      hideLens(260);
     }
 
     tabBar.addEventListener('pointerup', endDrag);
