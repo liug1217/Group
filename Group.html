@@ -597,6 +597,19 @@
     .tab-lens__row .tab {
       color: rgb(0, 74, 193);
     }
+
+    /* 其他按鈕：按下去放大、放開彈回來（iOS 26 玻璃按鈕的感覺）。用獨立的 scale，不會蓋掉原本的 transform；
+       整排的列表（聊天室、通知、選成員）放大少一點 */
+    .press-pop {
+      transition: scale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .press-pop.is-pressed {
+      scale: 1.08;
+      transition: scale 0.14s ease-out;
+    }
+    .press-pop.is-row.is-pressed {
+      scale: 1.025;
+    }
     /* 圖示、文字 #1A1A1A（Figma），粗體 10px；選取的是 Figma 的藍色 */
     .tab {
       position: relative;
@@ -1282,7 +1295,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.5.4</div>
+    <div class="abs version-label t12 nowrap">ESN v1.6.0</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1890,35 +1903,40 @@
       return lensBar.left + TAB_PAD + ((lensBar.width - TAB_PAD * 2) / tabs.length) * (index + 0.5);
     }
 
-    // 按住往左右滑超過 6px 就出現鏡片跟著手指；沒滑就是點一下
+    // 一按下去，玻璃鏡片就在那個分頁上放大出現；往左右滑超過 6px 就跟著手指；放開切過去，鏡片縮小變回膠囊
     let dragStartX = null;
     let dragging = false;
     let lensTimer = 0;
 
-    function startLensDrag(clientX) {
-      dragging = true;
+    function showLens(clientX) {
       clearTimeout(lensTimer);
       ensureLensGlass();
       lensBar = tabBar.getBoundingClientRect();
       buildLensRow();
-      // 從目前選的分頁長出來，之後用彈簧跟著手指
-      lensTo(tabCenter(activeIndex), true);
+      lensTo(tabCenter(indexAt(clientX)), true);
       tabBar.classList.add('is-dragging');
       tabLens.classList.add('is-on');
+    }
+
+    function hideLens(delay) {
+      clearTimeout(lensTimer);
+      lensTimer = setTimeout(() => {
+        tabLens.classList.remove('is-on');
+        tabBar.classList.remove('is-dragging');
+      }, delay);
     }
 
     tabBar.addEventListener('pointerdown', (event) => {
       dragStartX = event.clientX;
       dragging = false;
       try { tabBar.setPointerCapture(event.pointerId); } catch {}
+      showLens(event.clientX);
     });
 
     tabBar.addEventListener('pointermove', (event) => {
       if (dragStartX === null) return;
-      if (!dragging) {
-        if (Math.abs(event.clientX - dragStartX) < 6) return;
-        startLensDrag(dragStartX);
-      }
+      if (!dragging && Math.abs(event.clientX - dragStartX) < 6) return;
+      dragging = true;
       lensTo(event.clientX);
     });
 
@@ -1926,28 +1944,43 @@
       if (dragStartX === null) return;
       const index = indexAt(event.clientX);
       dragStartX = null;
-      if (!dragging) {
-        selectTab(index); // 單純點一下
-        return;
-      }
       dragging = false;
-      // 放開：馬上切過去（跟之前一樣），鏡片彈到那個分頁，然後縮回成灰色膠囊
+      // 放開：馬上切過去，鏡片彈到那個分頁，然後縮小變回灰色膠囊
       lensTo(tabCenter(index));
       selectTab(index);
-      lensTimer = setTimeout(() => {
-        tabLens.classList.remove('is-on');
-        tabBar.classList.remove('is-dragging');
-      }, 260);
+      hideLens(220);
     }
 
     tabBar.addEventListener('pointerup', endDrag);
     tabBar.addEventListener('pointercancel', () => {
       dragStartX = null;
       dragging = false;
-      tabLens.classList.remove('is-on');
-      tabBar.classList.remove('is-dragging');
+      hideLens(0);
       selectTab(activeIndex);
     });
+
+    // ---------- 其他按鈕：按下放大、放開彈回 ----------
+    const POP_BUTTONS = '.login-button, .logout-btn, .call-btn, .page-back, .page-action, .chat-send, .text-btn, .eye-button';
+    const POP_ROWS = '.picker-item, .thread-row, .notify-row';
+    let popped = null;
+    let poppedAt = 0;
+    function releasePop() {
+      if (!popped) return;
+      const node = popped;
+      popped = null;
+      // 很快點一下也要看得到放大：至少放大 120ms 再彈回
+      setTimeout(() => node.classList.remove('is-pressed'), Math.max(0, 120 - (performance.now() - poppedAt)));
+    }
+    document.addEventListener('pointerdown', (event) => {
+      const node = event.target.closest?.(`${POP_BUTTONS}, ${POP_ROWS}`);
+      if (!node || node.disabled || node.querySelector?.('button:disabled')) return;
+      releasePop();
+      node.classList.add('press-pop', 'is-pressed');
+      node.classList.toggle('is-row', node.matches(POP_ROWS));
+      popped = node;
+      poppedAt = performance.now();
+    }, { passive: true });
+    ['pointerup', 'pointercancel'].forEach((type) => document.addEventListener(type, releasePop, { passive: true }));
 
     // 鍵盤（Enter / 空白鍵）操作分頁。手指 / 滑鼠的點擊已經由上面的 pointer 事件處理，
     // 這裡只管鍵盤（detail 是 0），免得滑動後又被 click 切回原本按下的分頁
