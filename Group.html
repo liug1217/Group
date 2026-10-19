@@ -484,95 +484,152 @@
       color: rgba(255, 255, 255, 0.7);
     }
 
-    /* Tab Bar - iPhone · 五分頁（可點擊也可滑動） */
+    /* Tab Bar - iPhone · 五分頁（可點擊也可滑動）
+       Figma「五分頁底欄」（iOS 27 Tab Bar）：398×62、左右 21px、離底 21px，
+       灰色玻璃（深色背景上約白色 50%），上緣一條亮邊 */
     .tab-bar {
       position: fixed;
-      left: 19px;
-      right: 19px;
-      /* 一般是 29px（Figma）；有底部橫桿的 iPhone 在主畫面 App 裡，至少讓出橫桿的安全區 */
-      bottom: max(29px, var(--safe-bottom));
-      height: 70px;
+      left: 21px;
+      right: 21px;
+      bottom: 21px;
+      height: 62px;
       display: grid;
       grid-template-columns: repeat(5, 1fr);
       border-radius: 1000px;
-      background: rgba(242, 242, 247, 0.8);
+      background: rgba(255, 255, 255, 0.5);
       -webkit-backdrop-filter: blur(20px) saturate(190%);
       backdrop-filter: blur(20px) saturate(190%);
-      box-shadow: 1.25px 0px 0px -0.75px #D0D0D0, -1.25px 0px 0px -0.75px #D0D0D0, 0px 0px 0px 0.5px #E8E8E8, 0px 8px 15px 0px rgba(0, 0, 0, 0.02);
-      font-family: 'Inter', 'SF Pro', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0px 8px 15px 0px rgba(0, 0, 0, 0.12);
+      font-family: 'SF Pro', 'SF Pro Text', -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       touch-action: none;
       user-select: none;
       -webkit-user-select: none;
       z-index: 10;
-      --lg-tint: rgba(242, 242, 247, 0.8);
-      --lg-shadow-2: 1.25px 0px 0px -0.75px #D0D0D0, -1.25px 0px 0px -0.75px #D0D0D0, 0px 0px 0px 0.5px #E8E8E8, 0px 8px 15px 0px rgba(0, 0, 0, 0.02);
+      --lg-tint: rgba(255, 255, 255, 0.5);
+      --lg-shadow-2: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0px 8px 15px 0px rgba(0, 0, 0, 0.12);
     }
     .tab-bar[hidden] {
       display: none;
     }
     /* <lg-panel> 會把分頁按鈕包進 .lg-panel__body，五等分排版要放在這一層 */
+    /* 五個分頁的中心照 Figma：左右各留 10px，每格 (寬 - 20) / 5（398 寬時一格 75.6） */
     .tab-bar > .lg-panel__body {
       position: absolute;
       inset: 0;
+      padding: 0 10px;
+      box-sizing: border-box;
       display: grid;
       grid-template-columns: repeat(5, 1fr);
     }
-    /* 選取底色：用 transform 移動，點擊跟滑動都有動畫 */
+    /* 選取底色：靜止時是比分頁列深一點的灰色膠囊，沒有玻璃（Figma 88×54，離左 4、離上 4），用 transform 移動 */
     .tab-pill {
       position: absolute;
-      left: 2px;
-      top: 5px;
-      width: calc(20% - 4px);
-      height: 60px;
-      border-radius: 30px;
-      background: rgba(0, 122, 255, 0.4);
-      transform: translateX(var(--pill-x, 0px)) scale(var(--pill-scale, 1));
-      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      left: 4px;
+      top: 4px;
+      width: calc((100% - 20px) / 5 + 12.4px);
+      height: 54px;
+      border-radius: 27px;
+      background: rgba(0, 0, 0, 0.12);
+      transform: translateX(var(--pill-x, 0px));
+      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
       pointer-events: none;
-      --lg-tint: rgba(0, 122, 255, 0.4);
-      --lg-shadow-2: none;
     }
-    /* 選取底色玻璃的「背景」：分頁列的淺灰（rgba(242, 242, 247, 0.8) 疊在深色背景上 ≈ rgb(200, 200, 204)） */
-    .tab-surface {
-      display: none;
-      background: rgb(200, 200, 204);
-    }
+    /* 按住滑動時：灰色膠囊藏起來，換玻璃鏡片 */
     .tab-bar.is-dragging .tab-pill {
-      --pill-scale: 1.12;
-      transition: transform 0.12s ease-out;
+      opacity: 0;
     }
+
+    /* ---------- 滑動時的玻璃鏡片（iOS 26 / Threads 那種） ----------
+       比選取膠囊大（106×74，上下超出分頁列）、很透明；鏡片本身固定大小，靠 transform 移動和縮放，
+       折射圖只要算一次。鏡片裡放一份分頁列的複本，跟底下的分頁列對齊，圖示文字是藍色 */
+    .tab-lens {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 106px;
+      height: 74px;
+      border-radius: 37px;
+      overflow: hidden;
+      z-index: 11;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(var(--lens-x, 0px), var(--lens-y, 0px)) scale(var(--lens-scale, 0.8));
+      transition: opacity 0.18s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      /* 外面的陰影放在沒有濾鏡的外框，才不會被鏡片裁掉 */
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+    }
+    /* 鏡片本體（有折射濾鏡）：幾乎透明，只有一圈亮邊，上緣比較亮 */
+    .tab-lens__glass {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.04);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.7),
+        inset 0 2px 2px rgba(255, 255, 255, 0.75),
+        inset 0 -2px 2px rgba(255, 255, 255, 0.35);
+    }
+    .tab-lens.is-on {
+      opacity: 1;
+      --lens-scale: 1;
+    }
+    /* 跟手指的時候不要動畫延遲；放開才用彈簧動畫回到分頁 */
+    .tab-lens.is-following {
+      transition: opacity 0.18s ease;
+    }
+    .tab-lens__row {
+      position: absolute;
+      left: 0;
+      top: 0;
+      border-radius: 1000px;
+      /* 分頁列的灰（白色 50% 疊在深色背景上 ≈ rgb(148, 148, 148)），讓鏡片裡看起來跟底下一樣 */
+      background: rgb(148, 148, 148);
+      transform: translate(var(--row-x, 0px), var(--row-y, 0px));
+    }
+    .tab-lens__row .tab-lens__tabs {
+      position: absolute;
+      inset: 0;
+      padding: 0 10px;
+      box-sizing: border-box;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+    }
+    .tab-lens__row .tab {
+      color: rgb(0, 74, 193);
+    }
+    /* 圖示、文字 #1A1A1A（Figma），粗體 10px；選取的是 Figma 的藍色 */
     .tab {
       position: relative;
-      height: 70px;
+      height: 62px;
       padding: 0;
       border: 0;
       background: transparent;
-      color: #1C1C1E;
+      color: #1A1A1A;
       font: inherit;
-      font-size: 12px;
+      font-size: 10px;
+      font-weight: 600;
       cursor: pointer;
       transition: color 0.25s ease;
     }
     .tab.is-active {
-      color: #007AFF;
+      color: rgb(0, 74, 193);
     }
     .tab img,
     .tab .tab-icon {
       position: absolute;
       left: 50%;
-      top: 14px;
+      top: 12px;
       transform: translateX(-50%);
       transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.25s ease;
     }
-    .tab.is-active img,
-    .tab.is-active .tab-icon {
-      transform: translateX(-50%) scale(1.12);
-    }
     /* 分頁圖示用遮罩：圖檔只決定形狀，顏色跟著文字（選取時一起變藍） */
+    /* 圖示照抄 Figma（iOS 27 SF Symbols 轉成的外框）：每個圖示的寬高、離分頁列頂端的距離都照 Figma */
     .tab .tab-icon {
       display: block;
-      width: var(--size);
-      height: var(--size);
+      top: var(--top);
+      width: var(--w);
+      height: var(--h);
       background-color: currentColor;
       -webkit-mask: var(--icon) center / contain no-repeat;
       mask: var(--icon) center / contain no-repeat;
@@ -580,13 +637,18 @@
     .tab span {
       position: absolute;
       left: 50%;
-      top: 42px;
+      top: 40px;
+      line-height: 12px;
       transform: translateX(-50%);
       white-space: nowrap;
     }
+    /* 「我的」用自己的頭像（Figma 27×27） */
+    /* 頭像正中對齊下面的「我的」（Figma 原本往左偏 2px，看起來歪） */
     .tab .tab-avatar {
-      width: 20px;
-      height: 20px;
+      left: 50%;
+      top: 10.5px;
+      width: 27.2px;
+      height: 27.2px;
       border-radius: 50px;
       object-fit: cover;
     }
@@ -712,6 +774,17 @@
     .screen-videos,
     .screen-me {
       background: #212121 url(assets/home-bg.jpg) 0 0 / 100% auto no-repeat;
+    }
+    /* iPhone（WebKit）的 bug：開關的 SVG 折射放在 overflow: hidden 的容器裡會畫錯位
+       （按住時變透明 + 一條斜線）。「我的」頁改用 clip-path 裁切，效果一樣但不會觸發這個 bug。 */
+    .screen-me {
+      overflow: visible;
+      clip-path: inset(0);
+    }
+    /* clip-path 只裁畫面、不管排版，超出右邊的東西會讓整頁能左右滑；在最外層擋掉左右溢出 */
+    html,
+    body {
+      overflow-x: clip;
     }
     .page-header {
       position: absolute;
@@ -1078,7 +1151,7 @@
     .tab-badge {
       position: absolute;
       left: calc(50% + 6px);
-      top: 8px;
+      top: 6px;
       min-width: 16px;
       height: 16px;
       padding: 0 4px;
@@ -1148,25 +1221,6 @@
     /* 圓鈕到底時底色才換，換的那一下淡入 0.2 秒 */
     @property --p { syntax: '<number>'; inherits: true; initial-value: 0; }
     .setting-row .lg-switch__control { transition: --p 0.2s ease; }
-    /* iPhone 上按住時的玻璃圓鈕（CSS 版，見 cssSwitchLens） */
-    .switch-lens {
-      position: absolute;
-      left: 0;
-      top: 0;
-      z-index: 2;
-      opacity: 0;
-      pointer-events: none;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.06) 45%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, 0.16) 100%),
-        color-mix(in srgb, var(--lg-track-off), var(--lg-on) calc(var(--p) * 100%));
-      box-shadow:
-        inset 0 1px 1px rgba(255, 255, 255, 0.75),
-        inset 0 -1px 1px rgba(255, 255, 255, 0.3),
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.45),
-        0 3px 10px rgba(0, 0, 0, 0.28);
-      -webkit-backdrop-filter: blur(1.5px) saturate(1.8) brightness(1.1);
-      backdrop-filter: blur(1.5px) saturate(1.8) brightness(1.1);
-    }
     .logout-btn {
       position: absolute;
       left: 20px;
@@ -1229,7 +1283,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.4.4</div>
+    <div class="abs version-label t12 nowrap">ESN v1.5.0</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1451,26 +1505,29 @@
 
   <!-- 分頁列在主頁外面，用 backdrop 指定折射主頁的背景（iPhone Safari 也是真的玻璃；
        backdrop="none" 在 Safari 只會變毛玻璃） -->
-  <lg-panel class="tab-bar glass" id="tabBar" role="navigation" radius="35" backdrop="#homeScreen" hidden>
-    <span class="tab-surface" id="tabSurface" aria-hidden="true"></span>
-    <lg-panel class="tab-pill glass" id="tabPill" radius="30" backdrop="#tabSurface"></lg-panel>
+  <lg-panel class="tab-bar glass" id="tabBar" role="navigation" radius="31" backdrop="#homeScreen" hidden>
+    <!-- 選取底色：靜止時是一般的灰色膠囊（沒有玻璃）；按住滑動時換成下面的 #tabLens 玻璃 -->
+    <span class="tab-pill" id="tabPill" aria-hidden="true"></span>
     <!-- 一開始就是主頁，所以預設選「主頁」 -->
     <button class="tab is-active" data-target="homeScreen" type="button">
-      <i class="tab-icon" style="--icon: url(assets/icon-home.svg); --size: 20px;"></i><span>主頁</span>
+      <i class="tab-icon" style="--icon: url(assets/tab-house.svg); --w: 27.6px; --h: 24.3px; --top: 11.5px;"></i><span>主頁</span>
     </button>
     <button class="tab" data-target="chatScreen" type="button">
-      <i class="tab-icon" style="--icon: url(assets/icon-chat.svg); --size: 19px;"></i><span>聊天</span>
+      <i class="tab-icon" style="--icon: url(assets/tab-chat.svg); --w: 25.4px; --h: 23.8px; --top: 12.7px;"></i><span>聊天</span>
     </button>
     <button class="tab" data-target="videosScreen" type="button">
-      <i class="tab-icon" style="--icon: url(assets/icon-video.svg); --size: 21px;"></i><span>VIDEO</span>
+      <i class="tab-icon" style="--icon: url(assets/tab-film.svg); --w: 26.8px; --h: 21.2px; --top: 13.4px;"></i><span>VIDEO</span>
     </button>
     <button class="tab" data-target="notifyScreen" type="button">
-      <i class="tab-icon" style="--icon: url(assets/icon-bell.svg); --size: 21px;"></i><i class="tab-badge" id="notifyBadge" hidden></i><span>通知</span>
+      <i class="tab-icon" style="--icon: url(assets/tab-bell.svg); --w: 22.1px; --h: 23.8px; --top: 12px;"></i><i class="tab-badge" id="notifyBadge" hidden></i><span>通知</span>
     </button>
     <button class="tab" data-target="meScreen" type="button">
       <img class="tab-avatar" id="tabAvatar" src="assets/member-3.jpg" alt=""><span>我的</span>
     </button>
   </lg-panel>
+  <!-- 按住分頁列滑動時的玻璃鏡片（像 iOS 26 / Threads）：比選取膠囊大、很透明，會折射底下的分頁；
+       鏡片裡面是一份分頁列的複本（圖示是藍色），所以鏡片滑到的地方變藍、沒滑到的地方不變 -->
+  <div class="tab-lens" id="tabLens" aria-hidden="true"><div class="tab-lens__glass" id="tabLensGlass"><div class="tab-lens__row" id="tabLensRow"></div></div></div>
 
   <!-- Liquid Glass：liquidglass.dev v1.0.0（MIT，gentpan），檔案放在 assets/lib -->
   <script type="module" src="assets/lib/components.js"></script>
@@ -1701,8 +1758,10 @@
     });
 
     // ---------- 底部分頁：點擊或左右滑動 ----------
+    // 分頁列左右各留 10px（Figma），中間五等分
+    const TAB_PAD = 10;
     function slotWidth() {
-      return tabBar.clientWidth / tabs.length;
+      return (tabBar.clientWidth - TAB_PAD * 2) / tabs.length;
     }
 
     function placePill(index) {
@@ -1717,12 +1776,82 @@
     }
 
     function indexAt(clientX) {
-      const x = clientX - tabBar.getBoundingClientRect().left;
+      const x = clientX - tabBar.getBoundingClientRect().left - TAB_PAD;
       return Math.max(0, Math.min(tabs.length - 1, Math.floor(x / slotWidth())));
+    }
+
+    // ---------- 按住滑動時的玻璃鏡片（iOS 26 / Threads） ----------
+    // 靜止時只有灰色膠囊；一開始滑就換成鏡片跟著手指走。鏡片折射的是一份藍色的分頁列複本，
+    // 所以只有鏡片底下的圖示文字變藍，其他分頁不變；放開才真的切過去。
+    const tabLens = document.getElementById('tabLens');
+    const tabLensGlass = document.getElementById('tabLensGlass');
+    const tabLensRow = document.getElementById('tabLensRow');
+    const LENS_W = 106;
+    const LENS_H = 74;
+    let lensGlass = null;
+
+    // 鏡片固定大小、整塊都是鏡片（iPhone WebKit 這樣才畫得對），只建一次
+    async function ensureLensGlass() {
+      if (lensGlass) return;
+      const { createGlass } = await import('./assets/lib/components.js');
+      if (lensGlass) return;
+      lensGlass = createGlass(tabLensGlass, {
+        fit: true,
+        clip: true,
+        radius: LENS_H / 2,
+        refraction: 12,
+        bezel: 0.5,
+        curvature: 4,
+        chroma: 0.15,
+        specular: 0.9,
+        specularWidth: 2.5,
+      });
+    }
+
+    // 鏡片裡的分頁列複本：大小、排法跟真的一樣（頭像會換人，所以每次滑都重做）
+    function buildLensRow() {
+      const bar = tabBar.getBoundingClientRect();
+      const row = el('div', 'tab-lens__tabs');
+      tabs.forEach((tab) => {
+        const copy = tab.cloneNode(true);
+        copy.classList.remove('is-active');
+        copy.removeAttribute('data-target');
+        copy.tabIndex = -1;
+        copy.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'));
+        copy.querySelector('.tab-badge')?.remove();
+        row.append(copy);
+      });
+      tabLensRow.replaceChildren(row);
+      tabLensRow.style.width = `${bar.width}px`;
+      tabLensRow.style.height = `${bar.height}px`;
+    }
+
+    // 把鏡片中心放到 x（螢幕座標），限制在第一個和最後一個分頁中間；複本反方向移，跟底下對齊
+    function moveLens(clientX) {
+      const bar = tabBar.getBoundingClientRect();
+      const slot = slotWidth();
+      const minX = bar.left + TAB_PAD + slot / 2;
+      const maxX = bar.right - TAB_PAD - slot / 2;
+      const cx = Math.max(minX, Math.min(maxX, clientX));
+      const lx = cx - LENS_W / 2;
+      const ly = bar.top + bar.height / 2 - LENS_H / 2;
+      tabLens.style.setProperty('--lens-x', `${lx}px`);
+      tabLens.style.setProperty('--lens-y', `${ly}px`);
+      tabLensRow.style.setProperty('--row-x', `${bar.left - lx}px`);
+      tabLensRow.style.setProperty('--row-y', `${bar.top - ly}px`);
+    }
+
+    // 一載入就先把鏡片的折射圖算好，第一次滑才不會空白
+    ensureLensGlass();
+
+    function tabCenter(index) {
+      const bar = tabBar.getBoundingClientRect();
+      return bar.left + TAB_PAD + slotWidth() * (index + 0.5);
     }
 
     let dragStartX = null;
     let dragging = false;
+    let lensTimer = 0;
 
     tabBar.addEventListener('pointerdown', (event) => {
       dragStartX = event.clientX;
@@ -1733,28 +1862,44 @@
     tabBar.addEventListener('pointermove', (event) => {
       if (dragStartX === null) return;
       if (!dragging && Math.abs(event.clientX - dragStartX) < 6) return;
-      dragging = true;
-      tabBar.classList.add('is-dragging');
-      // 選取底色跟著手指移動
-      const x = event.clientX - tabBar.getBoundingClientRect().left - slotWidth() / 2;
-      const maxX = slotWidth() * (tabs.length - 1);
-      tabPill.style.setProperty('--pill-x', `${Math.max(0, Math.min(maxX, x))}px`);
-      tabs.forEach((tab, i) => tab.classList.toggle('is-active', i === indexAt(event.clientX)));
+      if (!dragging) {
+        dragging = true;
+        clearTimeout(lensTimer);
+        ensureLensGlass();
+        buildLensRow();
+        // 從目前選的分頁長出來，再跟著手指
+        moveLens(tabCenter(activeIndex));
+        tabBar.classList.add('is-dragging');
+        tabLens.classList.add('is-on', 'is-following');
+      }
+      moveLens(event.clientX);
     });
 
     function endDrag(event) {
       if (dragStartX === null) return;
-      tabBar.classList.remove('is-dragging');
-      // 放開時（或單純點擊）吸附到手指所在的分頁
-      selectTab(indexAt(event.clientX));
+      const index = indexAt(event.clientX);
       dragStartX = null;
+      if (!dragging) {
+        selectTab(index); // 單純點一下
+        return;
+      }
       dragging = false;
+      // 放開：鏡片彈到那個分頁，然後縮回成灰色膠囊
+      tabLens.classList.remove('is-following');
+      moveLens(tabCenter(index));
+      selectTab(index);
+      lensTimer = setTimeout(() => {
+        tabLens.classList.remove('is-on');
+        tabBar.classList.remove('is-dragging');
+      }, 260);
     }
 
     tabBar.addEventListener('pointerup', endDrag);
-    tabBar.addEventListener('pointercancel', (event) => {
-      tabBar.classList.remove('is-dragging');
+    tabBar.addEventListener('pointercancel', () => {
       dragStartX = null;
+      dragging = false;
+      tabLens.classList.remove('is-on', 'is-following');
+      tabBar.classList.remove('is-dragging');
       selectTab(activeIndex);
     });
 
@@ -2315,42 +2460,6 @@
         }
       });
     }
-    // iPhone（WebKit）上開關的玻璃（用 Playwright 的 WebKit 實測過）：
-    // 開關圓鈕這麼小的 SVG 折射，WebKit 會畫錯位（按住時變透明 + 一條斜線，或往下偏、缺一角），
-    // 換大小時還要等折射圖載入，所以會卡。iPhone 上改用 CSS 畫按住時的玻璃圓鈕
-    // （半透明 + 上下亮邊 + 背景加飽和），底下是純色軌道，看起來跟折射幾乎一樣，而且不會錯位、不會卡。
-    // 電腦（Chrome）照樣用 liquidglass.dev 原本的 SVG 折射。
-    const IS_WEBKIT = /AppleWebKit\//.test(navigator.userAgent) && !/Chrome\/|Chromium\/|Edg\//.test(navigator.userAgent);
-    function cssSwitchLens(sw) {
-      const lerp = (a, b, t) => a + (b - a) * t;
-      const place = (node, x, y, w, h) => {
-        node.style.width = `${w}px`;
-        node.style.height = `${h}px`;
-        node.style.borderRadius = `${h / 2}px`;
-        node.style.transform = `translate(${x}px, ${y}px)`;
-      };
-      sw.glass?.update({ hidden: true }); // 關掉 SVG 折射層
-      sw.refract.style.display = 'none';
-      const lens = el('span', 'switch-lens');
-      lens.setAttribute('aria-hidden', 'true');
-      sw.thumb.before(lens);
-      sw.render = function render() {
-        // 跟原本一樣：按住變大、滑動時依速度拉長
-        const stretch = Math.min(10, Math.abs(this.v) * 1.6);
-        const w = lerp(36, 54, this.p) + stretch;
-        const h = lerp(24, 36, this.p) - stretch * 0.2;
-        const left = 20 + 24 * this.x - w / 2;
-        const top = 14 - h / 2;
-        this.firstChild.lastChild.style.setProperty('--p', this.x.toFixed(3));
-        place(this.thumb, left, top, w, h);
-        place(this.shadow, left, top, w, h);
-        place(lens, left, top, w, h);
-        this.thumb.style.opacity = String(1 - this.p);
-        this.shadow.style.opacity = String(this.p);
-        lens.style.opacity = String(this.p);
-      };
-      sw.render();
-    }
     // 底色不要跟著圓鈕慢慢變：圓鈕到最右邊才變綠、到最左邊才變灰（中間維持原本的顏色）
     function snapSwitchColor(sw) {
       const base = sw.render;
@@ -2365,7 +2474,6 @@
     }
     customElements.whenDefined('lg-switch').then(() => {
       for (const sw of [settingNotify, settingLevel]) {
-        if (IS_WEBKIT || new URLSearchParams(location.search).has('webkit')) cssSwitchLens(sw);
         snapSwitchColor(sw);
         enableSwitchDrag(sw);
       }
