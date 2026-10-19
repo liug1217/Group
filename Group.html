@@ -538,6 +538,10 @@
     .tab-bar.is-dragging .tab-pill {
       opacity: 0;
     }
+    /* 放開時膠囊直接跳到新分頁（藏在鏡片後面），不要在淡入時還看到它滑過去 */
+    .tab-pill.no-anim {
+      transition: none;
+    }
 
     /* ---------- 滑動時的玻璃鏡片（iOS 26 / Threads 那種） ----------
        比選取膠囊大（106×74，上下超出分頁列）、很透明；鏡片本身固定大小，靠 transform 移動和縮放，
@@ -553,8 +557,10 @@
       z-index: 11;
       pointer-events: none;
       opacity: 0;
-      transform: translate(var(--lens-x, 0px), var(--lens-y, 0px)) scale(var(--lens-scale, 0.8));
-      transition: opacity 0.18s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      /* 位置（transform）由 JS 用彈簧動畫每一幀設定；出現 / 消失的縮放用獨立的 scale，才不會互相干擾 */
+      scale: 0.8;
+      transition: opacity 0.18s ease, scale 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+      will-change: transform, opacity;
       /* 外面的陰影放在沒有濾鏡的外框，才不會被鏡片裁掉 */
       box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
     }
@@ -572,11 +578,7 @@
     }
     .tab-lens.is-on {
       opacity: 1;
-      --lens-scale: 1;
-    }
-    /* 跟手指的時候不要動畫延遲；放開才用彈簧動畫回到分頁 */
-    .tab-lens.is-following {
-      transition: opacity 0.18s ease;
+      scale: 1;
     }
     .tab-lens__row {
       position: absolute;
@@ -585,7 +587,7 @@
       border-radius: 1000px;
       /* 分頁列的灰（白色 50% 疊在深色背景上 ≈ rgb(148, 148, 148)），讓鏡片裡看起來跟底下一樣 */
       background: rgb(148, 148, 148);
-      transform: translate(var(--row-x, 0px), var(--row-y, 0px));
+      will-change: transform;
     }
     .tab-lens__row .tab-lens__tabs {
       position: absolute;
@@ -1283,7 +1285,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.5.0</div>
+    <div class="abs version-label t12 nowrap">ESN v1.5.1</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1826,85 +1828,173 @@
       tabLensRow.style.height = `${bar.height}px`;
     }
 
-    // 把鏡片中心放到 x（螢幕座標），限制在第一個和最後一個分頁中間；複本反方向移，跟底下對齊
-    function moveLens(clientX) {
-      const bar = tabBar.getBoundingClientRect();
-      const slot = slotWidth();
-      const minX = bar.left + TAB_PAD + slot / 2;
-      const maxX = bar.right - TAB_PAD - slot / 2;
-      const cx = Math.max(minX, Math.min(maxX, clientX));
-      const lx = cx - LENS_W / 2;
-      const ly = bar.top + bar.height / 2 - LENS_H / 2;
-      tabLens.style.setProperty('--lens-x', `${lx}px`);
-      tabLens.style.setProperty('--lens-y', `${ly}px`);
-      tabLensRow.style.setProperty('--row-x', `${bar.left - lx}px`);
-      tabLensRow.style.setProperty('--row-y', `${bar.top - ly}px`);
+    // 鏡片位置用彈簧動畫：手指只改目標，每一幀往目標靠近，看起來順、不會一格一格跳。
+    // 分頁列的位置在開始滑的時候量一次就好，每一幀不用再量。
+    let lensBar = null;
+    const lensMotion = { x: 0, v: 0, target: 0, frame: 0, last: 0, onRest: null };
+
+    function lensLimits() {
+      const slot = (lensBar.width - TAB_PAD * 2) / tabs.length;
+      return [lensBar.left + TAB_PAD + slot / 2, lensBar.right - TAB_PAD - slot / 2];
+    }
+
+    function applyLens() {
+      const lx = lensMotion.x - LENS_W / 2;
+      const ly = lensBar.top + lensBar.height / 2 - LENS_H / 2;
+      tabLens.style.transform = `translate3d(${lx}px, ${ly}px, 0)`;
+      // 複本反方向移，跟底下真的分頁列對齊
+      tabLensRow.style.transform = `translate3d(${lensBar.left - lx}px, ${lensBar.top - ly}px, 0)`;
+    }
+
+    function stepLens(now) {
+      let dt = Math.min(0.05, (now - lensMotion.last) / 1000 || 1 / 60);
+      lensMotion.last = now;
+      while (dt > 1e-6) {
+        const h = Math.min(1 / 120, dt);
+        const accel = -700 * (lensMotion.x - lensMotion.target) - 48 * lensMotion.v;
+        lensMotion.v += accel * h;
+        lensMotion.x += lensMotion.v * h;
+        dt -= h;
+      }
+      // 放開後：鏡片已經到分頁附近（2px 內、速度慢下來）就先收尾，不用等彈簧完全停
+      if (lensMotion.onRest && Math.abs(lensMotion.x - lensMotion.target) < 2 && Math.abs(lensMotion.v) < 80) {
+        const done = lensMotion.onRest;
+        lensMotion.onRest = null;
+        done();
+      }
+      if (Math.abs(lensMotion.v) < 4 && Math.abs(lensMotion.x - lensMotion.target) < 0.3) {
+        lensMotion.x = lensMotion.target;
+        lensMotion.v = 0;
+        lensMotion.frame = 0;
+        applyLens();
+        const done = lensMotion.onRest;
+        lensMotion.onRest = null;
+        done?.();
+        return;
+      }
+      applyLens();
+      lensMotion.frame = requestAnimationFrame(stepLens);
+    }
+
+    // 鏡片中心移到 x（螢幕座標），限制在第一個和最後一個分頁中間
+    function lensTo(clientX, immediate = false) {
+      const [minX, maxX] = lensLimits();
+      lensMotion.target = Math.max(minX, Math.min(maxX, clientX));
+      if (immediate) {
+        cancelAnimationFrame(lensMotion.frame);
+        lensMotion.frame = 0;
+        lensMotion.x = lensMotion.target;
+        lensMotion.v = 0;
+        applyLens();
+        return;
+      }
+      if (!lensMotion.frame) {
+        lensMotion.last = performance.now();
+        lensMotion.frame = requestAnimationFrame(stepLens);
+      }
     }
 
     // 一載入就先把鏡片的折射圖算好，第一次滑才不會空白
     ensureLensGlass();
 
     function tabCenter(index) {
-      const bar = tabBar.getBoundingClientRect();
-      return bar.left + TAB_PAD + slotWidth() * (index + 0.5);
+      return lensBar.left + TAB_PAD + ((lensBar.width - TAB_PAD * 2) / tabs.length) * (index + 0.5);
     }
 
+    // 長按才會出現鏡片（約 0.3 秒，手指沒有亂動）；之後才能左右滑。沒長按就只是點一下。
+    const LONG_PRESS_MS = 280;
     let dragStartX = null;
+    let dragStartY = null;
     let dragging = false;
+    let pressMoved = false;
+    let pressTimer = 0;
     let lensTimer = 0;
+
+    function startLensDrag(clientX) {
+      dragging = true;
+      clearTimeout(lensTimer);
+      lensMotion.onRest = null;
+      ensureLensGlass();
+      lensBar = tabBar.getBoundingClientRect();
+      buildLensRow();
+      // 從按住的分頁長出來，之後用彈簧跟著手指
+      lensTo(tabCenter(indexAt(clientX)), true);
+      tabBar.classList.add('is-dragging');
+      tabLens.classList.add('is-on');
+      haptic?.();
+    }
 
     tabBar.addEventListener('pointerdown', (event) => {
       dragStartX = event.clientX;
+      dragStartY = event.clientY;
       dragging = false;
-      tabBar.setPointerCapture(event.pointerId);
+      pressMoved = false;
+      try { tabBar.setPointerCapture(event.pointerId); } catch {}
+      clearTimeout(pressTimer);
+      pressTimer = setTimeout(() => {
+        if (dragStartX !== null && !pressMoved) startLensDrag(dragStartX);
+      }, LONG_PRESS_MS);
     });
 
     tabBar.addEventListener('pointermove', (event) => {
       if (dragStartX === null) return;
-      if (!dragging && Math.abs(event.clientX - dragStartX) < 6) return;
       if (!dragging) {
-        dragging = true;
-        clearTimeout(lensTimer);
-        ensureLensGlass();
-        buildLensRow();
-        // 從目前選的分頁長出來，再跟著手指
-        moveLens(tabCenter(activeIndex));
-        tabBar.classList.add('is-dragging');
-        tabLens.classList.add('is-on', 'is-following');
+        // 還沒長按完就動了：當作一般滑動，不出現鏡片
+        if (Math.hypot(event.clientX - dragStartX, event.clientY - dragStartY) > 10) {
+          pressMoved = true;
+          clearTimeout(pressTimer);
+        }
+        return;
       }
-      moveLens(event.clientX);
+      lensTo(event.clientX);
     });
 
     function endDrag(event) {
       if (dragStartX === null) return;
       const index = indexAt(event.clientX);
       dragStartX = null;
+      clearTimeout(pressTimer);
       if (!dragging) {
-        selectTab(index); // 單純點一下
+        if (!pressMoved) selectTab(index); // 單純點一下（沒長按、也沒亂滑）
         return;
       }
       dragging = false;
-      // 放開：鏡片彈到那個分頁，然後縮回成灰色膠囊
-      tabLens.classList.remove('is-following');
-      moveLens(tabCenter(index));
-      selectTab(index);
-      lensTimer = setTimeout(() => {
+      // 膠囊先直接跳到新分頁（藏在鏡片後面）
+      tabPill.classList.add('no-anim');
+      placePill(index);
+      tabPill.getBoundingClientRect();
+      tabPill.classList.remove('no-anim');
+      // 鏡片彈到那個分頁、停穩之後：鏡片淡出變回膠囊，再切頁面（切頁面很吃效能，放到動畫後面才不會卡）
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(lensTimer);
         tabLens.classList.remove('is-on');
         tabBar.classList.remove('is-dragging');
-      }, 260);
+        requestAnimationFrame(() => selectTab(index));
+      };
+      lensMotion.onRest = finish;
+      lensTo(tabCenter(index));
+      lensTimer = setTimeout(finish, 350); // 保險：彈簧太久沒停也照樣收尾
     }
 
     tabBar.addEventListener('pointerup', endDrag);
     tabBar.addEventListener('pointercancel', () => {
+      clearTimeout(pressTimer);
       dragStartX = null;
       dragging = false;
-      tabLens.classList.remove('is-on', 'is-following');
+      lensMotion.onRest = null;
+      tabLens.classList.remove('is-on');
       tabBar.classList.remove('is-dragging');
       selectTab(activeIndex);
     });
 
-    // 鍵盤（Enter / 空白鍵）操作分頁
-    tabs.forEach((tab, i) => tab.addEventListener('click', () => selectTab(i)));
+    // 鍵盤（Enter / 空白鍵）操作分頁。手指 / 滑鼠的點擊已經由上面的 pointer 事件處理，
+    // 這裡只管鍵盤（detail 是 0），免得長按滑動後又被 click 切回原本按住的分頁
+    tabs.forEach((tab, i) => tab.addEventListener('click', (event) => {
+      if (event.detail === 0) selectTab(i);
+    }));
 
     window.addEventListener('resize', () => placePill(activeIndex));
 
