@@ -19,11 +19,14 @@
 import json
 import os
 import queue
+import shutil
 import socket
+import subprocess
 import threading
 import time
+from collections import Counter
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 PORT = int(os.environ.get('ESN_PORT', '8800'))
 # 0.0.0.0 = 同網路的手機也連得到；設成 127.0.0.1 就只有這台電腦能連
@@ -35,8 +38,9 @@ DATA_DIR = os.environ.get('ESN_DATA_DIR') or (r'C:\ESNData' if os.name == 'nt' e
 os.makedirs(DATA_DIR, exist_ok=True)
 DATA_FILE = os.path.join(DATA_DIR, 'chat-data.json')
 
-# 跟 Group.html 的 MEMBERS 一樣
-MEMBER_IDS = {'fan', 'zhang', 'liu', 'si'}
+# 跟 Group.html 的 MEMBERS 一樣（名字給推播通知用）
+MEMBER_NAMES = {'fan': '帆～', 'zhang': '張 O 寧', 'liu': '劉 O 佑', 'si': '劉思妤'}
+MEMBER_IDS = set(MEMBER_NAMES)
 MAX_TEXT = 300
 MAX_PER_ROOM = 500
 # 通話（WebRTC）的訊號：只轉傳給對方，不存檔
@@ -52,11 +56,15 @@ ALLOWED_ORIGINS = {
 } | {o.strip() for o in os.environ.get('ESN_ORIGINS', '').split(',') if o.strip()}
 
 # 只開放網站本身的檔案，不讓別人讀到 server.py、聊天資料或 .git
-PUBLIC_FILES = {'/Group.html'}
+PUBLIC_FILES = {'/Group.html', '/sw.js', '/manifest.json'}
 PUBLIC_DIRS = ('/assets/',)
 
 lock = threading.Lock()
 listeners = set()
+# 誰現在開著網頁（連著即時通道）：開著的人看得到畫面，就不用再推播通知
+online = Counter()
+# App 切到背景時網頁會送「我離開了」（/api/away）：連線還沒斷乾淨也算不在線上，照樣推播
+away = set()
 
 
 def load_rooms():
@@ -97,6 +105,114 @@ def broadcast(payload):
     data = json.dumps(payload, ensure_ascii=False)
     for q in list(listeners):
         q.put(data)
+
+
+# ---------- 推播通知（Web Push，App 關著也收得到） ----------
+# 加密和簽章交給同一個資料夾的 push.js（Node 內建 crypto）。VAPID 金鑰第一次用時產生，
+# 跟每個人的訂閱一起存在 DATA_DIR/push.json；換掉金鑰的話所有人的訂閱都會失效。
+PUSH_FILE = os.path.join(DATA_DIR, 'push.json')
+PUSH_SCRIPT = os.path.join(ROOT, 'push.js')
+PUSH_SUBJECT = 'https://liug1217.github.io/Group/Group.html'
+NODE = shutil.which('node')
+push_lock = threading.Lock()
+# 來電時對方沒開網頁：記住 30 秒，對方點通知打開網頁一連上就補送響鈴
+pending_rings = {}
+
+
+def load_push():
+    try:
+        with open(PUSH_FILE, encoding='utf-8') as f:
+            data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        data = {}
+    data.setdefault('vapid', None)
+    data.setdefault('subs', {})
+    return data
+
+
+push_data = load_push()
+
+
+def save_push():
+    tmp = PUSH_FILE + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(push_data, f, ensure_ascii=False)
+    os.replace(tmp, PUSH_FILE)
+
+
+def run_push_script(mode, payload=None):
+    if not NODE:
+        raise RuntimeError('node not found')
+    result = subprocess.run(
+        [NODE, PUSH_SCRIPT, mode],
+        input=json.dumps(payload, ensure_ascii=False).encode('utf-8') if payload is not None else b'',
+        capture_output=True,
+        timeout=30,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.decode('utf-8', 'replace')[:300])
+    return json.loads(result.stdout.decode('utf-8'))
+
+
+def get_vapid():
+    with push_lock:
+        if not push_data['vapid']:
+            push_data['vapid'] = run_push_script('keys')
+            save_push()
+        return push_data['vapid']
+
+
+def valid_subscription(sub):
+    if not isinstance(sub, dict):
+        return False
+    keys = sub.get('keys') or {}
+    return (isinstance(sub.get('endpoint'), str) and sub['endpoint'].startswith('https://')
+            and len(sub['endpoint']) < 1000 and isinstance(keys.get('p256dh'), str) and isinstance(keys.get('auth'), str))
+
+
+def add_subscription(member, sub):
+    clean = {'endpoint': sub['endpoint'], 'keys': {'p256dh': sub['keys']['p256dh'], 'auth': sub['keys']['auth']}}
+    with push_lock:
+        # 同一支手機換成員登入：訂閱跟著換人
+        for subs in push_data['subs'].values():
+            subs[:] = [s for s in subs if s['endpoint'] != clean['endpoint']]
+        push_data['subs'].setdefault(member, []).append(clean)
+        save_push()
+
+
+def remove_subscription(endpoint):
+    with push_lock:
+        for subs in push_data['subs'].values():
+            subs[:] = [s for s in subs if s['endpoint'] != endpoint]
+        save_push()
+
+
+def push_to(members, message, urgency='normal', skip_online=True):
+    """推播給這些成員（開著網頁的人跳過）。在背景跑，不會拖慢回應。"""
+    targets = [m for m in members if not (skip_online and online[m] > 0 and m not in away)]
+    with push_lock:
+        subs = [s for m in targets for s in push_data['subs'].get(m, [])]
+    if not subs or not NODE:
+        return
+
+    def work():
+        try:
+            out = run_push_script('send', {
+                'vapid': get_vapid(),
+                'subject': PUSH_SUBJECT,
+                'subs': subs,
+                'message': message,
+                'urgency': urgency,
+            })
+            for r in out.get('results', []):
+                if r.get('status') in (404, 410):
+                    remove_subscription(r['endpoint'])
+                elif not (200 <= int(r.get('status') or 0) < 300):
+                    print('推播失敗', r.get('status'), r.get('error', ''))
+        except Exception as error:  # 推播失敗不影響聊天
+            print('推播失敗', error)
+
+    threading.Thread(target=work, daemon=True).start()
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -147,6 +263,11 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json(200, rooms)
         if path == '/api/events':
             return self.stream_events()
+        if path == '/api/push':
+            try:
+                return self.send_json(200, {'publicKey': get_vapid()['publicKey']})
+            except Exception:
+                return self.send_json(503, {'error': 'push unavailable'})
         if path in ('/', '/index.html'):
             self.send_response(302)
             self.send_header('Location', '/Group.html')
@@ -168,6 +289,10 @@ class Handler(SimpleHTTPRequestHandler):
         path = urlparse(self.path).path
         if path == '/api/signal':
             return self.handle_signal()
+        if path == '/api/push':
+            return self.handle_push()
+        if path == '/api/away':
+            return self.handle_away()
         if path != '/api/messages':
             return self.send_error(404)
         try:
@@ -199,7 +324,48 @@ class Handler(SimpleHTTPRequestHandler):
             rooms[room] = rooms[room][-MAX_PER_ROOM:]
             save_rooms()
         broadcast({'room': room, 'msg': msg})
+        # 推播：上面是誰傳的，下面是訊息；群組的話名字後面加「（群組）」
+        if room == 'group':
+            receivers = MEMBER_IDS - {sender}
+            title = f'{MEMBER_NAMES[sender]}（★Bi_藍冰團★）'
+        else:
+            receivers = set(room[3:].split('-')) - {sender}
+            title = MEMBER_NAMES[sender]
+        body = text if len(text) <= 120 else text[:118] + '…'
+        push_to(receivers, {'title': title, 'body': body, 'tag': room, 'url': PUSH_SUBJECT})
         return self.send_json(200, msg)
+
+    # App 切到背景：{me}（網頁用 sendBeacon 送，內容是純文字的 JSON）
+    def handle_away(self):
+        try:
+            length = int(self.headers.get('Content-Length', '0'))
+            data = json.loads(self.rfile.read(min(length, 1024)) or b'{}')
+        except (ValueError, json.JSONDecodeError):
+            return self.send_json(400, {'error': 'bad json'})
+        me = str(data.get('me', ''))
+        if me in MEMBER_IDS:
+            with lock:
+                away.add(me)
+        return self.send_json(200, {'ok': True})
+
+    # 訂閱推播：{member, subscription}；取消：{unsubscribe: endpoint}
+    def handle_push(self):
+        try:
+            length = int(self.headers.get('Content-Length', '0'))
+            if length > 8192:
+                return self.send_json(413, {'error': 'too large'})
+            data = json.loads(self.rfile.read(length) or b'{}')
+        except (ValueError, json.JSONDecodeError):
+            return self.send_json(400, {'error': 'bad json'})
+        if data.get('unsubscribe'):
+            remove_subscription(str(data['unsubscribe']))
+            return self.send_json(200, {'removed': True})
+        member = str(data.get('member', ''))
+        sub = data.get('subscription')
+        if member not in MEMBER_IDS or not valid_subscription(sub):
+            return self.send_json(400, {'error': 'bad subscription'})
+        add_subscription(member, sub)
+        return self.send_json(200, {'subscribed': True})
 
     # 通話訊號（響鈴、接聽、拒接、掛斷、WebRTC 的 offer / answer / ice）：
     # 透過同一條 Server-Sent Events 推給大家，網頁只理會「to 是自己」的
@@ -216,7 +382,25 @@ class Handler(SimpleHTTPRequestHandler):
         kind = str(data.get('type', ''))
         if sender not in MEMBER_IDS or target not in MEMBER_IDS or sender == target or kind not in SIGNAL_TYPES:
             return self.send_json(400, {'error': 'invalid signal'})
-        broadcast({'signal': {'from': sender, 'to': target, 'type': kind, 'call': str(data.get('call', ''))[:40], 'data': data.get('data')}})
+        signal = {'from': sender, 'to': target, 'type': kind, 'call': str(data.get('call', ''))[:40], 'data': data.get('data')}
+        broadcast({'signal': signal})
+        if kind == 'ring':
+            # 對方沒開網頁：推播「來電」，對方 30 秒內打開網頁就補送響鈴
+            with lock:
+                pending_rings[target] = (time.time(), signal)
+            mode = (data.get('data') or {}).get('mode')
+            push_to([target], {
+                'title': MEMBER_NAMES[sender],
+                'body': '語音來電' if mode == 'voice' else '視訊來電',
+                'tag': 'call',
+                'url': PUSH_SUBJECT,
+            }, urgency='high')
+        elif kind in ('accept', 'decline', 'busy', 'end'):
+            with lock:
+                for member in (sender, target):
+                    ring = pending_rings.get(member)
+                    if ring and ring[1]['call'] == signal['call']:
+                        pending_rings.pop(member, None)
         return self.send_json(200, {'ok': True})
 
     # Server-Sent Events：新訊息即時推給每支連著的手機
@@ -229,12 +413,22 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         q = queue.Queue()
         listeners.add(q)
+        me = (parse_qs(urlparse(self.path).query).get('me') or [''])[0]
+        me = me if me in MEMBER_IDS else ''
+        if me:
+            with lock:
+                online[me] += 1
+                away.discard(me)  # 回來了
+                ring = pending_rings.get(me)
+            # 點來電通知打開網頁：通話還在響就補送響鈴
+            if ring and time.time() - ring[0] < 30:
+                q.put(json.dumps({'signal': ring[1]}, ensure_ascii=False))
         try:
             self.wfile.write(b': connected\n\n')
             self.wfile.flush()
             while True:
                 try:
-                    data = q.get(timeout=15)
+                    data = q.get(timeout=10)
                     self.wfile.write(f'data: {data}\n\n'.encode('utf-8'))
                 except queue.Empty:
                     self.wfile.write(b': ping\n\n')  # 保持連線
@@ -243,6 +437,9 @@ class Handler(SimpleHTTPRequestHandler):
             pass
         finally:
             listeners.discard(q)
+            if me:
+                with lock:
+                    online[me] -= 1
 
 
 def lan_ip():

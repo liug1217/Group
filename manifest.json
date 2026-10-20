@@ -1,0 +1,10 @@
+{
+  "name": "★Bi_藍冰團★《Roblox》",
+  "short_name": "Group",
+  "description": "藍冰團的聊天、通話、短影音",
+  "start_url": "./Group.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#212121",
+  "theme_color": "#252525"
+}

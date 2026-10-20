@@ -11,6 +11,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Group">
+  <!-- 加入主畫面的 App 資訊：iPhone 要有這個，加入主畫面的網頁才能收推播通知 -->
+  <link rel="manifest" href="manifest.json">
   <title>Group</title>
   <script>
     // iOS 舊版的主畫面 App 不一定支援 display-mode 媒體查詢，用 navigator.standalone 補判斷
@@ -1049,6 +1051,58 @@
       90% { rotate: -8deg; }
     }
 
+    /* 問要不要開通知的小卡片（分頁列上面） */
+    .push-ask {
+      position: fixed;
+      left: 20px;
+      right: 20px;
+      bottom: 110px;
+      z-index: 350;
+      padding: 16px 18px 14px;
+      border-radius: 22px;
+      background: rgba(40, 40, 40, 0.92);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
+      color: #FFFFFF;
+      animation: screen-in 0.22s ease;
+    }
+    .push-ask[hidden] {
+      display: none;
+    }
+    .push-ask-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .push-ask-text {
+      margin-top: 4px;
+      font-size: 13px;
+      line-height: 18px;
+      color: rgba(255, 255, 255, 0.75);
+    }
+    .push-ask-btns {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .push-ask-btns button {
+      padding: 8px 16px;
+      border: 0;
+      border-radius: 16px;
+      font: inherit;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .push-ask-no {
+      background: rgba(255, 255, 255, 0.12);
+      color: #FFFFFF;
+    }
+    .push-ask-yes {
+      background: #007AFF;
+      color: #FFFFFF;
+    }
+
     /* 全站小提示 */
     .app-toast {
       position: fixed;
@@ -1826,7 +1880,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.8.1</div>
+    <div class="abs version-label t12 nowrap">ESN v1.9.0</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -2001,6 +2055,15 @@
 
   <!-- 全站小提示（例如群組還不能打電話） -->
   <div class="app-toast" id="appToast" aria-live="polite"></div>
+  <!-- 第一次登入後問要不要開通知 -->
+  <div class="push-ask" id="pushAsk" role="dialog" aria-label="開啟通知" hidden>
+    <div class="push-ask-title">開啟通知？</div>
+    <div class="push-ask-text" id="pushAskText">有人傳訊息、打電話來時通知你</div>
+    <div class="push-ask-btns">
+      <button type="button" class="push-ask-no" id="pushNo">不要</button>
+      <button type="button" class="push-ask-yes" id="pushYes">開啟</button>
+    </div>
+  </div>
 
   <!-- VIDEO（底部中間）：之後放影片；通話改在聊天室裡 -->
   <section class="screen screen-videos is-hidden" id="videosScreen" data-lg-backdrop="">
@@ -2673,6 +2736,9 @@
       document.getElementById('meRole').textContent = member.tag === '群主' ? '團長' : '成員';
       document.getElementById('tabAvatar').src = member.avatar;
       renderThreadList();
+      // 換人登入：即時通道用新的身分重連；推播訂閱也換成這個人
+      if (chat.online && chat.eventsMe !== member.id) chat.init();
+      setTimeout(() => pushRefresh(), 0); // 等整頁程式都跑完（推播那段在後面）
     }
 
     // 切到某個頁面時要做的事
@@ -2722,7 +2788,12 @@
           await this.loadRooms();
           this.online = true;
           this.retrying = false;
-          const events = new EventSource(`${base}/api/events`);
+          // 連線時告訴伺服器「我是誰」：開著網頁的人，伺服器就不再推播通知給他
+          this.events?.close();
+          const events = new EventSource(`${base}/api/events${ME ? `?me=${encodeURIComponent(ME.id)}` : ''}`);
+          this.events = events;
+          this.eventsMe = ME?.id || '';
+          this.paused = false;
           let dropped = false;
           events.onmessage = (event) => {
             const payload = JSON.parse(event.data);
@@ -3930,6 +4001,9 @@
       settings.notify = event.target.checked;
       store.set('settings', settings);
       applySettings();
+      // 開：請手機允許通知並訂閱；關：取消訂閱
+      if (settings.notify) pushEnable(true);
+      else pushDisable();
     });
     settingLevel.addEventListener('change', (event) => {
       if (!event.isTrusted) haptic();
@@ -4022,6 +4096,128 @@
       }
     });
     applySettings();
+
+    // ----- 推播通知：有人傳訊息、打電話來，App 關著也收得到（Web Push） -----
+    // 流程照智行地圖：跟伺服器要公開金鑰 → 手機允許通知 → 註冊 sw.js 訂閱 → 把訂閱交給伺服器（記在這個成員底下）。
+    // iPhone 要 iOS 16.4 以上，而且要「加入主畫面」、從主畫面打開才能訂閱（Safari 分頁裡不行）。
+    const pushSupported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    const pushAsk = document.getElementById('pushAsk');
+    function b64ToBytes(text) {
+      let s = text.replace(/-/g, '+').replace(/_/g, '/');
+      while (s.length % 4) s += '=';
+      const raw = atob(s);
+      return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+    }
+    async function pushSubscribe() {
+      if (!pushSupported || !chat.base && chat.base !== '' || !ME) return false;
+      const reg = await navigator.serviceWorker.register('sw.js');
+      await navigator.serviceWorker.ready;
+      const keyRes = await fetch(`${chat.base}/api/push`, { cache: 'no-store' });
+      if (!keyRes.ok) return false;
+      const { publicKey } = await keyRes.json();
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(publicKey) });
+      const res = await fetch(`${chat.base}/api/push`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member: ME.id, subscription: sub.toJSON() }),
+      });
+      return res.ok;
+    }
+    // 打開通知（要在使用者點按鈕 / 開關的時候呼叫，手機才會跳出允許視窗）
+    async function pushEnable(fromUser) {
+      if (!pushSupported) {
+        if (fromUser) toast(isIOS() && !isStandalone() ? '要先「加入主畫面」，從主畫面打開才收得到通知' : '這個瀏覽器不支援通知', 3500);
+        return;
+      }
+      try {
+        const permission = Notification.permission === 'default' ? await Notification.requestPermission() : Notification.permission;
+        if (permission !== 'granted') {
+          if (fromUser) toast('通知被關掉了，要到手機的「設定」裡打開', 3500);
+          return;
+        }
+        if (await pushSubscribe()) {
+          if (fromUser) toast('已開啟通知：有人傳訊息、打電話來都會通知你');
+        } else if (fromUser) {
+          toast('要連到聊天伺服器才能開啟通知');
+        }
+      } catch (error) {
+        console.warn('開啟通知失敗', error);
+        if (fromUser) toast('開啟通知失敗，請稍後再試');
+      }
+    }
+    async function pushDisable() {
+      if (!pushSupported) return;
+      try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        const sub = await reg?.pushManager.getSubscription();
+        if (!sub) return;
+        if (chat.online) {
+          await fetch(`${chat.base}/api/push`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ unsubscribe: sub.endpoint }),
+          }).catch(() => {});
+        }
+        await sub.unsubscribe();
+      } catch {
+        // 取消失敗沒關係，下次開通知會重新訂閱
+      }
+    }
+    function isIOS() {
+      return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+    function isStandalone() {
+      return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    }
+    // 已經允許過：每次打開（或換人登入）確認訂閱還在、記在現在這個人底下
+    function pushRefresh() {
+      if (pushSupported && ME && settings.notify && Notification.permission === 'granted' && chat.online) {
+        pushSubscribe().catch(() => {});
+      }
+    }
+    // 第一次登入後問一次要不要開通知（手機要使用者按按鈕才能跳出允許視窗）
+    function maybeAskPush() {
+      let asked = false;
+      try { asked = !!localStorage.getItem('esn.pushAsked'); } catch {}
+      if (asked || !settings.notify || !ME) return;
+      if (pushSupported && Notification.permission !== 'default') return;
+      if (!pushSupported && !(isIOS() && !isStandalone())) return; // 不支援、也不是 iPhone 沒加主畫面：不用問
+      document.getElementById('pushAskText').textContent = pushSupported
+        ? '有人傳訊息、打電話來時通知你'
+        : '先用 Safari「分享」→「加入主畫面」，從主畫面打開就能收到通知';
+      document.getElementById('pushYes').textContent = pushSupported ? '開啟' : '知道了';
+      pushAsk.hidden = false;
+    }
+    function closePushAsk() {
+      pushAsk.hidden = true;
+      try { localStorage.setItem('esn.pushAsked', '1'); } catch {}
+    }
+    document.getElementById('pushNo').addEventListener('click', closePushAsk);
+    document.getElementById('pushYes').addEventListener('click', () => {
+      closePushAsk();
+      if (pushSupported) pushEnable(true);
+    });
+    document.getElementById('loginButton').addEventListener('click', () => setTimeout(maybeAskPush, 1500));
+    if (ME) setTimeout(maybeAskPush, 3000);
+    setTimeout(pushRefresh, 4000);
+
+    // App 切到背景：先斷開即時通道，伺服器就知道你沒在看，有訊息會推播通知；回來再連上（順便抓最新訊息）。
+    // 通話中不要斷，不然通話的訊號會收不到
+    document.addEventListener('visibilitychange', () => {
+      if (!chat.online && !chat.paused) return;
+      if (document.hidden) {
+        if (call.state !== 'idle' || !chat.events) return;
+        // 告訴伺服器「我離開了」，馬上開始推播通知（sendBeacon 在 App 切到背景時也送得出去）
+        if (ME) navigator.sendBeacon?.(`${chat.base}/api/away`, JSON.stringify({ me: ME.id }));
+        chat.events.close();
+        chat.events = null;
+        chat.paused = true;
+      } else if (chat.paused) {
+        chat.paused = false;
+        chat.init();
+      }
+    });
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
       selectTab(0);
