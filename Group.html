@@ -1880,7 +1880,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.9.0</div>
+    <div class="abs version-label t12 nowrap">ESN v1.9.1</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -4096,6 +4096,14 @@
       }
     });
     applySettings();
+
+    // ----- 離線也能打開：一載入就註冊 sw.js（存網站檔案、推播通知都是它） -----
+    // iPhone Safari / 主畫面 App 都支援；本機直接開檔案（file:）時沒有 service worker，就跳過
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch((error) => console.warn('service worker 註冊失敗', error));
+      });
+    }
 
     // ----- 推播通知：有人傳訊息、打電話來，App 關著也收得到（Web Push） -----
     // 流程照智行地圖：跟伺服器要公開金鑰 → 手機允許通知 → 註冊 sw.js 訂閱 → 把訂閱交給伺服器（記在這個成員底下）。
