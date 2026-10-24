@@ -1,0 +1,18 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" aria-label="煙火">
+  <g transform="translate(120 120)">
+    <g>
+      <animateTransform attributeName="transform" type="scale" values="0.1;1" keyTimes="0;1" dur="1.2s" repeatCount="indefinite"/>
+      <g>
+        <animate attributeName="opacity" values="1;1;0" keyTimes="0;0.55;1" dur="1.2s" repeatCount="indefinite"/>
+        <circle cx="0" cy="-74" r="9" fill="#FF4D6D"/>
+        <circle cx="52" cy="-52" r="9" fill="#FFD23F"/>
+        <circle cx="74" cy="0" r="9" fill="#3BD16F"/>
+        <circle cx="52" cy="52" r="9" fill="#2949CB"/>
+        <circle cx="0" cy="74" r="9" fill="#FF7A00"/>
+        <circle cx="-52" cy="52" r="9" fill="#7FD3FF"/>
+        <circle cx="-74" cy="0" r="9" fill="#FF4D6D"/>
+        <circle cx="-52" cy="-52" r="9" fill="#FFD23F"/>
+      </g>
+    </g>
+  </g>
+</svg>

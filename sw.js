@@ -4,12 +4,28 @@
 //      - 其他檔案：先用存的（秒開），背景再上網更新一份，下次打開就是新的
 //      - 聊天伺服器、短影音影片這些別的網站的東西不存，照常連網（沒網路時聊天會顯示連不上）
 //   2. 推播通知（有人傳訊息、打電話來）：{ title, body, tag, url }；點通知 → 切到 / 打開網頁
-const CACHE = 'esn-offline-v1';
+const CACHE = 'esn-offline-v2';
 const PRECACHE = [
   './Group.html',
   './manifest.json',
   './assets/lib/components.js',
   './assets/lib/liquid-glass.js',
+  './assets/stickers/s1.svg',
+  './assets/stickers/s2.svg',
+  './assets/stickers/s3.svg',
+  './assets/stickers/s4.svg',
+  './assets/stickers/s5.svg',
+  './assets/stickers/s6.svg',
+  './assets/stickers/s7.svg',
+  './assets/stickers/s8.svg',
+  './assets/stickers/s9.svg',
+  './assets/stickers/s10.svg',
+  './assets/gifs/g1.svg',
+  './assets/gifs/g2.svg',
+  './assets/gifs/g3.svg',
+  './assets/gifs/g4.svg',
+  './assets/gifs/g5.svg',
+  './assets/gifs/g6.svg',
   './assets/home-bg.jpg',
   './assets/group-avatar.jpg',
   './assets/member-1.jpg',

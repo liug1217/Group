@@ -1487,6 +1487,292 @@
       transform: scale(0.92);
     }
 
+    /* ===== 多媒體訊息：圖片 / 塗鴉 / 貼圖 / GIF ===== */
+    .msg-image {
+      display: block;
+      max-width: min(220px, 62vw);
+      max-height: 300px;
+      border-radius: 18px;
+      object-fit: cover;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+      background: rgba(65, 65, 65, 0.4);
+    }
+    .msg-sticker {
+      display: block;
+      width: 128px;
+      height: 128px;
+      object-fit: contain;
+    }
+    .msg.is-me .msg-sticker,
+    .msg.is-me .msg-image {
+      margin-left: auto;
+    }
+
+    /* ===== 輸入列左邊的「＋」：打開貼圖 / 相簿 / GIF / 塗鴉 ===== */
+    .chat-input input {
+      left: 54px;
+    }
+    .chat-attach {
+      position: absolute;
+      left: 6px;
+      top: 6px;
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      border-radius: 19px;
+      background: rgba(255, 255, 255, 0.14);
+      color: #FFFFFF;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+    .chat-attach:active {
+      transform: scale(0.9);
+    }
+    .chat-attach.is-open {
+      background: #2949CB;
+      transform: rotate(45deg);
+    }
+
+    /* ===== 貼圖 / GIF 面板（從底部升起） ===== */
+    .media-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 58;
+      background: rgba(0, 0, 0, 0.001);
+      display: none;
+    }
+    .media-backdrop.is-open {
+      display: block;
+    }
+    .media-panel {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 60;
+      max-height: 48vh;
+      background: rgba(28, 28, 30, 0.97);
+      backdrop-filter: blur(24px) saturate(1.4);
+      -webkit-backdrop-filter: blur(24px) saturate(1.4);
+      border-radius: 24px 24px 0 0;
+      box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.45);
+      padding: 8px 14px calc(14px + max(10px, var(--safe-bottom)));
+      transform: translateY(112%);
+      transition: transform 0.3s cubic-bezier(0.25, 0.9, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+    }
+    .media-panel.is-open {
+      transform: translateY(0);
+    }
+    .media-grip {
+      width: 40px;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255, 255, 255, 0.25);
+      margin: 4px auto 8px;
+    }
+    .media-tabs {
+      display: flex;
+      gap: 8px;
+      padding-bottom: 10px;
+    }
+    .media-tab {
+      flex: none;
+      padding: 7px 15px;
+      border: 0;
+      border-radius: 16px;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.7);
+      font: inherit;
+      font-size: 14px;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .media-tab.is-active {
+      background: #2949CB;
+      color: #FFFFFF;
+    }
+    .media-grid {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 2px 2px 4px;
+    }
+    .sticker-btn {
+      aspect-ratio: 1;
+      border: 0;
+      border-radius: 16px;
+      cursor: pointer;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      display: grid;
+      place-items: center;
+      transition: transform 0.12s ease, background 0.12s ease;
+    }
+    .sticker-btn:active {
+      transform: scale(0.9);
+      background: rgba(41, 73, 203, 0.4);
+    }
+    .sticker-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    /* ===== 塗鴉 ===== */
+    .doodle {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      display: none;
+      flex-direction: column;
+      background: rgba(18, 18, 20, 0.98);
+      padding: calc(14px + var(--safe-top)) 14px calc(14px + max(10px, var(--safe-bottom)));
+    }
+    .doodle.is-open {
+      display: flex;
+    }
+    .doodle-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .doodle-bar .d-title {
+      flex: 1;
+      font-size: 17px;
+    }
+    .doodle-bar button {
+      border: 0;
+      border-radius: 16px;
+      padding: 9px 16px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 14px;
+      color: #FFFFFF;
+      background: rgba(255, 255, 255, 0.12);
+    }
+    .doodle-bar button.d-send {
+      background: #2949CB;
+    }
+    .doodle-canvas-wrap {
+      flex: 1;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #FFFFFF;
+      min-height: 0;
+    }
+    .doodle-canvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      display: block;
+    }
+    .doodle-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .d-color {
+      width: 30px;
+      height: 30px;
+      border-radius: 15px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      padding: 0;
+      transition: transform 0.12s ease, border-color 0.12s ease;
+    }
+    .d-color.is-active {
+      border-color: #FFFFFF;
+      transform: scale(1.14);
+    }
+    .d-size {
+      flex: 1;
+      min-width: 90px;
+      accent-color: #2949CB;
+    }
+
+    /* ===== 全組通話：影像網格 ===== */
+    .call-grid {
+      position: absolute;
+      inset: 0;
+      display: none;
+      gap: 4px;
+      padding: 4px;
+    }
+    .screen-video.is-group .call-grid {
+      display: grid;
+    }
+    .screen-video.is-group .call-remote,
+    .screen-video.is-group .call-local,
+    .screen-video.is-group .call-glow,
+    .screen-video.is-group .call-avatar,
+    .screen-video.is-group .call-rings,
+    .screen-video.is-group .call-name {
+      display: none;
+    }
+    .screen-video.is-group .call-title,
+    .screen-video.is-group .call-clock,
+    .screen-video.is-group .call-timer,
+    .screen-video.is-group .call-status,
+    .screen-video.is-group .call-controls {
+      z-index: 3;
+    }
+    .call-grid[data-n="1"] { grid-template-columns: 1fr; }
+    .call-grid[data-n="2"] { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+    .call-grid[data-n="3"],
+    .call-grid[data-n="4"] { grid-template-columns: 1fr 1fr; }
+    .gtile {
+      position: relative;
+      background: #1b1b1d;
+      border-radius: 14px;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+    }
+    .gtile video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: #1b1b1d;
+    }
+    .gtile .gt-avatar {
+      width: 34%;
+      max-width: 90px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .gtile.has-video .gt-avatar {
+      display: none;
+    }
+    .gtile .gt-name {
+      position: absolute;
+      left: 9px;
+      bottom: 7px;
+      font-size: 12px;
+      color: #FFFFFF;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+    }
+    .gtile .gt-state {
+      position: absolute;
+      right: 9px;
+      bottom: 7px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.85);
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+    }
+
     /* 聊天：列表 / 對話 兩種畫面 */
     .screen-chat:not(.is-thread) .chat-list,
     .screen-chat:not(.is-thread) .chat-input,
@@ -1868,7 +2154,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.9.3</div>
+    <div class="abs version-label t12 nowrap">ESN v1.10.0</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -1968,6 +2254,8 @@
     <!-- 對方的畫面（視訊接通後全螢幕），自己的畫面在右上角小框 -->
     <video class="call-remote" id="remoteVideo" autoplay playsinline></video>
     <video class="call-local" id="localVideo" autoplay playsinline muted></video>
+    <!-- 全組通話：每個人一格 -->
+    <div class="call-grid" id="callGrid" data-n="1"></div>
     <div class="abs call-title t12 nowrap text-shadow" id="callTitle">視訊通話</div>
     <img class="abs call-clock" src="assets/icon-clock.svg" alt="">
     <div class="abs call-timer t10 nowrap" id="callTimer">00:00</div>
@@ -2085,12 +2373,44 @@
     <div class="chat-list" id="chatList" aria-live="polite"></div>
     <lg-panel class="chat-input glass" radius="25">
       <form id="chatForm" autocomplete="off">
+        <button class="chat-attach" id="chatAttach" type="button" aria-label="貼圖、照片、GIF、塗鴉">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        </button>
         <input type="text" id="chatText" placeholder="輸入訊息…" aria-label="輸入訊息" maxlength="300">
         <button class="chat-send" id="chatSend" type="submit" aria-label="送出" disabled>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
         </button>
       </form>
     </lg-panel>
+    <input type="file" id="imageInput" accept="image/*" hidden>
+    <!-- 貼圖 / GIF 面板 -->
+    <div class="media-backdrop" id="mediaBackdrop"></div>
+    <div class="media-panel" id="mediaPanel" hidden>
+      <div class="media-grip"></div>
+      <div class="media-tabs">
+        <button class="media-tab is-active" type="button" data-media="sticker">貼圖</button>
+        <button class="media-tab" type="button" data-media="gif">GIF</button>
+        <button class="media-tab" type="button" data-media="photo">相簿</button>
+        <button class="media-tab" type="button" data-media="doodle">塗鴉</button>
+      </div>
+      <div class="media-grid" id="mediaGrid"></div>
+    </div>
+  </section>
+
+  <!-- 塗鴉：手指 / 滑鼠在白板上畫，畫完當圖片送出 -->
+  <section class="doodle" id="doodle">
+    <div class="doodle-bar">
+      <div class="d-title">塗鴉</div>
+      <button type="button" id="doodleCancel">取消</button>
+      <button type="button" id="doodleUndo">清除</button>
+      <button type="button" class="d-send" id="doodleSend">送出</button>
+    </div>
+    <div class="doodle-canvas-wrap">
+      <canvas class="doodle-canvas" id="doodleCanvas"></canvas>
+    </div>
+    <div class="doodle-tools" id="doodleColors">
+      <input type="range" class="d-size" id="doodleSize" min="2" max="30" value="6" aria-label="筆粗">
+    </div>
   </section>
 
   <!-- 通知 -->
@@ -2892,12 +3212,13 @@
         });
         if (!res.ok) throw new Error(`signal failed: ${res.status}`);
       },
-      async send(room, text) {
+      // 送訊息：payload 可以是文字 {kind:'text',text}、貼圖 / GIF {kind,ref}、圖片 / 塗鴉 {kind,src}
+      async post(room, payload) {
         if (this.online) {
           const res = await fetch(`${this.base}/api/messages`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ room, from: ME.id, text }),
+            body: JSON.stringify({ room, from: ME.id, ...payload }),
           });
           if (!res.ok) throw new Error(`send failed: ${res.status}`);
           const msg = await res.json();
@@ -2908,11 +3229,30 @@
         }
         // 有設定伺服器但現在連不到：不要偷偷只存在手機，讓使用者知道沒送出
         if (chatBase() !== null) throw new Error('chat server unreachable');
-        const list = this.get(room, []).concat({ from: ME.id, text, time: nowTime() }).slice(-100);
+        // 圖片 / 塗鴉要上傳，一定要有伺服器；貼圖 / GIF / 文字沒伺服器時還是可以存在這支手機
+        if (payload.kind === 'image' || payload.kind === 'doodle') throw new Error('need server');
+        const list = this.get(room, []).concat({ from: ME.id, time: nowTime(), ...payload }).slice(-100);
         store.set(`chat.${room}`, list);
         onChatUpdate(room);
       },
+      async send(room, text) {
+        return this.post(room, { kind: 'text', text });
+      },
+      // 上傳圖片（照片 / 塗鴉），回傳伺服器存好的檔名
+      async upload(blob) {
+        if (!this.online) throw new Error('offline');
+        const res = await fetch(`${this.base}/api/upload`, { method: 'POST', body: blob });
+        if (!res.ok) throw new Error(`upload failed: ${res.status}`);
+        return (await res.json()).src;
+      },
     };
+    // 伺服器上傳圖片的網址（跨網域的圖片直接 <img> 讀沒問題）
+    const mediaUrl = (src) => `${chat.base || ''}/uploads/${src}`;
+    // 網頁內建的貼圖與 GIF（檔案在 assets/stickers、assets/gifs）
+    const STICKERS = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10'];
+    const GIFS = ['g1', 'g2', 'g3', 'g4', 'g5', 'g6'];
+    const STICKER_SET = new Set(STICKERS);
+    const GIF_SET = new Set(GIFS);
 
     // 訊息的寄件人：新格式用 from（成員 id），舊格式有 name / avatar / me
     function senderOf(m) {
@@ -3107,6 +3447,30 @@
       updateChatBadge();
     }
 
+    // 一則訊息的內容：文字用氣泡，貼圖 / GIF / 圖片 / 塗鴉用圖片
+    function buildMessageContent(m, index) {
+      if ((m.kind === 'sticker' && STICKER_SET.has(m.ref)) || (m.kind === 'gif' && GIF_SET.has(m.ref))) {
+        const img = el('img', 'msg-sticker');
+        img.src = m.kind === 'gif' ? `assets/gifs/${m.ref}.svg` : `assets/stickers/${m.ref}.svg`;
+        img.alt = m.kind === 'gif' ? 'GIF' : '貼圖';
+        return img;
+      }
+      if ((m.kind === 'image' || m.kind === 'doodle') && m.src) {
+        const img = el('img', 'msg-image');
+        img.src = mediaUrl(m.src);
+        img.alt = m.kind === 'doodle' ? '塗鴉' : '照片';
+        img.loading = 'lazy';
+        img.addEventListener('click', () => window.open(img.src, '_blank', 'noopener'));
+        return img;
+      }
+      // 文字（最新 30 則用玻璃氣泡，太多玻璃會拖慢手機）
+      const bubble = index >= chatMessages.length - 30
+        ? Object.assign(document.createElement('lg-panel'), { className: 'msg-bubble glass', textContent: m.text || '' })
+        : el('div', 'msg-bubble', m.text || '');
+      if (bubble.tagName === 'LG-PANEL') bubble.setAttribute('radius', '999');
+      return bubble;
+    }
+
     function renderChat() {
       if (!chatMessages.length) {
         chatList.replaceChildren(el('div', 'chat-empty', '還沒有訊息，打聲招呼吧！'));
@@ -3119,12 +3483,7 @@
         avatar.src = sender.avatar;
         avatar.alt = '';
         const body = el('div');
-        // 最新 30 則用玻璃氣泡（太多玻璃會拖慢手機），更早的用一樣顏色的一般氣泡
-        const bubble = index >= chatMessages.length - 30
-          ? Object.assign(document.createElement('lg-panel'), { className: 'msg-bubble glass', textContent: m.text })
-          : el('div', 'msg-bubble', m.text);
-        if (bubble.tagName === 'LG-PANEL') bubble.setAttribute('radius', '999');
-        body.append(el('div', 'msg-name', sender.name), bubble, el('div', 'msg-time', m.time));
+        body.append(el('div', 'msg-name', sender.name), buildMessageContent(m, index), el('div', 'msg-time', m.time));
         row.append(avatar, body);
         return row;
       }));
@@ -3148,7 +3507,212 @@
         chatSend.disabled = false;
       }
     });
-    if (ME) setMe(ME);
+    // ===== 貼圖 / 相簿 / GIF 面板 =====
+    const chatAttach = document.getElementById('chatAttach');
+    const mediaPanel = document.getElementById('mediaPanel');
+    const mediaBackdrop = document.getElementById('mediaBackdrop');
+    const mediaGrid = document.getElementById('mediaGrid');
+    const imageInput = document.getElementById('imageInput');
+    let mediaTab = 'sticker';
+
+    function openMediaPanel() {
+      mediaPanel.hidden = false;
+      requestAnimationFrame(() => {
+        mediaPanel.classList.add('is-open');
+        mediaBackdrop.classList.add('is-open');
+        chatAttach.classList.add('is-open');
+      });
+      renderMediaGrid();
+    }
+    function closeMediaPanel() {
+      mediaPanel.classList.remove('is-open');
+      mediaBackdrop.classList.remove('is-open');
+      chatAttach.classList.remove('is-open');
+      setTimeout(() => { mediaPanel.hidden = true; }, 300);
+    }
+    function renderMediaGrid() {
+      if (mediaTab !== 'sticker' && mediaTab !== 'gif') { mediaGrid.replaceChildren(); return; }
+      const ids = mediaTab === 'gif' ? GIFS : STICKERS;
+      const dir = mediaTab === 'gif' ? 'gifs' : 'stickers';
+      mediaGrid.replaceChildren(...ids.map((id) => {
+        const btn = el('button', 'sticker-btn');
+        btn.type = 'button';
+        const img = el('img');
+        img.src = `assets/${dir}/${id}.svg`;
+        img.alt = mediaTab === 'gif' ? 'GIF' : '貼圖';
+        btn.append(img);
+        btn.addEventListener('click', () => sendMedia({ kind: mediaTab, ref: id }));
+        return btn;
+      }));
+    }
+    async function sendMedia(payload) {
+      if (!currentThread || !ME) return;
+      closeMediaPanel();
+      try {
+        await chat.post(currentThread.room, payload);
+      } catch (error) {
+        console.warn('送不出去', error);
+        toast('送不出去，請確認有連到聊天伺服器');
+      }
+    }
+    chatAttach.addEventListener('click', () => {
+      if (mediaPanel.classList.contains('is-open')) closeMediaPanel();
+      else openMediaPanel();
+    });
+    mediaBackdrop.addEventListener('click', closeMediaPanel);
+    document.querySelectorAll('.media-tab').forEach((btn) => btn.addEventListener('click', () => {
+      const tab = btn.dataset.media;
+      if (tab === 'photo') { closeMediaPanel(); imageInput.click(); return; }
+      if (tab === 'doodle') { closeMediaPanel(); openDoodle(); return; }
+      mediaTab = tab;
+      document.querySelectorAll('.media-tab').forEach((b) => b.classList.toggle('is-active', b.dataset.media === tab));
+      renderMediaGrid();
+    }));
+
+    // 傳照片：先縮圖再上傳
+    imageInput.addEventListener('change', async () => {
+      const file = imageInput.files && imageInput.files[0];
+      imageInput.value = '';
+      if (!file || !currentThread || !ME) return;
+      if (!chat.online) { toast('要連到聊天伺服器才能傳照片'); return; }
+      toast('照片傳送中…');
+      try {
+        const blob = await shrinkImage(file);
+        if (blob.size > 8 * 1024 * 1024) { toast('照片太大了（上限 8MB）'); return; }
+        const src = await chat.upload(blob);
+        await chat.post(currentThread.room, { kind: 'image', src });
+      } catch (error) {
+        console.warn('照片傳不出去', error);
+        toast('照片傳不出去');
+      }
+    });
+    // 照片縮到最長邊 1600px、轉 JPEG，省流量也避開上限
+    async function shrinkImage(file) {
+      try {
+        const bitmap = await createImageBitmap(file);
+        const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+        if (scale === 1 && file.size < 1.5 * 1024 * 1024) { bitmap.close?.(); return file; }
+        const w = Math.round(bitmap.width * scale);
+        const h = Math.round(bitmap.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+        bitmap.close?.();
+        const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.85));
+        return blob || file;
+      } catch {
+        return file;
+      }
+    }
+
+    // ===== 塗鴉白板 =====
+    const doodleScreen = document.getElementById('doodle');
+    const doodleCanvas = document.getElementById('doodleCanvas');
+    const dctx = doodleCanvas.getContext('2d');
+    const doodleSize = document.getElementById('doodleSize');
+    const doodleColors = document.getElementById('doodleColors');
+    const DOODLE_PALETTE = ['#111111', '#2949CB', '#FF4D6D', '#FFB020', '#3BD16F', '#7FD3FF', '#FFFFFF'];
+    let dColor = '#111111';
+    let dDrawing = false;
+    let dLast = null;
+
+    DOODLE_PALETTE.forEach((c, i) => {
+      const b = el('button', 'd-color' + (i === 0 ? ' is-active' : ''));
+      b.type = 'button';
+      b.style.background = c;
+      b.setAttribute('aria-label', c === '#FFFFFF' ? '橡皮擦' : '顏色');
+      b.addEventListener('click', () => {
+        dColor = c;
+        doodleColors.querySelectorAll('.d-color').forEach((x) => x.classList.toggle('is-active', x === b));
+      });
+      doodleColors.insertBefore(b, doodleSize);
+    });
+
+    function fitDoodleCanvas() {
+      const rect = doodleCanvas.parentElement.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const prev = doodleCanvas.width ? doodleCanvas.toDataURL() : null;
+      doodleCanvas.width = Math.round(rect.width * dpr);
+      doodleCanvas.height = Math.round(rect.height * dpr);
+      dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      dctx.fillStyle = '#FFFFFF';
+      dctx.fillRect(0, 0, rect.width, rect.height);
+      dctx.lineCap = 'round';
+      dctx.lineJoin = 'round';
+      if (prev) {
+        const img = new Image();
+        img.onload = () => dctx.drawImage(img, 0, 0, rect.width, rect.height);
+        img.src = prev;
+      }
+    }
+    function clearDoodle() {
+      const rect = doodleCanvas.parentElement.getBoundingClientRect();
+      dctx.fillStyle = '#FFFFFF';
+      dctx.fillRect(0, 0, rect.width, rect.height);
+    }
+    function openDoodle() {
+      if (!currentThread || !ME) return;
+      doodleScreen.classList.add('is-open');
+      requestAnimationFrame(() => { fitDoodleCanvas(); clearDoodle(); });
+    }
+    function closeDoodle() {
+      doodleScreen.classList.remove('is-open');
+    }
+    const doodlePoint = (e) => {
+      const rect = doodleCanvas.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    };
+    doodleCanvas.addEventListener('pointerdown', (e) => {
+      dDrawing = true;
+      doodleCanvas.setPointerCapture(e.pointerId);
+      dLast = doodlePoint(e);
+      dctx.fillStyle = dColor;
+      dctx.beginPath();
+      dctx.arc(dLast.x, dLast.y, doodleSize.value / 2, 0, Math.PI * 2);
+      dctx.fill();
+    });
+    doodleCanvas.addEventListener('pointermove', (e) => {
+      if (!dDrawing) return;
+      const p = doodlePoint(e);
+      dctx.strokeStyle = dColor;
+      dctx.lineWidth = Number(doodleSize.value);
+      dctx.beginPath();
+      dctx.moveTo(dLast.x, dLast.y);
+      dctx.lineTo(p.x, p.y);
+      dctx.stroke();
+      dLast = p;
+    });
+    const endStroke = () => { dDrawing = false; };
+    doodleCanvas.addEventListener('pointerup', endStroke);
+    doodleCanvas.addEventListener('pointercancel', endStroke);
+    window.addEventListener('resize', () => { if (doodleScreen.classList.contains('is-open')) fitDoodleCanvas(); });
+
+    document.getElementById('doodleCancel').addEventListener('click', closeDoodle);
+    document.getElementById('doodleUndo').addEventListener('click', clearDoodle);
+    document.getElementById('doodleSend').addEventListener('click', async () => {
+      if (!currentThread || !ME) return;
+      if (!chat.online) { toast('要連到聊天伺服器才能傳塗鴉'); closeDoodle(); return; }
+      const sendBtn = document.getElementById('doodleSend');
+      sendBtn.disabled = true;
+      try {
+        const blob = await new Promise((res) => doodleCanvas.toBlob(res, 'image/png'));
+        const src = await chat.upload(blob);
+        await chat.post(currentThread.room, { kind: 'doodle', src });
+        closeDoodle();
+      } catch (error) {
+        console.warn('塗鴉傳不出去', error);
+        toast('塗鴉傳不出去');
+      } finally {
+        sendBtn.disabled = false;
+      }
+    });
+
+    // 記得上次是誰：之前登入過就直接進主畫面，不用每次重選身分
+    if (ME) {
+      setMe(ME);
+      showScreen('homeScreen');
+    }
     renderThreadList();
     chat.init();
 
@@ -3264,6 +3828,27 @@
       tick: 0,
     };
 
+    // 全組通話（網狀連線：每個人跟其他每個人都直接連，最多 4 人）
+    const gcall = {
+      active: false,
+      ringing: false,
+      id: '',
+      mode: 'video',
+      facing: 'user',
+      local: null,
+      camTrack: null,
+      screenTrack: null,
+      peers: new Map(), // 成員 id -> { pc, stream, pendingIce, tile }
+      incomingSig: null,
+      incomingFrom: null,
+      stopTone: null,
+      timers: [],
+      seconds: 0,
+      tick: 0,
+    };
+    const callGrid = document.getElementById('callGrid');
+    const groupThread = () => threads().find((t) => t.room === 'group');
+
     function peerOf(thread) {
       if (!thread?.room?.startsWith('dm:')) return null;
       const ids = thread.room.slice(3).split('-');
@@ -3296,11 +3881,12 @@
       btn.querySelector('button').setAttribute('aria-pressed', String(off));
     }
     function updateButtons() {
-      const audioTrack = call.local?.getAudioTracks()[0];
+      const cx = gcall.active ? gcall : call;
+      const audioTrack = cx.local?.getAudioTracks()[0];
       setButton(micBtn, !!audioTrack && !audioTrack.enabled);
-      setButton(camBtn, !call.camTrack || !call.camTrack.enabled);
-      setButton(shareBtn, !!call.screenTrack);
-      flipBtn.classList.toggle('is-disabled', !call.camTrack);
+      setButton(camBtn, !cx.camTrack || !cx.camTrack.enabled);
+      setButton(shareBtn, !!cx.screenTrack);
+      flipBtn.classList.toggle('is-disabled', !cx.camTrack);
     }
 
     // 自己的小框：分享螢幕時顯示分享的畫面，不然顯示鏡頭
@@ -3420,16 +4006,21 @@
 
     // ---------- 撥出 ----------
     async function startCall(thread, mode) {
+      // 群組聊天室：改成發起全組通話
+      if (thread?.room === 'group') {
+        startGroupCall(mode);
+        return;
+      }
       const peer = peerOf(thread);
       if (!peer) {
-        toast('群組通話還不支援，請到私人聊天室打給對方');
+        toast('找不到對象');
         return;
       }
       if (!chat.online) {
         toast('要連到聊天伺服器才能打電話');
         return;
       }
-      if (call.state !== 'idle') return;
+      if (call.state !== 'idle' || gcall.active || gcall.ringing) return;
       Object.assign(call, { state: 'dialing', id: `${Date.now()}-${ME.id}`, peer, thread, mode, role: 'caller', facing: 'user', pendingIce: [] });
       openCallScreen();
       setRinging(true);
@@ -3527,11 +4118,16 @@
 
     // ---------- 收到訊號 ----------
     async function onCallSignal(sig) {
-      if (!ME || sig.to !== ME.id) return;
+      if (!ME || sig.from === ME.id) return; // 自己廣播出去的不理
+      if (sig.to !== 'group' && sig.to !== ME.id) return;
       const from = memberById(sig.from);
       if (!from) return;
+      // g 開頭的、或屬於正在進行的全組通話 → 交給全組通話處理
+      if (sig.type[0] === 'g' || (gcall.active && sig.call === gcall.id)) {
+        return onGroupSignal(sig, from);
+      }
       if (sig.type === 'ring') {
-        if (call.state !== 'idle') {
+        if (call.state !== 'idle' || gcall.active || gcall.ringing) {
           chat.signal(sig.from, 'busy', null, sig.call).catch(() => {});
           return;
         }
@@ -3626,14 +4222,400 @@
       }
     }
 
+    // ================= 全組通話 =================
+    function gSignal(to, type, data) {
+      return chat.signal(to, type, data ?? null, gcall.id).catch(() => {});
+    }
+    function gTimer(fn, ms) {
+      const t = setTimeout(fn, ms);
+      gcall.timers.push(t);
+      return t;
+    }
+    function gStopTone() {
+      gcall.stopTone?.();
+      gcall.stopTone = null;
+      if (navigator.vibrate) navigator.vibrate(0);
+    }
+    async function getGroupMedia(withVideo) {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error('no media');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true },
+        video: withVideo ? { facingMode: gcall.facing, width: { ideal: 1280 }, height: { ideal: 720 } } : false,
+      });
+      gcall.local = stream;
+      gcall.camTrack = stream.getVideoTracks()[0] || null;
+    }
+
+    function updateGridCount() {
+      callGrid.dataset.n = String(Math.max(1, callGrid.children.length));
+    }
+    // 建一格：有影像就顯示影像，沒有就顯示頭像
+    function gAddTile(member, isSelf) {
+      const tile = el('div', 'gtile');
+      tile.dataset.id = member.id;
+      const video = document.createElement('video');
+      video.autoplay = true;
+      video.playsInline = true;
+      if (isSelf) video.muted = true;
+      const avatar = el('img', 'gt-avatar');
+      avatar.src = member.avatar;
+      avatar.alt = '';
+      tile.append(video, avatar, el('div', 'gt-name', isSelf ? '我' : member.name), el('div', 'gt-state'));
+      callGrid.append(tile);
+      updateGridCount();
+      return { el: tile, video };
+    }
+    function gRemoveTile(id) {
+      const tile = callGrid.querySelector(`.gtile[data-id="${id}"]`);
+      if (tile) tile.remove();
+      updateGridCount();
+    }
+    // 自己那一格：分享螢幕時放螢幕，不然放鏡頭（鏡頭關了就顯示頭像）
+    function refreshSelfTile() {
+      const tile = callGrid.querySelector(`.gtile[data-id="${ME.id}"]`);
+      if (!tile) return;
+      const video = tile.querySelector('video');
+      const track = gcall.screenTrack || (gcall.camTrack?.enabled ? gcall.camTrack : null);
+      if (track) {
+        video.srcObject = new MediaStream([track]);
+        video.play().catch(() => {});
+        tile.classList.add('has-video');
+      } else {
+        video.srcObject = null;
+        tile.classList.remove('has-video');
+      }
+    }
+    function addSelfTile() {
+      gAddTile(ME, true);
+      refreshSelfTile();
+    }
+
+    function gAddPeer(id) {
+      if (gcall.peers.has(id)) return gcall.peers.get(id);
+      const member = memberById(id);
+      if (!member) return null;
+      const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+      const stream = new MediaStream();
+      const tile = gAddTile(member, false);
+      tile.video.srcObject = stream;
+      const entry = { pc, stream, pendingIce: [], tile };
+      gcall.peers.set(id, entry);
+      pc.onicecandidate = (event) => {
+        if (event.candidate) gSignal(id, 'ice', event.candidate.toJSON());
+      };
+      pc.ontrack = (event) => {
+        stream.addTrack(event.track);
+        tile.video.play().catch(() => {});
+        if (event.track.kind === 'video') {
+          const upd = () => {
+            const live = !event.track.muted && event.track.readyState === 'live';
+            tile.el.classList.toggle('has-video', live);
+          };
+          event.track.addEventListener('mute', upd);
+          event.track.addEventListener('unmute', upd);
+          event.track.addEventListener('ended', upd);
+          upd();
+        }
+      };
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === 'connected') gOnConnected();
+        if (pc.connectionState === 'failed' || pc.connectionState === 'closed') gRemovePeer(id);
+      };
+      // 把自己的聲音 / 影像加進去（沒開鏡頭也先放一個空的影像通道，之後開鏡頭用 replaceTrack）
+      const audioTrack = gcall.local?.getAudioTracks()[0];
+      if (audioTrack) pc.addTrack(audioTrack, gcall.local);
+      else pc.addTransceiver('audio', { direction: 'sendrecv' });
+      if (gcall.camTrack) pc.addTrack(gcall.camTrack, gcall.local);
+      else pc.addTransceiver('video', { direction: 'sendrecv' });
+      return entry;
+    }
+    function gRemovePeer(id) {
+      const entry = gcall.peers.get(id);
+      if (!entry) return;
+      entry.pc.close();
+      gcall.peers.delete(id);
+      gRemoveTile(id);
+    }
+    async function gFlushIce(entry) {
+      const list = entry.pendingIce;
+      entry.pendingIce = [];
+      for (const candidate of list) await entry.pc.addIceCandidate(candidate).catch(() => {});
+    }
+    async function gOfferTo(id) {
+      const entry = gAddPeer(id);
+      if (!entry) return;
+      const offer = await entry.pc.createOffer();
+      await entry.pc.setLocalDescription(offer);
+      gSignal(id, 'offer', entry.pc.localDescription.toJSON());
+    }
+
+    function openGroupScreen() {
+      videoScreenEl.classList.add('is-group');
+      document.getElementById('callTitle').textContent = gcall.mode === 'voice' ? '全組語音通話' : '全組視訊通話';
+      document.getElementById('callTimer').textContent = '00:00';
+      callGrid.replaceChildren();
+      updateGridCount();
+      showScreen('videoScreen');
+    }
+    function gOnConnected() {
+      setStatus('');
+      if (gcall.tick) return;
+      chime('connect');
+      gcall.seconds = 0;
+      gcall.tick = setInterval(() => {
+        gcall.seconds += 1;
+        const mm = String(Math.floor(gcall.seconds / 60)).padStart(2, '0');
+        const ss = String(gcall.seconds % 60).padStart(2, '0');
+        document.getElementById('callTimer').textContent = `${mm}:${ss}`;
+      }, 1000);
+    }
+
+    // ---------- 發起全組通話 ----------
+    async function startGroupCall(mode) {
+      if (!chat.online) { toast('要連到聊天伺服器才能通話'); return; }
+      if (call.state !== 'idle' || gcall.active || gcall.ringing) return;
+      Object.assign(gcall, { active: true, id: `g-${Date.now()}-${ME.id}`, mode, facing: 'user' });
+      gcall.peers.clear();
+      openGroupScreen();
+      setStatus('等待其他人加入…', true);
+      try {
+        await getGroupMedia(mode === 'video');
+      } catch {
+        setStatus(mode === 'video' ? '沒辦法使用麥克風 / 鏡頭（請在瀏覽器允許）' : '沒辦法使用麥克風（請在瀏覽器允許）');
+        gTimer(() => endGroupCall(false), 2500);
+        return;
+      }
+      if (!gcall.active) return;
+      addSelfTile();
+      updateButtons();
+      gSignal('group', 'gring', { mode }); // 讓其他人的手機響
+      gSignal('group', 'gjoin', { mode }); // 宣告我在這場通話裡
+      // 45 秒都沒人加入就自己掛掉
+      gTimer(() => {
+        if (gcall.active && gcall.peers.size === 0) {
+          toast('沒有人加入通話');
+          endGroupCall(true);
+        }
+      }, 45000);
+    }
+
+    // ---------- 全組來電 ----------
+    function showGroupIncoming(from, sig) {
+      gcall.ringing = true;
+      gcall.incomingSig = sig;
+      gcall.incomingFrom = from;
+      gcall.id = sig.call;
+      const mode = sig.data?.mode === 'voice' ? 'voice' : 'video';
+      document.getElementById('incomingAvatar').src = from.avatar;
+      document.getElementById('incomingGlow').src = from.avatar;
+      document.getElementById('incomingName').textContent = from.name;
+      document.getElementById('incomingKind').textContent = mode === 'voice' ? '邀請全組語音通話' : '邀請全組視訊通話';
+      incoming.hidden = false;
+      gcall.stopTone = TONES.ringtone();
+      if (navigator.vibrate) navigator.vibrate([400, 300, 400, 300, 400, 300, 400]);
+      gTimer(() => { if (gcall.ringing) declineGroup(); }, 45000);
+    }
+    async function acceptGroup() {
+      if (!gcall.ringing) return;
+      const sig = gcall.incomingSig;
+      gStopTone();
+      incoming.hidden = true;
+      gcall.ringing = false;
+      Object.assign(gcall, { active: true, id: sig.call, mode: sig.data?.mode === 'voice' ? 'voice' : 'video', facing: 'user' });
+      gcall.peers.clear();
+      openGroupScreen();
+      setStatus('連線中…', true);
+      try {
+        await getGroupMedia(gcall.mode === 'video');
+      } catch {
+        gcall.local = null;
+        gcall.camTrack = null;
+        toast('沒辦法使用麥克風 / 鏡頭，其他人會看不到你（請在瀏覽器允許）', 3500);
+      }
+      if (!gcall.active) return;
+      addSelfTile();
+      updateButtons();
+      gSignal('group', 'gjoin', { mode: gcall.mode }); // 既有的人收到後會回 ghere 並建立連線
+    }
+    function declineGroup() {
+      if (!gcall.ringing) return;
+      gStopTone();
+      incoming.hidden = true;
+      gcall.ringing = false;
+      gSignal('group', 'gleave'); // 讓伺服器清掉我的待補響鈴
+      gcall.timers.forEach(clearTimeout);
+      gcall.timers = [];
+      gcall.incomingSig = null;
+      gcall.incomingFrom = null;
+    }
+
+    function endGroupCall(tell = true) {
+      if (gcall.ringing) { declineGroup(); return; }
+      if (!gcall.active) return;
+      if (tell) gSignal('group', 'gleave');
+      gStopTone();
+      chime('end');
+      gcall.timers.forEach(clearTimeout);
+      gcall.timers = [];
+      clearInterval(gcall.tick);
+      gcall.tick = 0;
+      gcall.peers.forEach((entry) => entry.pc.close());
+      gcall.peers.clear();
+      gcall.local?.getTracks().forEach((t) => t.stop());
+      gcall.screenTrack?.stop();
+      callGrid.replaceChildren();
+      videoScreenEl.classList.remove('is-group');
+      const wasOpen = !videoScreenEl.classList.contains('is-hidden');
+      Object.assign(gcall, { active: false, ringing: false, id: '', local: null, camTrack: null, screenTrack: null, seconds: 0, incomingSig: null, incomingFrom: null });
+      setStatus('');
+      updateButtons();
+      if (wasOpen) {
+        showScreen('chatScreen');
+        const gt = groupThread();
+        if (gt) openThread(gt);
+      }
+    }
+
+    // ---------- 收到全組通話訊號 ----------
+    async function onGroupSignal(sig, from) {
+      const id = from.id;
+      switch (sig.type) {
+        case 'gring':
+        case 'gjoin':
+          if (!gcall.active) {
+            // 我還沒在通話裡：顯示全組來電（已在 1-1 通話中就不打擾）
+            if (call.state !== 'idle') return;
+            if (gcall.ringing) return;
+            showGroupIncoming(from, sig);
+            return;
+          }
+          // 我已經在通話裡：有人加入 → 回報我在，並依 id 大小決定誰送 offer（避免兩邊同時送）
+          if (sig.call !== gcall.id) return;
+          gSignal(id, 'ghere', { mode: gcall.mode });
+          if (ME.id < id) gOfferTo(id);
+          return;
+        case 'ghere':
+          if (!gcall.active || sig.call !== gcall.id) return;
+          if (ME.id < id) gOfferTo(id);
+          return;
+        case 'offer': {
+          if (!gcall.active || sig.call !== gcall.id) return;
+          const entry = gAddPeer(id);
+          if (!entry) return;
+          await entry.pc.setRemoteDescription(sig.data);
+          const answer = await entry.pc.createAnswer();
+          await entry.pc.setLocalDescription(answer);
+          gSignal(id, 'answer', entry.pc.localDescription.toJSON());
+          await gFlushIce(entry);
+          return;
+        }
+        case 'answer': {
+          const entry = gcall.peers.get(id);
+          if (entry && !entry.pc.currentRemoteDescription) {
+            await entry.pc.setRemoteDescription(sig.data);
+            await gFlushIce(entry);
+          }
+          return;
+        }
+        case 'ice': {
+          const entry = gcall.peers.get(id);
+          if (!entry) return;
+          if (entry.pc.remoteDescription) await entry.pc.addIceCandidate(sig.data).catch(() => {});
+          else entry.pendingIce.push(sig.data);
+          return;
+        }
+        case 'gleave':
+          if (gcall.ringing && gcall.incomingFrom?.id === id) declineGroup(); // 邀請我的人取消了
+          gRemovePeer(id);
+          return;
+        default:
+          return;
+      }
+    }
+
+    // ---------- 全組通話的通話中控制（靜音 / 鏡頭 / 翻轉 / 分享） ----------
+    async function gReplaceVideo(track) {
+      for (const { pc } of gcall.peers.values()) {
+        const sender = pc.getTransceivers().find((t) => t.receiver.track?.kind === 'video')?.sender;
+        if (sender) await sender.replaceTrack(track).catch(() => {});
+      }
+    }
+    function gMic() {
+      const track = gcall.local?.getAudioTracks()[0];
+      if (!track) return;
+      track.enabled = !track.enabled;
+      updateButtons();
+    }
+    async function gCam() {
+      if (gcall.camTrack) {
+        gcall.camTrack.enabled = !gcall.camTrack.enabled;
+        if (!gcall.screenTrack) await gReplaceVideo(gcall.camTrack.enabled ? gcall.camTrack : null);
+      } else {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: gcall.facing } });
+          gcall.camTrack = stream.getVideoTracks()[0];
+          gcall.local?.addTrack(gcall.camTrack);
+          if (!gcall.screenTrack) await gReplaceVideo(gcall.camTrack);
+        } catch {
+          toast('沒辦法使用鏡頭（請在瀏覽器允許）');
+        }
+      }
+      refreshSelfTile();
+      updateButtons();
+    }
+    async function gFlip() {
+      if (!gcall.camTrack) return;
+      const facing = gcall.facing === 'user' ? 'environment' : 'user';
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: facing } } });
+        const track = stream.getVideoTracks()[0];
+        track.enabled = gcall.camTrack.enabled;
+        gcall.camTrack.stop();
+        gcall.camTrack = track;
+        gcall.facing = facing;
+        if (!gcall.screenTrack) await gReplaceVideo(track);
+        refreshSelfTile();
+      } catch {
+        toast('這支裝置沒有另一個鏡頭');
+      }
+    }
+    async function gShare() {
+      if (gcall.screenTrack) { await gStopScreenShare(); return; }
+      if (!navigator.mediaDevices?.getDisplayMedia) {
+        toast('這支手機不能分享螢幕，請用電腦', 3500);
+        return;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        gcall.screenTrack = stream.getVideoTracks()[0];
+        gcall.screenTrack.addEventListener('ended', gStopScreenShare);
+        await gReplaceVideo(gcall.screenTrack);
+        refreshSelfTile();
+        updateButtons();
+        toast('正在分享螢幕');
+      } catch {
+        // 取消
+      }
+    }
+    async function gStopScreenShare() {
+      if (!gcall.screenTrack) return;
+      gcall.screenTrack.stop();
+      gcall.screenTrack = null;
+      await gReplaceVideo(gcall.camTrack?.enabled ? gcall.camTrack : null);
+      refreshSelfTile();
+      updateButtons();
+    }
+
     // ---------- 按鈕 ----------
     micBtn.querySelector('button').addEventListener('click', () => {
+      if (gcall.active) return gMic();
       const track = call.local?.getAudioTracks()[0];
       if (!track) return;
       track.enabled = !track.enabled;
       updateButtons();
     });
     camBtn.querySelector('button').addEventListener('click', async () => {
+      if (gcall.active) return gCam();
       if (call.state === 'idle') return;
       if (call.camTrack) {
         call.camTrack.enabled = !call.camTrack.enabled;
@@ -3652,6 +4634,7 @@
       updateButtons();
     });
     flipBtn.querySelector('button').addEventListener('click', async () => {
+      if (gcall.active) return gFlip();
       if (!call.camTrack) return;
       const facing = call.facing === 'user' ? 'environment' : 'user';
       try {
@@ -3668,6 +4651,7 @@
       }
     });
     shareBtn.querySelector('button').addEventListener('click', async () => {
+      if (gcall.active) return gShare();
       if (call.state === 'idle') return;
       if (call.screenTrack) {
         stopScreenShare();
@@ -3697,10 +4681,10 @@
       showLocalPreview();
       updateButtons();
     }
-    document.querySelector('#endBtn button').addEventListener('click', () => endCall(true));
-    document.querySelector('#acceptBtn button').addEventListener('click', acceptCall);
-    document.querySelector('#declineBtn button').addEventListener('click', declineCall);
-    window.addEventListener('pagehide', () => endCall(true));
+    document.querySelector('#endBtn button').addEventListener('click', () => (gcall.active || gcall.ringing ? endGroupCall(true) : endCall(true)));
+    document.querySelector('#acceptBtn button').addEventListener('click', () => (gcall.ringing ? acceptGroup() : acceptCall()));
+    document.querySelector('#declineBtn button').addEventListener('click', () => (gcall.ringing ? declineGroup() : declineCall()));
+    window.addEventListener('pagehide', () => { endCall(true); endGroupCall(true); });
     document.getElementById('voiceCallBtn').addEventListener('click', () => currentThread && startCall(currentThread, 'voice'));
     document.getElementById('videoCallBtn').addEventListener('click', () => currentThread && startCall(currentThread, 'video'));
     updateButtons();
@@ -4252,7 +5236,7 @@
     document.addEventListener('visibilitychange', () => {
       if (!chat.online && !chat.paused) return;
       if (document.hidden) {
-        if (call.state !== 'idle' || !chat.events) return;
+        if (call.state !== 'idle' || gcall.active || gcall.ringing || !chat.events) return;
         // 告訴伺服器「我離開了」，馬上開始推播通知（sendBeacon 在 App 切到背景時也送得出去）
         if (ME) navigator.sendBeacon?.(`${chat.base}/api/away`, JSON.stringify({ me: ME.id }));
         chat.events.close();

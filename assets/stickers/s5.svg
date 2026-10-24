@@ -1,0 +1,6 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" aria-label="愛你">
+  <circle cx="120" cy="120" r="100" fill="#FDCB3C"/>
+  <path d="M80 118 C64 98 36 108 36 128 C36 150 64 162 80 176 C96 162 124 150 124 128 C124 108 96 98 80 118 Z" fill="#FF4D6D"/>
+  <path d="M160 118 C144 98 116 108 116 128 C116 150 144 162 160 176 C176 162 204 150 204 128 C204 108 176 98 160 118 Z" fill="#FF4D6D"/>
+  <path d="M84 196 q36 30 72 0" stroke="#5a3a00" stroke-width="11" fill="none" stroke-linecap="round"/>
+</svg>

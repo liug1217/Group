@@ -1,0 +1,7 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" aria-label="旋轉星星">
+  <g transform="translate(120 120)">
+    <path d="M0 -90 L22.3 -30.7 L85.6 -27.8 L36.1 11.7 L52.9 72.8 L0 38 L-52.9 72.8 L-36.1 11.7 L-85.6 -27.8 L-22.3 -30.7 Z" fill="#FFD23F" stroke="#FFB800" stroke-width="7" stroke-linejoin="round">
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="2.4s" repeatCount="indefinite"/>
+    </path>
+  </g>
+</svg>

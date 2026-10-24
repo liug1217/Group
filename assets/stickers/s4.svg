@@ -1,0 +1,8 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" aria-label="哭哭">
+  <circle cx="120" cy="120" r="100" fill="#FDCB3C"/>
+  <path d="M58 94 q22 -16 42 -2" stroke="#5a3a00" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M140 92 q20 -14 42 2" stroke="#5a3a00" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <ellipse cx="120" cy="172" rx="24" ry="17" fill="#5a3a00"/>
+  <path d="M68 112 q-7 46 5 74 q12 -28 7 -74 q-6 -9 -12 0 Z" fill="#7FD3FF"/>
+  <path d="M172 112 q7 46 -5 74 q-12 -28 -7 -74 q6 -9 12 0 Z" fill="#7FD3FF"/>
+</svg>

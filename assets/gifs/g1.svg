@@ -1,0 +1,7 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" aria-label="跳動愛心">
+  <g transform="translate(120 120)">
+    <path d="M0 70 C-70 20 -84 -20 -84 -46 A42 42 0 0 1 0 -66 A42 42 0 0 1 84 -46 C84 -20 70 20 0 70 Z" fill="#FF4D6D">
+      <animateTransform attributeName="transform" type="scale" values="1;1.18;0.95;1.08;1" keyTimes="0;0.25;0.5;0.75;1" dur="0.9s" repeatCount="indefinite"/>
+    </path>
+  </g>
+</svg>

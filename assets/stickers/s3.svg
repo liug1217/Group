@@ -1,0 +1,9 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" aria-label="大笑">
+  <circle cx="120" cy="120" r="100" fill="#FDCB3C"/>
+  <path d="M58 102 q20 -24 42 0" stroke="#5a3a00" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M140 102 q20 -24 42 0" stroke="#5a3a00" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M72 136 q48 58 96 0 Z" fill="#5a3a00"/>
+  <path d="M92 150 q28 28 56 0 Z" fill="#FF6B81"/>
+  <path d="M40 118 q-11 20 0 32 q11 -14 0 -32 Z" fill="#7FD3FF"/>
+  <path d="M200 118 q11 20 0 32 q-11 -14 0 -32 Z" fill="#7FD3FF"/>
+</svg>

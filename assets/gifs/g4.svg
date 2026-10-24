@@ -1,0 +1,11 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" aria-label="載入中">
+  <circle cx="70" cy="124" r="20" fill="#2949CB">
+    <animate attributeName="cy" values="124;92;124" dur="0.9s" begin="0s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.3 0 0.3 1;0.7 0 0.7 1"/>
+  </circle>
+  <circle cx="120" cy="124" r="20" fill="#3B82F6">
+    <animate attributeName="cy" values="124;92;124" dur="0.9s" begin="0.15s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.3 0 0.3 1;0.7 0 0.7 1"/>
+  </circle>
+  <circle cx="170" cy="124" r="20" fill="#7FB4FF">
+    <animate attributeName="cy" values="124;92;124" dur="0.9s" begin="0.3s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.3 0 0.3 1;0.7 0 0.7 1"/>
+  </circle>
+</svg>

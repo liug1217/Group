@@ -1,0 +1,4 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" aria-label="愛心">
+  <path d="M120 206 C40 150 24 104 24 76 A52 52 0 0 1 120 48 A52 52 0 0 1 216 76 C216 104 200 150 120 206 Z" fill="#FF4D6D"/>
+  <ellipse cx="82" cy="84" rx="22" ry="13" fill="#ffffff" opacity="0.5" transform="rotate(-32 82 84)"/>
+</svg>

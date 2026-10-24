@@ -19,6 +19,7 @@
 import json
 import os
 import queue
+import re
 import shutil
 import socket
 import subprocess
@@ -37,14 +38,43 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.environ.get('ESN_DATA_DIR') or (r'C:\ESNData' if os.name == 'nt' else ROOT)
 os.makedirs(DATA_DIR, exist_ok=True)
 DATA_FILE = os.path.join(DATA_DIR, 'chat-data.json')
+# 上傳的圖片（照片、塗鴉）放這裡；用隨機檔名存，再用 /uploads/<檔名> 讀回來
+UPLOADS_DIR = os.path.join(DATA_DIR, 'uploads')
+os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 # 跟 Group.html 的 MEMBERS 一樣（名字給推播通知用）
 MEMBER_NAMES = {'fan': '帆～', 'zhang': '張 O 寧', 'liu': '劉 O 佑', 'si': '劉思妤'}
 MEMBER_IDS = set(MEMBER_NAMES)
 MAX_TEXT = 300
 MAX_PER_ROOM = 500
-# 通話（WebRTC）的訊號：只轉傳給對方，不存檔
-SIGNAL_TYPES = {'ring', 'accept', 'decline', 'busy', 'end', 'offer', 'answer', 'ice'}
+# 訊息種類：純文字，或圖片 / 塗鴉（上傳的檔）、貼圖 / GIF（網頁內建的，只存 id）
+MSG_KINDS = {'text', 'image', 'doodle', 'sticker', 'gif'}
+MAX_REF = 80  # 貼圖 / GIF 的 id、上傳檔名的長度上限
+# 上傳圖片：最大 8MB，只收這幾種圖（用檔頭判斷，不信任副檔名）
+MAX_UPLOAD = 8 * 1024 * 1024
+IMAGE_TYPES = (
+    (b'\x89PNG\r\n\x1a\n', 'png'),
+    (b'\xff\xd8\xff', 'jpg'),
+    (b'GIF87a', 'gif'),
+    (b'GIF89a', 'gif'),
+)
+
+
+def sniff_image(head):
+    """看檔頭認圖片格式；WebP 要額外看 RIFF....WEBP。認不出來回 None。"""
+    for magic, ext in IMAGE_TYPES:
+        if head.startswith(magic):
+            return ext
+    if head[:4] == b'RIFF' and head[8:12] == b'WEBP':
+        return 'webp'
+    return None
+
+
+# 通話（WebRTC）的訊號：只轉傳給對方，不存檔。g 開頭的是群組通話
+SIGNAL_TYPES = {'ring', 'accept', 'decline', 'busy', 'end', 'offer', 'answer', 'ice',
+                'gring', 'gjoin', 'gleave', 'ghere'}
+# 這幾種的對象可以是 'group'（整組一起收到），其他一律指定某個人
+GROUP_SIGNALS = {'gring', 'gjoin', 'gleave'}
 MAX_SIGNAL = 65536
 
 # 允許哪些網站連這台伺服器（GitHub 網站 + 本機測試）。要加別的網址就加在這裡，
@@ -273,15 +303,40 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_header('Location', '/Group.html')
             self.end_headers()
             return
+        if path.startswith('/uploads/'):
+            return self.serve_upload(path[len('/uploads/'):])
         if path in PUBLIC_FILES or path.startswith(PUBLIC_DIRS):
             if '..' in path:
                 return self.send_error(404)
             return super().do_GET()
         return self.send_error(404)
 
+    # 讀回上傳的圖片：檔名只能是我們自己產生的「亂碼.副檔名」，擋掉路徑跳脫
+    def serve_upload(self, name):
+        if not re.fullmatch(r'[0-9a-f]{32}\.(png|jpg|gif|webp)', name or ''):
+            return self.send_error(404)
+        full = os.path.join(UPLOADS_DIR, name)
+        try:
+            with open(full, 'rb') as f:
+                body = f.read()
+        except OSError:
+            return self.send_error(404)
+        ext = name.rsplit('.', 1)[1]
+        ctype = {'png': 'image/png', 'jpg': 'image/jpeg', 'gif': 'image/gif', 'webp': 'image/webp'}[ext]
+        self.send_response(200)
+        self.send_cors()
+        self.send_header('Content-Type', ctype)
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Cache-Control', 'public, max-age=31536000, immutable')  # 檔名不重複，可以永久快取
+        self.end_headers()
+        if self.command != 'HEAD':
+            self.wfile.write(body)
+
     def do_HEAD(self):
         path = urlparse(self.path).path
-        if path in PUBLIC_FILES or path.startswith(PUBLIC_DIRS):
+        if path.startswith('/uploads/') or path in PUBLIC_FILES or path.startswith(PUBLIC_DIRS):
+            if path.startswith('/uploads/'):
+                return self.serve_upload(path[len('/uploads/'):])
             return super().do_HEAD()
         return self.send_error(404)
 
@@ -293,11 +348,13 @@ class Handler(SimpleHTTPRequestHandler):
             return self.handle_push()
         if path == '/api/away':
             return self.handle_away()
+        if path == '/api/upload':
+            return self.handle_upload()
         if path != '/api/messages':
             return self.send_error(404)
         try:
             length = int(self.headers.get('Content-Length', '0'))
-            if length > 4096:
+            if length > 8192:  # 圖片是另外上傳的，這裡的訊息只帶很短的文字或參照
                 return self.send_json(413, {'error': 'too large'})
             data = json.loads(self.rfile.read(length) or b'{}')
         except (ValueError, json.JSONDecodeError):
@@ -305,8 +362,8 @@ class Handler(SimpleHTTPRequestHandler):
 
         room = str(data.get('room', ''))
         sender = str(data.get('from', ''))
-        text = str(data.get('text', '')).strip()
-        if not valid_room(room) or sender not in MEMBER_IDS or not text or len(text) > MAX_TEXT:
+        kind = str(data.get('kind', 'text')) or 'text'
+        if not valid_room(room) or sender not in MEMBER_IDS or kind not in MSG_KINDS:
             return self.send_json(400, {'error': 'invalid message'})
         if room.startswith('dm:') and sender not in room[3:].split('-'):
             return self.send_json(403, {'error': 'not in this room'})
@@ -315,10 +372,33 @@ class Handler(SimpleHTTPRequestHandler):
         msg = {
             'id': f'{int(now * 1000)}-{sender}',
             'from': sender,
-            'text': text,
+            'kind': kind,
             'time': time.strftime('%H:%M', time.localtime(now)),
             'ts': int(now * 1000),
         }
+        # 每種訊息帶的欄位不一樣，各自檢查；推播通知的內容也跟著換
+        if kind == 'text':
+            text = str(data.get('text', '')).strip()
+            if not text or len(text) > MAX_TEXT:
+                return self.send_json(400, {'error': 'invalid message'})
+            msg['text'] = text
+            preview = text if len(text) <= 120 else text[:118] + '…'
+        elif kind in ('image', 'doodle'):
+            src = str(data.get('src', ''))
+            import re
+            if not re.fullmatch(r'[0-9a-f]{32}\.(png|jpg|gif|webp)', src) or \
+                    not os.path.exists(os.path.join(UPLOADS_DIR, src)):
+                return self.send_json(400, {'error': 'invalid image'})
+            msg['src'] = src
+            preview = '傳了一張塗鴉' if kind == 'doodle' else '傳了一張照片'
+        else:  # sticker / gif：只是網頁內建素材的 id
+            ref = str(data.get('ref', ''))
+            import re
+            if not re.fullmatch(r'[0-9a-zA-Z_-]{1,%d}' % MAX_REF, ref):
+                return self.send_json(400, {'error': 'invalid ref'})
+            msg['ref'] = ref
+            preview = '傳了一張貼圖' if kind == 'sticker' else '傳了一個 GIF'
+
         with lock:
             rooms.setdefault(room, []).append(msg)
             rooms[room] = rooms[room][-MAX_PER_ROOM:]
@@ -331,9 +411,27 @@ class Handler(SimpleHTTPRequestHandler):
         else:
             receivers = set(room[3:].split('-')) - {sender}
             title = MEMBER_NAMES[sender]
-        body = text if len(text) <= 120 else text[:118] + '…'
-        push_to(receivers, {'title': title, 'body': body, 'tag': room, 'url': PUSH_SUBJECT})
+        push_to(receivers, {'title': title, 'body': preview, 'tag': room, 'url': PUSH_SUBJECT})
         return self.send_json(200, msg)
+
+    # 上傳圖片（照片 / 塗鴉）：body 直接是圖片的位元組，存成亂碼檔名，回 {src}
+    def handle_upload(self):
+        try:
+            length = int(self.headers.get('Content-Length', '0'))
+        except ValueError:
+            return self.send_json(400, {'error': 'bad length'})
+        if length <= 0 or length > MAX_UPLOAD:
+            return self.send_json(413, {'error': 'too large'})
+        body = self.rfile.read(length)
+        ext = sniff_image(body[:16])
+        if not ext:
+            return self.send_json(400, {'error': 'not an image'})
+        name = f'{os.urandom(16).hex()}.{ext}'
+        tmp = os.path.join(UPLOADS_DIR, name + '.tmp')
+        with open(tmp, 'wb') as f:
+            f.write(body)
+        os.replace(tmp, os.path.join(UPLOADS_DIR, name))
+        return self.send_json(200, {'src': name})
 
     # App 切到背景：{me}（網頁用 sendBeacon 送，內容是純文字的 JSON）
     def handle_away(self):
@@ -380,10 +478,14 @@ class Handler(SimpleHTTPRequestHandler):
         sender = str(data.get('from', ''))
         target = str(data.get('to', ''))
         kind = str(data.get('type', ''))
-        if sender not in MEMBER_IDS or target not in MEMBER_IDS or sender == target or kind not in SIGNAL_TYPES:
+        is_group = target == 'group' and kind in GROUP_SIGNALS
+        if sender not in MEMBER_IDS or kind not in SIGNAL_TYPES:
+            return self.send_json(400, {'error': 'invalid signal'})
+        if not is_group and (target not in MEMBER_IDS or sender == target):
             return self.send_json(400, {'error': 'invalid signal'})
         signal = {'from': sender, 'to': target, 'type': kind, 'call': str(data.get('call', ''))[:40], 'data': data.get('data')}
         broadcast({'signal': signal})
+        others = MEMBER_IDS - {sender}
         if kind == 'ring':
             # 對方沒開網頁：推播「來電」，對方 30 秒內打開網頁就補送響鈴
             with lock:
@@ -395,12 +497,28 @@ class Handler(SimpleHTTPRequestHandler):
                 'tag': 'call',
                 'url': PUSH_SUBJECT,
             }, urgency='high')
+        elif kind == 'gring':
+            # 全組通話邀請：推播給其他每個人，並各自記住 30 秒內補送
+            with lock:
+                for member in others:
+                    pending_rings[member] = (time.time(), signal)
+            mode = (data.get('data') or {}).get('mode')
+            push_to(list(others), {
+                'title': f'{MEMBER_NAMES[sender]}（★Bi_藍冰團★）',
+                'body': '邀請全組語音通話' if mode == 'voice' else '邀請全組視訊通話',
+                'tag': 'call',
+                'url': PUSH_SUBJECT,
+            }, urgency='high')
         elif kind in ('accept', 'decline', 'busy', 'end'):
             with lock:
                 for member in (sender, target):
                     ring = pending_rings.get(member)
                     if ring and ring[1]['call'] == signal['call']:
                         pending_rings.pop(member, None)
+        elif kind in ('gjoin', 'gleave'):
+            # 加入 / 離開全組通話：這個人自己的那通邀請就不用再補送了
+            with lock:
+                pending_rings.pop(sender, None)
         return self.send_json(200, {'ok': True})
 
     # Server-Sent Events：新訊息即時推給每支連著的手機

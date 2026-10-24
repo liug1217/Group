@@ -1,0 +1,9 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" aria-label="慶祝">
+  <path d="M30 210 L104 84 L156 132 Z" fill="#FFB020"/>
+  <path d="M30 210 L104 84 L128 108 Z" fill="#FF7A00"/>
+  <circle cx="150" cy="58" r="11" fill="#FF4D6D"/>
+  <rect x="178" y="88" width="20" height="20" rx="4" fill="#3BD16F" transform="rotate(22 188 98)"/>
+  <circle cx="202" cy="150" r="10" fill="#2949CB"/>
+  <path d="M150 104 l7 16 16 2 -11 11 3 16 -15 -9 -15 9 3 -16 -11 -11 16 -2 Z" fill="#FFD23F"/>
+  <rect x="116" y="38" width="16" height="16" rx="3" fill="#7FD3FF" transform="rotate(30 124 46)"/>
+</svg>

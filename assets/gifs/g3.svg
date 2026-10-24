@@ -1,0 +1,13 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" aria-label="揮手">
+  <g transform="translate(120 130)">
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="-20;20;-20" dur="1s" repeatCount="indefinite"/>
+      <rect x="-40" y="-14" width="80" height="86" rx="30" fill="#FFCC4D"/>
+      <rect x="-38" y="-64" width="18" height="72" rx="9" fill="#FFCC4D"/>
+      <rect x="-16" y="-76" width="18" height="84" rx="9" fill="#FFCC4D"/>
+      <rect x="6" y="-70" width="18" height="78" rx="9" fill="#FFCC4D"/>
+      <rect x="28" y="-58" width="18" height="66" rx="9" fill="#FFCC4D"/>
+      <rect x="-60" y="2" width="30" height="18" rx="9" fill="#FFCC4D" transform="rotate(-32 -45 11)"/>
+    </g>
+  </g>
+</svg>

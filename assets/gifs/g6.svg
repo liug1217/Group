@@ -1,0 +1,12 @@
+<svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" aria-label="讚啦">
+  <g transform="translate(120 120)">
+    <circle r="96" fill="#2949CB"/>
+    <g>
+      <animateTransform attributeName="transform" type="scale" values="0.9;1.08;0.9" dur="0.85s" repeatCount="indefinite"/>
+      <g fill="#ffffff" transform="translate(-120 -129)">
+        <path d="M96 108 l10 -40 a16 16 0 0 1 31 6 l-4 30 h28 a16 16 0 0 1 16 18 l-8 48 a20 20 0 0 1 -20 17 h-53 z"/>
+        <rect x="62" y="104" width="32" height="88" rx="11"/>
+      </g>
+    </g>
+  </g>
+</svg>
