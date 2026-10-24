@@ -631,13 +631,24 @@
       transition: opacity 0.16s ease, scale 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s;
     }
     /* 鏡片出現時，真的分頁圖示在鏡片底下挖一個洞（鏡片形狀），鏡片裡只看到藍色那一份 */
+    /* 洞的大小跟著鏡片一起長大、縮小（--hole-s：0 = 沒有洞，1 = 跟鏡片一樣大），
+       不然鏡片還沒出現 / 已經淡掉時，圖示會先不見或疊成兩個 */
+    @property --hole-s { syntax: '<number>'; inherits: true; initial-value: 0; }
+    .tab-bar {
+      --hole-s: 0;
+      transition: --hole-s 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .tab-bar.is-lens-on {
+      --hole-s: 1;
+      transition: --hole-s 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
     .tab-bar.is-dragging > .lg-panel__body {
       -webkit-mask-image: linear-gradient(#000, #000), var(--lens-hole);
       mask-image: linear-gradient(#000, #000), var(--lens-hole);
-      -webkit-mask-size: 100% 100%, var(--lens-w, 106px) 74px;
-      mask-size: 100% 100%, var(--lens-w, 106px) 74px;
-      -webkit-mask-position: 0 0, var(--hole-x, -999px) var(--hole-y, 0px);
-      mask-position: 0 0, var(--hole-x, -999px) var(--hole-y, 0px);
+      -webkit-mask-size: 100% 100%, calc(var(--lens-w, 106px) * var(--hole-s)) calc(74px * var(--hole-s));
+      mask-size: 100% 100%, calc(var(--lens-w, 106px) * var(--hole-s)) calc(74px * var(--hole-s));
+      -webkit-mask-position: 0 0, calc(var(--hole-x, -999px) + var(--lens-w, 106px) * (1 - var(--hole-s)) / 2) calc(var(--hole-y, 0px) + 74px * (1 - var(--hole-s)) / 2);
+      mask-position: 0 0, calc(var(--hole-x, -999px) + var(--lens-w, 106px) * (1 - var(--hole-s)) / 2) calc(var(--hole-y, 0px) + 74px * (1 - var(--hole-s)) / 2);
       -webkit-mask-repeat: no-repeat;
       mask-repeat: no-repeat;
       -webkit-mask-composite: xor;
@@ -1880,7 +1891,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.9.1</div>
+    <div class="abs version-label t12 nowrap">ESN v1.9.2</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -2559,20 +2570,31 @@
 
     function showLens(clientX) {
       clearTimeout(lensTimer);
+      clearTimeout(lensDoneTimer);
       ensureLensGlass();
       lensBar = tabBar.getBoundingClientRect();
       sizeLens();
       buildLensRow();
       lensTo(tabCenter(indexAt(clientX)), true);
-      tabBar.classList.add('is-dragging');
+      tabBar.classList.add('is-dragging', 'is-lens-on');
       tabLens.classList.add('is-on');
+      // 鏡片剛從隱藏變成看得到：iPhone（WebKit）要換一次濾鏡 id 才會畫出裡面的藍色圖示，
+      // 不然一開始鏡片是空的（底下的圖示又被挖掉，看起來像不見了）。跟引擎載完折射圖後的做法一樣，多補兩次
+      requestAnimationFrame(() => lensGlass?.flush());
+      [90, 250].forEach((ms) => setTimeout(() => lensGlass?.flush(), ms));
     }
 
+    // 收起鏡片：鏡片縮小淡出的同時，底下圖示的洞也一起縮回去；全部收完才恢復分頁列（灰色膠囊淡入）
+    let lensDoneTimer = 0;
     function hideLens(delay) {
       clearTimeout(lensTimer);
+      clearTimeout(lensDoneTimer);
       lensTimer = setTimeout(() => {
         tabLens.classList.remove('is-on');
-        tabBar.classList.remove('is-dragging');
+        tabBar.classList.remove('is-lens-on');
+        lensDoneTimer = setTimeout(() => {
+          if (!tabLens.classList.contains('is-on')) tabBar.classList.remove('is-dragging');
+        }, 340);
       }, delay);
     }
 
