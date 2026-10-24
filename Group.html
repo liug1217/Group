@@ -549,8 +549,6 @@
       z-index: 10;
       --lg-tint: rgba(255, 255, 255, 0.5);
       --lg-shadow-2: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0px 8px 15px 0px rgba(0, 0, 0, 0.12);
-      /* 挖洞用的膠囊形狀：沒有固定大小，跟著 mask-size 撐開，兩端一樣是半圓 */
-      --lens-hole: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' rx='37' fill='black'/%3E%3C/svg%3E");
     }
     .tab-bar[hidden] {
       display: none;
@@ -630,30 +628,9 @@
       visibility: visible;
       transition: opacity 0.16s ease, scale 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s;
     }
-    /* 鏡片出現時，真的分頁圖示在鏡片底下挖一個洞（鏡片形狀），鏡片裡只看到藍色那一份 */
-    /* 洞的大小跟著鏡片一起長大、縮小（--hole-s：0 = 沒有洞，1 = 跟鏡片一樣大），
-       不然鏡片還沒出現 / 已經淡掉時，圖示會先不見或疊成兩個 */
-    @property --hole-s { syntax: '<number>'; inherits: true; initial-value: 0; }
-    .tab-bar {
-      --hole-s: 0;
-      transition: --hole-s 0.32s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .tab-bar.is-lens-on {
-      --hole-s: 1;
-      transition: --hole-s 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .tab-bar.is-dragging > .lg-panel__body {
-      -webkit-mask-image: linear-gradient(#000, #000), var(--lens-hole);
-      mask-image: linear-gradient(#000, #000), var(--lens-hole);
-      -webkit-mask-size: 100% 100%, calc(var(--lens-w, 106px) * var(--hole-s)) calc(74px * var(--hole-s));
-      mask-size: 100% 100%, calc(var(--lens-w, 106px) * var(--hole-s)) calc(74px * var(--hole-s));
-      -webkit-mask-position: 0 0, calc(var(--hole-x, -999px) + var(--lens-w, 106px) * (1 - var(--hole-s)) / 2) calc(var(--hole-y, 0px) + 74px * (1 - var(--hole-s)) / 2);
-      mask-position: 0 0, calc(var(--hole-x, -999px) + var(--lens-w, 106px) * (1 - var(--hole-s)) / 2) calc(var(--hole-y, 0px) + 74px * (1 - var(--hole-s)) / 2);
-      -webkit-mask-repeat: no-repeat;
-      mask-repeat: no-repeat;
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-    }
+    /* 鏡片出現時，真的分頁圖示在鏡片底下挖一個洞（鏡片形狀），鏡片裡只看到藍色那一份。
+       洞用 JS 算的 clip-path（path，奇偶填色）畫，不用 SVG 圖片當遮罩：
+       遮罩圖片每一幀換大小 / 位置時 iPhone 要重新畫那張圖，畫好之前整排圖示會閃一下不見 */
     .tab-lens__row {
       position: absolute;
       left: 0;
@@ -1891,7 +1868,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.9.2</div>
+    <div class="abs version-label t12 nowrap">ESN v1.9.3</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -2504,8 +2481,46 @@
       // 鏡片裡面用一般 2D 移動（不要 translate3d / will-change 另開圖層，WebKit 的濾鏡碰到會畫錯）
       tabLensRow.style.transform = `translate(${lensBar.left - lx}px, ${lensBar.top - ly}px)`;
       // 底下真的分頁圖示挖洞的位置（相對分頁列）
-      tabBar.style.setProperty('--hole-x', `${lx - lensBar.left}px`);
-      tabBar.style.setProperty('--hole-y', `${ly - lensBar.top}px`);
+      holePos.x = lx - lensBar.left;
+      holePos.y = ly - lensBar.top;
+    }
+
+    // 挖洞：每一幀照鏡片現在的大小和透明度（出現時長大、淡出時縮到沒有）算出一個膠囊形的洞，
+    // 用 clip-path: path(evenodd, 外框 + 膠囊) 把底下的圖示挖掉。純幾何，當下就畫好，不會閃
+    const holePos = { x: 0, y: 0 };
+    let holeFrame = 0;
+    function drawHole() {
+      holeFrame = 0;
+      const body = tabBar.querySelector('.lg-panel__body');
+      if (!body) return;
+      if (!tabBar.classList.contains('is-dragging')) {
+        body.style.clipPath = '';
+        body.style.webkitClipPath = '';
+        return;
+      }
+      const cs = getComputedStyle(tabLens);
+      const scale = parseFloat(cs.scale) || 1;
+      const k = scale * (parseFloat(cs.opacity) || 0);
+      if (k < 0.03) {
+        body.style.clipPath = '';
+        body.style.webkitClipPath = '';
+      } else {
+        const W = body.clientWidth;
+        const H = body.clientHeight;
+        const w = LENS_W * k;
+        const h = LENS_H * k;
+        const r = h / 2;
+        const x = holePos.x + (LENS_W - w) / 2;
+        const y = holePos.y + (LENS_H - h) / 2;
+        const f = (n) => n.toFixed(1);
+        const path = `path(evenodd, 'M0 0H${f(W)}V${f(H)}H0Z M${f(x + r)} ${f(y)}H${f(x + w - r)}A${f(r)} ${f(r)} 0 0 1 ${f(x + w - r)} ${f(y + h)}H${f(x + r)}A${f(r)} ${f(r)} 0 0 1 ${f(x + r)} ${f(y)}Z')`;
+        body.style.clipPath = path;
+        body.style.webkitClipPath = path;
+      }
+      holeFrame = requestAnimationFrame(drawHole);
+    }
+    function startHole() {
+      if (!holeFrame) holeFrame = requestAnimationFrame(drawHole);
     }
 
     function stepLens(now) {
@@ -2576,8 +2591,9 @@
       sizeLens();
       buildLensRow();
       lensTo(tabCenter(indexAt(clientX)), true);
-      tabBar.classList.add('is-dragging', 'is-lens-on');
+      tabBar.classList.add('is-dragging');
       tabLens.classList.add('is-on');
+      startHole();
       // 鏡片剛從隱藏變成看得到：iPhone（WebKit）要換一次濾鏡 id 才會畫出裡面的藍色圖示，
       // 不然一開始鏡片是空的（底下的圖示又被挖掉，看起來像不見了）。跟引擎載完折射圖後的做法一樣，多補兩次
       requestAnimationFrame(() => lensGlass?.flush());
@@ -2591,7 +2607,6 @@
       clearTimeout(lensDoneTimer);
       lensTimer = setTimeout(() => {
         tabLens.classList.remove('is-on');
-        tabBar.classList.remove('is-lens-on');
         lensDoneTimer = setTimeout(() => {
           if (!tabLens.classList.contains('is-on')) tabBar.classList.remove('is-dragging');
         }, 340);
