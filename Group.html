@@ -325,6 +325,171 @@
       border-radius: 25px;
       cursor: pointer;
     }
+    /* 登入按鈕下面的「註冊」連結 */
+    .reg-link {
+      left: 0;
+      right: 0;
+      top: 540px;
+      text-align: center;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.85);
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .reg-link b {
+      color: #6FA0FF;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    /* ---------- 註冊畫面（目前只做介面，不會真的存） ---------- */
+    .screen-register {
+      background: #212121 url(assets/home-bg.jpg) 0 0 / 100% auto no-repeat;
+    }
+    .register-body {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(56px + var(--safe-top));
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 28px 20px calc(28px + var(--safe-bottom));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .reg-avatar {
+      position: relative;
+      width: 112px;
+      height: 112px;
+      border-radius: 56px;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      background: rgba(65, 65, 65, 0.3);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+      display: grid;
+      place-items: center;
+    }
+    .reg-avatar img {
+      width: 112px;
+      height: 112px;
+      border-radius: 56px;
+      object-fit: cover;
+      display: none;
+    }
+    .reg-avatar.has-img img {
+      display: block;
+    }
+    .reg-avatar-plus {
+      position: absolute;
+      width: 46px;
+      height: 46px;
+      border-radius: 23px;
+      background: #2949CB;
+      display: grid;
+      place-items: center;
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+    .reg-avatar.has-img .reg-avatar-plus {
+      width: 34px;
+      height: 34px;
+      border-radius: 17px;
+      right: 0;
+      bottom: 0;
+      inset: auto 0 0 auto;
+    }
+    .reg-avatar-hint {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 13px;
+      margin-top: -4px;
+    }
+    .reg-field {
+      position: relative;
+      width: 100%;
+      max-width: 360px;
+      height: 50px;
+      border-radius: 25px;
+      background: rgba(65, 65, 65, 0.2);
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      --lg-tint: rgba(65, 65, 65, 0.2);
+      --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+    .reg-field input {
+      position: absolute;
+      left: 52px;
+      right: 52px;
+      top: 0;
+      height: 50px;
+      padding: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: #FFFFFF;
+      font: inherit;
+      font-size: 15px;
+    }
+    .reg-field input::placeholder {
+      color: #FFFFFF;
+      opacity: 0.7;
+    }
+    .reg-field .icon-user {
+      left: 22px;
+      top: 15px;
+    }
+    .reg-field .icon-lock {
+      left: 23px;
+      top: 15px;
+    }
+    .reg-field .eye-button {
+      right: 18px;
+    }
+    .reg-submit {
+      position: relative;
+      width: 100%;
+      max-width: 360px;
+      height: 50px;
+      margin-top: 4px;
+      border-radius: 25px;
+      background: #2949CB;
+      box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+      transition: transform 0.15s ease;
+      --lg-tint: rgba(41, 73, 203, 0.6);
+      --lg-shadow-2: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    }
+    .reg-submit:active {
+      transform: scale(0.98);
+    }
+    .reg-submit > .lg-panel__body {
+      position: absolute;
+      inset: 0;
+    }
+    .reg-submit button {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      border: 0;
+      border-radius: 25px;
+      background: transparent;
+      color: #FFFFFF;
+      font: inherit;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .reg-note {
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 12px;
+      text-align: center;
+      margin-top: 2px;
+    }
 
     /* ---------- 群組主頁 ---------- */
     /* 主頁可以往下滑（Figma 畫面高度 1500 - 60） */
@@ -2158,10 +2323,46 @@
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
+    <button class="abs reg-link" id="registerLink" type="button">還沒有帳號？<b>建立一個</b></button>
     <img class="abs social shadow" style="left: 20px;" src="assets/login-line.png" alt="LINE 登入">
     <img class="abs social shadow" style="left: 80px;" src="assets/login-google.jpg" alt="Google 登入">
     <img class="abs social shadow" style="left: 140px;" src="assets/login-facebook.png" alt="Facebook 登入">
     <img class="abs social shadow" style="left: 200px;" src="assets/login-instagram.jpg" alt="Instagram 登入">
+  </section>
+
+  <!-- 註冊：目前只做介面給人看，還不會真的建立帳號（密碼也不會被存） -->
+  <section class="screen screen-register is-hidden" id="registerScreen" data-lg-backdrop="">
+    <lg-panel class="page-header glass shadow" radius="0">
+      <button class="abs page-back" id="registerBack" type="button" aria-label="返回登入">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="abs page-title center-x t20 nowrap text-shadow">建立帳號</div>
+    </lg-panel>
+    <div class="register-body">
+      <button class="reg-avatar" id="regAvatarBtn" type="button" aria-label="上傳頭像">
+        <img id="regAvatarImg" alt="">
+        <span class="reg-avatar-plus">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        </span>
+      </button>
+      <div class="reg-avatar-hint">上傳頭像</div>
+      <lg-panel class="reg-field glass" radius="25">
+        <img class="abs icon-user" src="assets/icon-user.svg" alt="">
+        <input type="text" id="regName" placeholder="名稱" aria-label="名稱" maxlength="20" autocomplete="off">
+      </lg-panel>
+      <lg-panel class="reg-field glass" radius="25">
+        <img class="abs icon-lock" src="assets/icon-lock.svg" alt="">
+        <input type="password" id="regPassword" placeholder="密碼" aria-label="密碼" autocomplete="new-password">
+        <button class="eye-button" id="regEye" type="button" aria-label="顯示密碼">
+          <img src="assets/icon-eye.svg" alt="">
+        </button>
+      </lg-panel>
+      <lg-panel class="reg-submit glass" radius="25">
+        <button id="regSubmit" type="button">建立帳號</button>
+      </lg-panel>
+      <div class="reg-note">目前先做介面，之後才會開放註冊</div>
+    </div>
+    <input type="file" id="regAvatarInput" accept="image/*" hidden>
   </section>
 
   <!-- 群組主頁 -->
@@ -2696,7 +2897,7 @@
       if (current && current.id === id) return;
       screens.forEach((screen) => screen.classList.toggle('is-hidden', screen.id !== id));
       // 登入畫面和通話中不顯示底部分頁列
-      tabBar.hidden = id === 'loginScreen' || id === 'videoScreen';
+      tabBar.hidden = id === 'loginScreen' || id === 'videoScreen' || id === 'registerScreen';
       window.scrollTo(0, 0);
       onScreenShown(id);
 
@@ -3080,6 +3281,49 @@
     const passwordInput = document.getElementById('passwordInput');
     document.getElementById('eyeButton').addEventListener('click', () => {
       passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
+    });
+
+    // ----- 註冊畫面（目前只做介面，不存任何東西；密碼不管有沒有打都不會被存起來） -----
+    const regName = document.getElementById('regName');
+    const regPassword = document.getElementById('regPassword');
+    const regAvatarBtn = document.getElementById('regAvatarBtn');
+    const regAvatarImg = document.getElementById('regAvatarImg');
+    const regAvatarInput = document.getElementById('regAvatarInput');
+    let regAvatarUrl = '';
+    function resetRegister() {
+      regName.value = '';
+      regPassword.value = '';
+      regPassword.type = 'password';
+      regAvatarInput.value = '';
+      if (regAvatarUrl) { URL.revokeObjectURL(regAvatarUrl); regAvatarUrl = ''; }
+      regAvatarImg.removeAttribute('src');
+      regAvatarBtn.classList.remove('has-img');
+    }
+    document.getElementById('registerLink').addEventListener('click', () => {
+      resetRegister();
+      showScreen('registerScreen');
+    });
+    document.getElementById('registerBack').addEventListener('click', () => {
+      resetRegister();
+      showScreen('loginScreen');
+    });
+    document.getElementById('regEye').addEventListener('click', () => {
+      regPassword.type = regPassword.type === 'password' ? 'text' : 'password';
+    });
+    regAvatarBtn.addEventListener('click', () => regAvatarInput.click());
+    regAvatarInput.addEventListener('change', () => {
+      const file = regAvatarInput.files && regAvatarInput.files[0];
+      if (!file) return;
+      if (regAvatarUrl) URL.revokeObjectURL(regAvatarUrl);
+      regAvatarUrl = URL.createObjectURL(file); // 只在畫面上預覽，不會上傳也不會存
+      regAvatarImg.src = regAvatarUrl;
+      regAvatarBtn.classList.add('has-img');
+    });
+    document.getElementById('regSubmit').addEventListener('click', () => {
+      // 之後才會真的建立帳號；現在只是回到登入畫面，什麼都不存
+      resetRegister();
+      showScreen('loginScreen');
+      toast('註冊功能即將開放，敬請期待～');
     });
 
     // 登入後：「我的」頁、分頁列頭像、聊天都換成這個人
