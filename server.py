@@ -219,6 +219,15 @@ def name_of(uid):
     return accounts.get(uid, {}).get('name', '成員')
 
 
+def contacts(uid):
+    """可以拉進群組的人：好友；原本的 4 個成員彼此也算"""
+    people = set(accounts.get(uid, {}).get('friends', []))
+    if uid in LEGACY_IDS:
+        people |= LEGACY_IDS
+    people.discard(uid)
+    return {p for p in people if p in accounts}
+
+
 def room_members(room):
     if room == 'group':
         return set(LEGACY_IDS)
@@ -699,13 +708,13 @@ class Handler(SimpleHTTPRequestHandler):
                     group = groups.get(gid)
                     if not group or uid not in group['members']:
                         return self.send_json(404, {'error': '找不到群組'})
-                    add = [m for m in data.get('members', []) if m in accounts.get(uid, {}).get('friends', [])]
+                    add = [m for m in data.get('members', []) if m in contacts(uid)]
                     group['members'] = (group['members'] + [m for m in add if m not in group['members']])[:MAX_GROUP]
                 else:
                     if not 1 <= len(name) <= 30:
                         return self.send_json(400, {'error': '群組名稱要 1～30 個字'})
-                    friends = accounts[uid].get('friends', [])
-                    members = [uid] + [m for m in dict.fromkeys(data.get('members', [])) if m in friends]
+                    allowed = contacts(uid)
+                    members = [uid] + [m for m in dict.fromkeys(data.get('members', [])) if m in allowed]
                     gid = secrets.token_hex(5)
                     group = {'name': name, 'members': members[:MAX_GROUP], 'owner': uid, 'created': int(time.time())}
                     groups[gid] = group

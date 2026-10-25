@@ -2662,7 +2662,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.13.0</div>
+    <div class="abs version-label t12 nowrap">ESN v1.13.1</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -6462,14 +6462,17 @@
       onClose(() => scanArea.stopScan?.());
       sheet.append(row, scanBtn, scanArea);
 
-      sheet.append(sec('建立群組（選好友）'));
+      sheet.append(sec('建立群組（選成員）'));
       const groupName = input('群組名稱');
       const people = el('div');
       const picked = new Set();
+      // 可以拉進群組的人：好友；原本的 4 個成員彼此也算（跟伺服器的 contacts 一樣）
       function renderPeople() {
-        const friends = MY_FRIENDS.map(memberById).filter(Boolean);
+        const ids = new Set([...MY_FRIENDS, ...(ME && LEGACY_IDS.has(ME.id) ? MEMBERS.map((m) => m.id) : [])]);
+        if (ME) ids.delete(ME.id);
+        const friends = [...ids].map(memberById).filter(Boolean);
         if (!friends.length) {
-          people.replaceChildren(el('div', 'esn-hint', '先加好友，才能拉他們進群組'));
+          people.replaceChildren(el('div', 'esn-hint', '先用上面的 ID 或 QR Code 加好友，才能拉他們進群組'));
           return;
         }
         people.replaceChildren(...friends.map((m) => {
@@ -6489,6 +6492,7 @@
       const createBtn = button('建立群組', async () => {
         const name = groupName.value.trim();
         if (!name) { toast('請輸入群組名稱'); return; }
+        if (!picked.size) { toast('請至少選一個成員'); return; }
         createBtn.disabled = true;
         try {
           const data = await accountApi('groups', { name, members: [...picked] });
