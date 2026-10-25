@@ -19,6 +19,14 @@
     if (window.navigator.standalone) document.documentElement.classList.add('is-standalone');
     // 載入畫面還在的時候整頁不能捲（載入完才拿掉）
     document.documentElement.classList.add('is-loading');
+    // 保險：程式萬一出錯，載入畫面最多 12 秒就自己拿掉，不會永遠卡住
+    setTimeout(() => {
+      const splash = document.getElementById('splash');
+      if (!splash) return;
+      splash.classList.add('is-done');
+      document.documentElement.classList.remove('is-loading');
+      setTimeout(() => splash.remove(), 500);
+    }, 12000);
   </script>
   <style>
     /* 安全區高度：系統依機型給的值；一般 Safari 分頁裡是 0 */
@@ -2319,7 +2327,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.10.0</div>
+    <div class="abs version-label t12 nowrap">ESN v1.10.1</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -3952,11 +3960,8 @@
       }
     });
 
-    // 記得上次是誰：之前登入過就直接進主畫面，不用每次重選身分
-    if (ME) {
-      setMe(ME);
-      showScreen('homeScreen');
-    }
+    // 記得上次是誰：之前登入過就直接進主畫面，不用每次重選身分（切到主畫面在整支程式最後，後面的短影音、推播那些都準備好了才切）
+    if (ME) setMe(ME);
     renderThreadList();
     chat.init();
 
@@ -5497,6 +5502,9 @@
       showScreen('loginScreen');
     });
 
+    // 之前登入過：直接進主畫面。要放在最後，切頁面會用到上面所有的功能（短影音、推播…），太早切會出錯、卡在載入畫面
+    if (ME) showScreen('homeScreen');
+
     // ---------- 載入畫面：先把圖片和玻璃都準備好 ----------
     const splash = document.getElementById('splash');
     // iPhone 的手指捲動不一定理會 overflow: hidden，載入畫面上直接擋掉
@@ -5505,6 +5513,7 @@
     const splashProgress = document.getElementById('splashProgress');
     const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     let warmScreens = [];
+    let tabBarWasHidden = true;
 
     // 預熱結束：不管成功、失敗或逾時，都把預熱的頁面和分頁列藏回去（只做一次）
     function finishWarm() {
@@ -5514,7 +5523,7 @@
         screen.classList.remove('is-warming');
       });
       warmScreens = [];
-      tabBar.hidden = true;
+      tabBar.hidden = tabBarWasHidden; // 回到預熱前的樣子（之前登入過、直接進主畫面時分頁列本來就要顯示）
       tabBar.classList.remove('is-warming');
     }
 
@@ -5525,6 +5534,7 @@
         screen.classList.add('is-warming');
         screen.classList.remove('is-hidden');
       });
+      tabBarWasHidden = tabBar.hidden;
       tabBar.classList.add('is-warming');
       tabBar.hidden = false;
       await wait(60);
