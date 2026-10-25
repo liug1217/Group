@@ -1983,6 +1983,16 @@
     .msg.is-dragging {
       transition: none;
     }
+    /* 長按中的訊息：稍微放大，表示選到了 */
+    .msg.is-held .msg-bubble,
+    .msg.is-held .msg-sticker,
+    .msg.is-held .msg-image {
+      scale: 1.04;
+      transition: scale 0.2s ease;
+    }
+    .esn-btn.is-danger {
+      background: rgba(229, 72, 77, 0.9);
+    }
     /* 往左滑看時間（像 iMessage）：所有訊息一起往左移，右邊露出每一則的時間；放開彈回去 */
     .chat-list {
       overflow-x: hidden;
@@ -2687,7 +2697,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.13.2</div>
+    <div class="abs version-label t12 nowrap">ESN v1.13.3</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -4086,6 +4096,13 @@
               this.loadMe().catch(() => {});
               return;
             }
+            // 有人收回訊息：從這裡拿掉
+            if (payload.deleted) {
+              const list = this.rooms[payload.room];
+              if (list) this.rooms[payload.room] = list.filter((m) => m.id !== payload.deleted);
+              onChatUpdate(payload.room);
+              return;
+            }
             const { room, msg } = payload;
             const list = (this.rooms[room] ||= []);
             if (!list.some((m) => m.id === msg.id)) list.push(msg);
@@ -4516,6 +4533,78 @@
     chatList.addEventListener('pointerup', () => endListSwipe(false));
     chatList.addEventListener('pointercancel', () => endListSwipe(true));
 
+    // ----- 長按訊息：收回（大家都看不到，只能收回自己的）/ 刪除（只在這支手機隱藏） -----
+    const hiddenMsgs = new Set(store.get('hiddenMsgs', []));
+    let holdTimer = 0;
+    let holdStart = null;
+    chatList.addEventListener('pointerdown', (event) => {
+      const row = event.target.closest('.msg');
+      if (!row?.msg) return;
+      holdStart = { x: event.clientX, y: event.clientY, row };
+      clearTimeout(holdTimer);
+      holdTimer = setTimeout(() => {
+        if (!holdStart || listSwipe?.mode) return;
+        listSwipe = null; // 長按成功：不要再當成滑動
+        haptic();
+        openMessageMenu(holdStart.row);
+        holdStart = null;
+      }, 480);
+    });
+    chatList.addEventListener('pointermove', (event) => {
+      if (holdStart && Math.hypot(event.clientX - holdStart.x, event.clientY - holdStart.y) > 8) {
+        clearTimeout(holdTimer);
+        holdStart = null;
+      }
+    });
+    for (const type of ['pointerup', 'pointercancel']) {
+      chatList.addEventListener(type, () => {
+        clearTimeout(holdTimer);
+        holdStart = null;
+      });
+    }
+    // iPhone 長按的系統選單（拷貝、查詢…）不要跳出來
+    chatList.addEventListener('contextmenu', (event) => {
+      if (event.target.closest('.msg')) event.preventDefault();
+    });
+
+    function openMessageMenu(row) {
+      const m = row.msg;
+      const mine = senderOf(m).isMe;
+      row.classList.add('is-held');
+      const { sheet, close, onClose } = openSheet(mine ? '你的訊息' : `${senderOf(m).name} 的訊息`);
+      onClose(() => row.classList.remove('is-held'));
+      const preview = el('div', 'esn-hint', replySnippet(m));
+      sheet.append(preview);
+      if (m.id && !m.id.startsWith('seed') && !mine) {
+        // 對方的訊息也可以從這裡回覆
+        sheet.append(el('div', 'esn-row'), button('回覆', () => { close(); setReply(m); }, 'is-ghost is-wide'));
+      }
+      if (mine && m.id && chat.online) {
+        sheet.append(el('div', 'esn-row'), button('收回（大家都看不到）', async () => {
+          try {
+            await accountApi('messages/delete', { room: currentThread.room, id: m.id });
+            const list = chat.rooms[currentThread.room];
+            if (list) chat.rooms[currentThread.room] = list.filter((x) => x.id !== m.id);
+            onChatUpdate(currentThread.room);
+            close();
+            toast('已收回');
+          } catch (error) {
+            toast(error.message || '收回失敗', 3000);
+          }
+        }, 'is-danger is-wide'));
+      }
+      if (m.id) {
+        sheet.append(el('div', 'esn-row'), button('刪除（只在我這邊刪掉）', () => {
+          hiddenMsgs.add(m.id);
+          store.set('hiddenMsgs', [...hiddenMsgs].slice(-2000));
+          close();
+          renderChat();
+          toast('已刪除');
+        }, mine ? 'is-ghost is-wide' : 'is-danger is-wide'));
+      }
+      sheet.append(el('div', 'esn-row'), button('取消', close, 'is-ghost is-wide'));
+    }
+
     // 有新訊息（自己送的或伺服器推來的）
     function onChatUpdate(room) {
       if (currentThread?.room === room) {
@@ -4558,6 +4647,7 @@
         return;
       }
       chatList.replaceChildren(...chatMessages.map((m, index) => {
+        if (m.id && hiddenMsgs.has(m.id)) return document.createComment('hidden');
         const sender = senderOf(m);
         const row = el('div', sender.isMe ? 'msg is-me' : 'msg');
         const avatar = el('img');

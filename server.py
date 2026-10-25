@@ -481,6 +481,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self.handle_upload()
         if path in ACCOUNT_ROUTES:
             return self.handle_account(path)
+        if path == '/api/messages/delete':
+            return self.handle_delete()
         if path != '/api/messages':
             return self.send_error(404)
         try:
@@ -724,6 +726,34 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json(200, {**payload, 'room': f'g:{gid}'})
 
         return self.send_error(404)
+
+    # 收回訊息：{token, room, id}；只有傳的人可以收回，所有人那邊都會消失
+    def handle_delete(self):
+        try:
+            length = int(self.headers.get('Content-Length', '0'))
+            if length > 4096:
+                return self.send_json(413, {'error': 'too large'})
+            data = json.loads(self.rfile.read(length) or b'{}')
+        except (ValueError, json.JSONDecodeError):
+            return self.send_json(400, {'error': 'bad json'})
+        uid = identify(data)
+        room = str(data.get('room', ''))
+        msg_id = str(data.get('id', ''))
+        if not uid:
+            return self.send_json(401, {'error': 'login required'})
+        if uid not in room_members(room):
+            return self.send_json(403, {'error': 'not in this room'})
+        with lock:
+            msgs = rooms.get(room, [])
+            target = next((m for m in msgs if m.get('id') == msg_id), None)
+            if not target:
+                return self.send_json(404, {'error': '找不到這則訊息'})
+            if target.get('from') != uid:
+                return self.send_json(403, {'error': '只能收回自己傳的訊息'})
+            rooms[room] = [m for m in msgs if m.get('id') != msg_id]
+            save_rooms()
+        broadcast({'room': room, 'deleted': msg_id}, to=room_members(room))
+        return self.send_json(200, {'ok': True})
 
     # 上傳圖片（照片 / 塗鴉）：body 直接是圖片的位元組，存成亂碼檔名，回 {src}
     def handle_upload(self):
