@@ -729,6 +729,9 @@
     /* <lg-panel> 會把分頁按鈕包進 .lg-panel__body，五等分排版要放在這一層 */
     /* 五個分頁的中心照 Figma：左右各留 10px，每格 (寬 - 20) / 5（398 寬時一格 75.6） */
     .tab-bar > .lg-panel__body {
+      /* 圖示這層自己一個圖層：滑動時每一幀改它的 clip-path（挖洞），只重畫這層，
+         不會連分頁列底下的玻璃折射（CPU 算的 SVG 濾鏡）一起重算 */
+      will-change: transform;
       position: absolute;
       inset: 0;
       padding: 0 10px;
@@ -771,13 +774,12 @@
       /* 不要 overflow: hidden：iPhone（WebKit）的 SVG 折射放在會裁切的容器裡會畫錯位（跟「我的」頁開關同一個 bug） */
       z-index: 11;
       pointer-events: none;
+      /* 位置、大小、透明度全部由 JS 同一個動畫迴圈每一幀設定（見 stepLens），不用 CSS transition：
+         這樣底下圖示的洞不用每一幀 getComputedStyle 去讀鏡片現在多大，iPhone 才不會卡 */
       opacity: 0;
-      /* 位置（translate）由 JS 用彈簧動畫每一幀設定；出現 / 消失的縮放用獨立的 scale，以鏡片中心縮放。
-         消失：平順地縮小淡出 */
       scale: 0.6;
       /* 淡出完再整個藏起來（visibility），iPhone 才不會殘留最後一張畫面（例如 VIDEO 一直是藍色） */
       visibility: hidden;
-      transition: opacity 0.28s ease, scale 0.32s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.32s;
       will-change: translate, scale, opacity;
       /* 外面的陰影放在沒有濾鏡的外框，才不會被鏡片裁掉 */
       box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
@@ -793,13 +795,6 @@
         inset 0 0 0 1px rgba(255, 255, 255, 0.7),
         inset 0 2px 2px rgba(255, 255, 255, 0.75),
         inset 0 -2px 2px rgba(255, 255, 255, 0.35);
-    }
-    /* 出現：從 0.6 倍彈出來，稍微超過一點再回到原本大小 */
-    .tab-lens.is-on {
-      opacity: 1;
-      scale: 1;
-      visibility: visible;
-      transition: opacity 0.16s ease, scale 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s;
     }
     /* 鏡片出現時，真的分頁圖示在鏡片底下挖一個洞（鏡片形狀），鏡片裡只看到藍色那一份。
        洞用 JS 算的 clip-path（path，奇偶填色）畫，不用 SVG 圖片當遮罩：
@@ -2261,6 +2256,8 @@
       --lg-shadow-1: 0px 3px 8px rgba(0, 0, 0, 0.15), 0px 1px 1px rgba(0, 0, 0, 0.16);
       flex: none;
       touch-action: pan-y; /* 左右滑交給開關，上下還是捲頁面 */
+      /* 開關自己一個圖層：圓鈕每一幀動的時候只重畫開關，不會連底下設定卡片的玻璃折射一起重算（iPhone 卡頓的原因） */
+      will-change: transform;
     }
     /* 圓鈕到底時底色才換，換的那一下淡入 0.2 秒 */
     @property --p { syntax: '<number>'; inherits: true; initial-value: 0; }
@@ -2327,7 +2324,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.10.1</div>
+    <div class="abs version-label t12 nowrap">ESN v1.10.2</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -2990,105 +2987,113 @@
       tabLensRow.style.height = `${bar.height}px`;
     }
 
-    // 鏡片位置用彈簧動畫：手指只改目標，每一幀往目標靠近，看起來順、不會一格一格跳。
-    // 分頁列的位置在開始滑的時候量一次就好，每一幀不用再量。
+    // ---------- 鏡片動畫：位置、大小、透明度、底下的洞，全部在同一個 requestAnimationFrame 迴圈裡算 ----------
+    // 手指只改目標，每一幀往目標靠近。數值都是自己算的（不讀 getComputedStyle），
+    // 洞跟鏡片永遠同一幀、同一個大小；分頁列的位置在開始滑的時候量一次就好
     let lensBar = null;
-    const lensMotion = { x: 0, v: 0, target: 0, frame: 0, last: 0 };
+    let tabBody = null;
+    const lens = {
+      x: 0, v: 0, target: 0, // 位置（彈簧）
+      s: 0.6, sv: 0, sTarget: 0.6, // 大小（彈簧：出現時彈過頭一點，收起來不彈）
+      o: 0, oTarget: 0, // 透明度（等速：出現 0.16 秒、消失 0.28 秒）
+      frame: 0, last: 0,
+    };
+    let holeKey = '';
 
     function lensLimits() {
       const slot = (lensBar.width - TAB_PAD * 2) / tabs.length;
       return [lensBar.left + TAB_PAD + slot / 2, lensBar.right - TAB_PAD - slot / 2];
     }
 
-    function applyLens() {
-      const lx = lensMotion.x - LENS_W / 2;
-      const ly = lensBar.top + lensBar.height / 2 - LENS_H / 2;
-      // 用 translate（不是 transform）：scale 才會以鏡片自己的中心縮放。
-      // 用 transform 的話縮放中心在螢幕左上角，鏡片縮小時會往上飄
-      tabLens.style.translate = `${lx}px ${ly}px`;
-      // 複本反方向移，跟底下真的分頁列對齊
-      // 鏡片裡面用一般 2D 移動（不要 translate3d / will-change 另開圖層，WebKit 的濾鏡碰到會畫錯）
-      tabLensRow.style.transform = `translate(${lensBar.left - lx}px, ${lensBar.top - ly}px)`;
-      // 底下真的分頁圖示挖洞的位置（相對分頁列）
-      holePos.x = lx - lensBar.left;
-      holePos.y = ly - lensBar.top;
-    }
-
-    // 挖洞：每一幀照鏡片現在的大小和透明度（出現時長大、淡出時縮到沒有）算出一個膠囊形的洞，
-    // 用 clip-path: path(evenodd, 外框 + 膠囊) 把底下的圖示挖掉。純幾何，當下就畫好，不會閃
-    const holePos = { x: 0, y: 0 };
-    let holeFrame = 0;
-    function drawHole() {
-      holeFrame = 0;
-      const body = tabBar.querySelector('.lg-panel__body');
-      if (!body) return;
-      if (!tabBar.classList.contains('is-dragging')) {
-        body.style.clipPath = '';
-        body.style.webkitClipPath = '';
-        return;
-      }
-      const cs = getComputedStyle(tabLens);
-      const scale = parseFloat(cs.scale) || 1;
-      const k = scale * (parseFloat(cs.opacity) || 0);
-      if (k < 0.03) {
-        body.style.clipPath = '';
-        body.style.webkitClipPath = '';
-      } else {
-        const W = body.clientWidth;
-        const H = body.clientHeight;
+    // 底下真的分頁圖示挖一個跟鏡片一樣大的膠囊形洞（clip-path: path 奇偶填色），鏡片裡只看到藍色那一份
+    function drawHole(x, y, k) {
+      tabBody = tabBody || tabBar.querySelector('.lg-panel__body');
+      if (!tabBody) return;
+      let path = '';
+      if (k >= 0.03) {
+        const W = lensBar.width;
+        const H = lensBar.height;
         const w = LENS_W * k;
         const h = LENS_H * k;
         const r = h / 2;
-        const x = holePos.x + (LENS_W - w) / 2;
-        const y = holePos.y + (LENS_H - h) / 2;
+        const hx = x + (LENS_W - w) / 2;
+        const hy = y + (LENS_H - h) / 2;
         const f = (n) => n.toFixed(1);
-        const path = `path(evenodd, 'M0 0H${f(W)}V${f(H)}H0Z M${f(x + r)} ${f(y)}H${f(x + w - r)}A${f(r)} ${f(r)} 0 0 1 ${f(x + w - r)} ${f(y + h)}H${f(x + r)}A${f(r)} ${f(r)} 0 0 1 ${f(x + r)} ${f(y)}Z')`;
-        body.style.clipPath = path;
-        body.style.webkitClipPath = path;
+        path = `path(evenodd, 'M0 0H${f(W)}V${f(H)}H0Z M${f(hx + r)} ${f(hy)}H${f(hx + w - r)}A${f(r)} ${f(r)} 0 0 1 ${f(hx + w - r)} ${f(hy + h)}H${f(hx + r)}A${f(r)} ${f(r)} 0 0 1 ${f(hx + r)} ${f(hy)}Z')`;
       }
-      holeFrame = requestAnimationFrame(drawHole);
+      if (path === holeKey) return;
+      holeKey = path;
+      tabBody.style.clipPath = path;
+      tabBody.style.webkitClipPath = path;
     }
-    function startHole() {
-      if (!holeFrame) holeFrame = requestAnimationFrame(drawHole);
+
+    function applyLens() {
+      const lx = lens.x - LENS_W / 2;
+      const ly = lensBar.top + lensBar.height / 2 - LENS_H / 2;
+      // 用 translate（不是 transform）：scale 才會以鏡片自己的中心縮放
+      tabLens.style.translate = `${lx}px ${ly}px`;
+      tabLens.style.scale = lens.s.toFixed(4);
+      tabLens.style.opacity = lens.o.toFixed(3);
+      // 複本反方向移，跟底下真的分頁列對齊
+      // 鏡片裡面用一般 2D 移動（不要 translate3d / will-change 另開圖層，WebKit 的濾鏡碰到會畫錯）
+      tabLensRow.style.transform = `translate(${lensBar.left - lx}px, ${lensBar.top - ly}px)`;
+      drawHole(lx - lensBar.left, ly - lensBar.top, lens.s * lens.o);
     }
 
     function stepLens(now) {
-      let dt = Math.min(0.05, (now - lensMotion.last) / 1000 || 1 / 60);
-      lensMotion.last = now;
+      let dt = Math.min(0.05, (now - lens.last) / 1000 || 1 / 60);
+      lens.last = now;
+      const showing = lens.oTarget === 1;
+      const oStep = dt / (showing ? 0.16 : 0.28);
+      lens.o = lens.o < lens.oTarget ? Math.min(lens.oTarget, lens.o + oStep) : Math.max(lens.oTarget, lens.o - oStep);
+      // 出現：稍微彈過頭再回來（像 iOS）；收起來：平順縮小，不彈
+      const [sk, sc] = showing ? [520, 28] : [380, 40];
       while (dt > 1e-6) {
         const h = Math.min(1 / 120, dt);
-        const accel = -700 * (lensMotion.x - lensMotion.target) - 48 * lensMotion.v;
-        lensMotion.v += accel * h;
-        lensMotion.x += lensMotion.v * h;
+        lens.v += (-700 * (lens.x - lens.target) - 48 * lens.v) * h;
+        lens.x += lens.v * h;
+        lens.sv += (-sk * (lens.s - lens.sTarget) - sc * lens.sv) * h;
+        lens.s += lens.sv * h;
         dt -= h;
       }
-      if (Math.abs(lensMotion.v) < 4 && Math.abs(lensMotion.x - lensMotion.target) < 0.3) {
-        lensMotion.x = lensMotion.target;
-        lensMotion.v = 0;
-        lensMotion.frame = 0;
-        applyLens();
-        return;
+      const settled = Math.abs(lens.v) < 4 && Math.abs(lens.x - lens.target) < 0.3
+        && Math.abs(lens.sv) < 0.02 && Math.abs(lens.s - lens.sTarget) < 0.002 && lens.o === lens.oTarget;
+      if (settled) {
+        lens.x = lens.target;
+        lens.v = 0;
+        lens.s = lens.sTarget;
+        lens.sv = 0;
       }
       applyLens();
-      lensMotion.frame = requestAnimationFrame(stepLens);
+      if (!settled) {
+        lens.frame = requestAnimationFrame(stepLens);
+        return;
+      }
+      lens.frame = 0;
+      // 完全收起來：藏起鏡片、拿掉洞，灰色膠囊淡入
+      if (lens.o === 0) {
+        tabLens.style.visibility = 'hidden';
+        tabBar.classList.remove('is-dragging');
+        drawHole(0, 0, 0);
+      }
+    }
+
+    function runLens() {
+      if (lens.frame) return;
+      lens.last = performance.now();
+      lens.frame = requestAnimationFrame(stepLens);
     }
 
     // 鏡片中心移到 x（螢幕座標），限制在第一個和最後一個分頁中間
     function lensTo(clientX, immediate = false) {
       const [minX, maxX] = lensLimits();
-      lensMotion.target = Math.max(minX, Math.min(maxX, clientX));
+      lens.target = Math.max(minX, Math.min(maxX, clientX));
       if (immediate) {
-        cancelAnimationFrame(lensMotion.frame);
-        lensMotion.frame = 0;
-        lensMotion.x = lensMotion.target;
-        lensMotion.v = 0;
+        lens.x = lens.target;
+        lens.v = 0;
         applyLens();
-        return;
       }
-      if (!lensMotion.frame) {
-        lensMotion.last = performance.now();
-        lensMotion.frame = requestAnimationFrame(stepLens);
-      }
+      runLens();
     }
 
     // 鏡片寬度用螢幕寬度先算好（分頁列 = 螢幕寬 - 左右各 21px）：一開始就是正確大小，
@@ -3114,31 +3119,32 @@
 
     function showLens(clientX) {
       clearTimeout(lensTimer);
-      clearTimeout(lensDoneTimer);
       ensureLensGlass();
+      const wasHidden = lens.o === 0;
       lensBar = tabBar.getBoundingClientRect();
       sizeLens();
       buildLensRow();
-      lensTo(tabCenter(indexAt(clientX)), true);
+      // 收起來到一半又按下去：從現在的位置滑過去；本來沒顯示：直接出現在那個分頁上
+      lensTo(tabCenter(indexAt(clientX)), wasHidden);
+      lens.sTarget = 1;
+      lens.oTarget = 1;
       tabBar.classList.add('is-dragging');
-      tabLens.classList.add('is-on');
-      startHole();
+      tabLens.style.visibility = 'visible';
+      runLens();
+      if (!wasHidden) return;
       // 鏡片剛從隱藏變成看得到：iPhone（WebKit）要換一次濾鏡 id 才會畫出裡面的藍色圖示，
       // 不然一開始鏡片是空的（底下的圖示又被挖掉，看起來像不見了）。跟引擎載完折射圖後的做法一樣，多補兩次
       requestAnimationFrame(() => lensGlass?.flush());
       [90, 250].forEach((ms) => setTimeout(() => lensGlass?.flush(), ms));
     }
 
-    // 收起鏡片：鏡片縮小淡出的同時，底下圖示的洞也一起縮回去；全部收完才恢復分頁列（灰色膠囊淡入）
-    let lensDoneTimer = 0;
+    // 收起鏡片：縮小淡出，底下圖示的洞同一幀一起縮回去；全部收完才恢復分頁列（灰色膠囊淡入）
     function hideLens(delay) {
       clearTimeout(lensTimer);
-      clearTimeout(lensDoneTimer);
       lensTimer = setTimeout(() => {
-        tabLens.classList.remove('is-on');
-        lensDoneTimer = setTimeout(() => {
-          if (!tabLens.classList.contains('is-on')) tabBar.classList.remove('is-dragging');
-        }, 340);
+        lens.sTarget = 0.6;
+        lens.oTarget = 0;
+        runLens();
       }, delay);
     }
 
