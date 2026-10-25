@@ -729,9 +729,6 @@
     /* <lg-panel> 會把分頁按鈕包進 .lg-panel__body，五等分排版要放在這一層 */
     /* 五個分頁的中心照 Figma：左右各留 10px，每格 (寬 - 20) / 5（398 寬時一格 75.6） */
     .tab-bar > .lg-panel__body {
-      /* 圖示這層自己一個圖層：滑動時每一幀改它的 clip-path（挖洞），只重畫這層，
-         不會連分頁列底下的玻璃折射（CPU 算的 SVG 濾鏡）一起重算 */
-      will-change: transform;
       position: absolute;
       inset: 0;
       padding: 0 10px;
@@ -752,12 +749,9 @@
       transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.28s ease;
       pointer-events: none;
     }
-    /* 按住滑動時：灰色膠囊藏起來，換玻璃鏡片；原本選的分頁也先變回黑色，只有鏡片底下是藍的 */
+    /* 按住滑動時：灰色膠囊藏起來，換玻璃鏡片（原本選的分頁維持藍色，不會先變黑再變藍） */
     .tab-bar.is-dragging .tab-pill {
       opacity: 0;
-    }
-    .tab-bar.is-dragging .tab.is-active {
-      color: #1A1A1A;
     }
 
     /* ---------- 滑動時的玻璃鏡片（iOS 26 / Threads 那種） ----------
@@ -774,12 +768,13 @@
       /* 不要 overflow: hidden：iPhone（WebKit）的 SVG 折射放在會裁切的容器裡會畫錯位（跟「我的」頁開關同一個 bug） */
       z-index: 11;
       pointer-events: none;
-      /* 位置、大小、透明度全部由 JS 同一個動畫迴圈每一幀設定（見 stepLens），不用 CSS transition：
-         這樣底下圖示的洞不用每一幀 getComputedStyle 去讀鏡片現在多大，iPhone 才不會卡 */
       opacity: 0;
+      /* 位置（translate）由 JS 用彈簧動畫每一幀設定；出現 / 消失的縮放用獨立的 scale，以鏡片中心縮放。
+         消失：平順地縮小淡出 */
       scale: 0.6;
       /* 淡出完再整個藏起來（visibility），iPhone 才不會殘留最後一張畫面（例如 VIDEO 一直是藍色） */
       visibility: hidden;
+      transition: opacity 0.28s ease, scale 0.32s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.32s;
       will-change: translate, scale, opacity;
       /* 外面的陰影放在沒有濾鏡的外框，才不會被鏡片裁掉 */
       box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
@@ -796,21 +791,30 @@
         inset 0 2px 2px rgba(255, 255, 255, 0.75),
         inset 0 -2px 2px rgba(255, 255, 255, 0.35);
     }
+    /* 出現：從 0.6 倍彈出來，稍微超過一點再回到原本大小 */
+    .tab-lens.is-on {
+      opacity: 1;
+      scale: 1;
+      visibility: visible;
+      transition: opacity 0.16s ease, scale 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), visibility 0s;
+    }
     /* 鏡片出現時，真的分頁圖示在鏡片底下挖一個洞（鏡片形狀），鏡片裡只看到藍色那一份。
        洞用 JS 算的 clip-path（path，奇偶填色）畫，不用 SVG 圖片當遮罩：
        遮罩圖片每一幀換大小 / 位置時 iPhone 要重新畫那張圖，畫好之前整排圖示會閃一下不見 */
+    /* 複本的外框跟鏡片一樣大、超出的裁掉，裡面整排分頁再用 transform 對齊底下的分頁列。
+       不能讓整排（比鏡片寬很多）露在鏡片外：iPhone（WebKit）的折射圖會照「含超出部分」的大小算，
+       滑到最左最右時超出的一邊特別長，折射圖跑掉，鏡片裡就多出一條弧線 */
     .tab-lens__row {
       position: absolute;
-      left: 0;
-      top: 0;
-      border-radius: 1000px;
-      /* 透明：鏡片裡看到的是底下真正的分頁列顏色（每一頁背景不同，分頁列顏色也不同），
-         底下真的圖示在鏡片範圍會被挖掉（見 .tab-bar.is-dragging），不會出現兩份 */
+      inset: 0;
+      overflow: hidden;
+      border-radius: inherit;
       background: transparent;
     }
     .tab-lens__row .tab-lens__tabs {
       position: absolute;
-      inset: 0;
+      left: 0;
+      top: 0;
       padding: 0 10px;
       box-sizing: border-box;
       display: grid;
@@ -818,6 +822,17 @@
     }
     .tab-lens__row .tab {
       color: rgb(0, 74, 193);
+    }
+    /* 鏡片裡的分頁列底色：鏡片底下整條分頁列（含圓弧的兩端）都被挖掉，這裡補一條跟分頁列一樣的灰，
+       左右跟著鏡片的圓邊、上下跟分頁列一樣高（鏡片 74、分頁列 62，上下各少 6px），滑到最左最右也不會看到圓弧。
+       放在玻璃（有折射濾鏡）的外面、下面：不會被折射拉成一整片灰，鏡片的亮邊和折射都跟原本一樣。
+       不透明：分頁列的玻璃折射的是主頁底部的深色背景，看起來就是這個灰（截圖量的 144）；半透明會看到後面卡片的邊 */
+    .tab-lens__band {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      clip-path: inset(6px 0);
+      background: rgb(144, 144, 144);
     }
 
     /* 其他按鈕：按下去放大、放開彈回來（iOS 26 玻璃按鈕的感覺）。用獨立的 scale，不會蓋掉原本的 transform；
@@ -1215,8 +1230,11 @@
       bottom: 110px;
       z-index: 350;
       padding: 16px 18px 14px;
-      border-radius: 22px;
+      border-radius: 26px;
+      /* 玻璃（<lg-panel>）載入後由玻璃畫底色和陰影；這裡是載入前 / 失敗時的樣子 */
       background: rgba(40, 40, 40, 0.92);
+      --lg-tint: rgba(65, 65, 65, 0.25);
+      --lg-shadow-2: 0 8px 24px rgba(0, 0, 0, 0.35);
       -webkit-backdrop-filter: blur(20px);
       backdrop-filter: blur(20px);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 0 0 0.5px rgba(255, 255, 255, 0.2);
@@ -1242,10 +1260,11 @@
       gap: 10px;
       margin-top: 12px;
     }
+    /* 兩顆按鈕都是膠囊形（完全圓角） */
     .push-ask-btns button {
-      padding: 8px 16px;
+      padding: 9px 20px;
       border: 0;
-      border-radius: 16px;
+      border-radius: 999px;
       font: inherit;
       font-size: 14px;
       cursor: pointer;
@@ -2324,7 +2343,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.10.2</div>
+    <div class="abs version-label t12 nowrap">ESN v1.10.3</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -2538,14 +2557,15 @@
   <!-- 全站小提示（例如群組還不能打電話） -->
   <div class="app-toast" id="appToast" aria-live="polite"></div>
   <!-- 第一次登入後問要不要開通知 -->
-  <div class="push-ask" id="pushAsk" role="dialog" aria-label="開啟通知" hidden>
+  <!-- 玻璃卡片：跟分頁列一樣在畫面外層，用 backdrop 指定折射主頁的背景 -->
+  <lg-panel class="push-ask glass" id="pushAsk" role="dialog" aria-label="開啟通知" radius="26" backdrop="#homeScreen" hidden>
     <div class="push-ask-title">開啟通知？</div>
     <div class="push-ask-text" id="pushAskText">有人傳訊息、打電話來時通知你</div>
     <div class="push-ask-btns">
       <button type="button" class="push-ask-no" id="pushNo">不要</button>
       <button type="button" class="push-ask-yes" id="pushYes">開啟</button>
     </div>
-  </div>
+  </lg-panel>
 
   <!-- VIDEO（底部中間）：之後放影片；通話改在聊天室裡 -->
   <section class="screen screen-videos is-hidden" id="videosScreen" data-lg-backdrop="">
@@ -2697,7 +2717,7 @@
   </lg-panel>
   <!-- 按住分頁列滑動時的玻璃鏡片（像 iOS 26 / Threads）：比選取膠囊大、很透明，會折射底下的分頁；
        鏡片裡面是一份分頁列的複本（圖示是藍色），所以鏡片滑到的地方變藍、沒滑到的地方不變 -->
-  <div class="tab-lens" id="tabLens" aria-hidden="true"><div class="tab-lens__glass" id="tabLensGlass"><div class="tab-lens__row" id="tabLensRow"></div></div></div>
+  <div class="tab-lens" id="tabLens" aria-hidden="true"><div class="tab-lens__band"></div><div class="tab-lens__glass" id="tabLensGlass"><div class="tab-lens__row" id="tabLensRow"></div></div></div>
 
   <!-- Liquid Glass：liquidglass.dev v1.0.0（MIT，gentpan），檔案放在 assets/lib -->
   <script type="module" src="assets/lib/components.js"></script>
@@ -2944,6 +2964,7 @@
     const tabLens = document.getElementById('tabLens');
     const tabLensGlass = document.getElementById('tabLensGlass');
     const tabLensRow = document.getElementById('tabLensRow');
+    let lensTabs = null; // 鏡片裡那一整排分頁的複本（buildLensRow 建的）
     // 鏡片寬度 = 一格分頁 + 16px（402 寬的手機約 84、440 寬約 92），滑到最左最右剛好在分頁列裡面；
     // 太寬的話兩端會超出分頁列，折射會拉到外面的空白，頭像被拉得很大、邊緣破掉
     let LENS_W = 106;
@@ -2982,118 +3003,112 @@
         // 紅點要留著：鏡片滑過「通知」「聊天」時，紅點才不會不見
         row.append(copy);
       });
+      row.style.width = `${bar.width}px`;
+      row.style.height = `${bar.height}px`;
       tabLensRow.replaceChildren(row);
-      tabLensRow.style.width = `${bar.width}px`;
-      tabLensRow.style.height = `${bar.height}px`;
+      lensTabs = row;
     }
 
-    // ---------- 鏡片動畫：位置、大小、透明度、底下的洞，全部在同一個 requestAnimationFrame 迴圈裡算 ----------
-    // 手指只改目標，每一幀往目標靠近。數值都是自己算的（不讀 getComputedStyle），
-    // 洞跟鏡片永遠同一幀、同一個大小；分頁列的位置在開始滑的時候量一次就好
+    // 鏡片位置用彈簧動畫：手指只改目標，每一幀往目標靠近，看起來順、不會一格一格跳。
+    // 分頁列的位置在開始滑的時候量一次就好，每一幀不用再量。
     let lensBar = null;
-    let tabBody = null;
-    const lens = {
-      x: 0, v: 0, target: 0, // 位置（彈簧）
-      s: 0.6, sv: 0, sTarget: 0.6, // 大小（彈簧：出現時彈過頭一點，收起來不彈）
-      o: 0, oTarget: 0, // 透明度（等速：出現 0.16 秒、消失 0.28 秒）
-      frame: 0, last: 0,
-    };
-    let holeKey = '';
+    const lensMotion = { x: 0, v: 0, target: 0, frame: 0, last: 0 };
 
     function lensLimits() {
       const slot = (lensBar.width - TAB_PAD * 2) / tabs.length;
       return [lensBar.left + TAB_PAD + slot / 2, lensBar.right - TAB_PAD - slot / 2];
     }
 
-    // 底下真的分頁圖示挖一個跟鏡片一樣大的膠囊形洞（clip-path: path 奇偶填色），鏡片裡只看到藍色那一份
-    function drawHole(x, y, k) {
-      tabBody = tabBody || tabBar.querySelector('.lg-panel__body');
-      if (!tabBody) return;
-      let path = '';
-      if (k >= 0.03) {
-        const W = lensBar.width;
-        const H = lensBar.height;
+    function applyLens() {
+      const lx = lensMotion.x - LENS_W / 2;
+      const ly = lensBar.top + lensBar.height / 2 - LENS_H / 2;
+      // 用 translate（不是 transform）：scale 才會以鏡片自己的中心縮放。
+      // 用 transform 的話縮放中心在螢幕左上角，鏡片縮小時會往上飄
+      tabLens.style.translate = `${lx}px ${ly}px`;
+      // 複本反方向移，跟底下真的分頁列對齊
+      // 鏡片裡面用一般 2D 移動（不要 translate3d / will-change 另開圖層，WebKit 的濾鏡碰到會畫錯）
+      if (lensTabs) lensTabs.style.transform = `translate(${lensBar.left - lx}px, ${lensBar.top - ly}px)`;
+      // 底下真的分頁圖示挖洞的位置（相對分頁列）
+      holePos.x = lx - lensBar.left;
+      holePos.y = ly - lensBar.top;
+    }
+
+    // 挖洞：每一幀照鏡片現在的大小和透明度（出現時長大、淡出時縮到沒有）算出一個膠囊形的洞，
+    // 用 clip-path: path(evenodd, 外框 + 膠囊) 把底下的圖示挖掉。純幾何，當下就畫好，不會閃
+    const holePos = { x: 0, y: 0 };
+    let holeFrame = 0;
+    // 挖的是整條分頁列（玻璃、圓弧兩端、圖示都挖掉），鏡片裡用自己的直條底色補上（.tab-lens__band），
+    // 滑到最左最右時鏡片裡才不會看到分頁列的圓弧。外框多留 40px，分頁列外面的陰影不會被裁掉
+    function drawHole() {
+      holeFrame = 0;
+      const body = tabBar;
+      if (!tabBar.classList.contains('is-dragging')) {
+        body.style.clipPath = '';
+        body.style.webkitClipPath = '';
+        return;
+      }
+      const cs = getComputedStyle(tabLens);
+      const scale = parseFloat(cs.scale) || 1;
+      const k = scale * (parseFloat(cs.opacity) || 0);
+      if (k < 0.03) {
+        body.style.clipPath = '';
+        body.style.webkitClipPath = '';
+      } else {
+        const W = body.clientWidth;
+        const H = body.clientHeight;
         const w = LENS_W * k;
         const h = LENS_H * k;
         const r = h / 2;
-        const hx = x + (LENS_W - w) / 2;
-        const hy = y + (LENS_H - h) / 2;
+        const x = holePos.x + (LENS_W - w) / 2;
+        const y = holePos.y + (LENS_H - h) / 2;
         const f = (n) => n.toFixed(1);
-        path = `path(evenodd, 'M0 0H${f(W)}V${f(H)}H0Z M${f(hx + r)} ${f(hy)}H${f(hx + w - r)}A${f(r)} ${f(r)} 0 0 1 ${f(hx + w - r)} ${f(hy + h)}H${f(hx + r)}A${f(r)} ${f(r)} 0 0 1 ${f(hx + r)} ${f(hy)}Z')`;
+        const path = `path(evenodd, 'M-40 -40H${f(W + 40)}V${f(H + 40)}H-40Z M${f(x + r)} ${f(y)}H${f(x + w - r)}A${f(r)} ${f(r)} 0 0 1 ${f(x + w - r)} ${f(y + h)}H${f(x + r)}A${f(r)} ${f(r)} 0 0 1 ${f(x + r)} ${f(y)}Z')`;
+        body.style.clipPath = path;
+        body.style.webkitClipPath = path;
       }
-      if (path === holeKey) return;
-      holeKey = path;
-      tabBody.style.clipPath = path;
-      tabBody.style.webkitClipPath = path;
+      holeFrame = requestAnimationFrame(drawHole);
     }
-
-    function applyLens() {
-      const lx = lens.x - LENS_W / 2;
-      const ly = lensBar.top + lensBar.height / 2 - LENS_H / 2;
-      // 用 translate（不是 transform）：scale 才會以鏡片自己的中心縮放
-      tabLens.style.translate = `${lx}px ${ly}px`;
-      tabLens.style.scale = lens.s.toFixed(4);
-      tabLens.style.opacity = lens.o.toFixed(3);
-      // 複本反方向移，跟底下真的分頁列對齊
-      // 鏡片裡面用一般 2D 移動（不要 translate3d / will-change 另開圖層，WebKit 的濾鏡碰到會畫錯）
-      tabLensRow.style.transform = `translate(${lensBar.left - lx}px, ${lensBar.top - ly}px)`;
-      drawHole(lx - lensBar.left, ly - lensBar.top, lens.s * lens.o);
+    function startHole() {
+      if (!holeFrame) holeFrame = requestAnimationFrame(drawHole);
     }
 
     function stepLens(now) {
-      let dt = Math.min(0.05, (now - lens.last) / 1000 || 1 / 60);
-      lens.last = now;
-      const showing = lens.oTarget === 1;
-      const oStep = dt / (showing ? 0.16 : 0.28);
-      lens.o = lens.o < lens.oTarget ? Math.min(lens.oTarget, lens.o + oStep) : Math.max(lens.oTarget, lens.o - oStep);
-      // 出現：稍微彈過頭再回來（像 iOS）；收起來：平順縮小，不彈
-      const [sk, sc] = showing ? [520, 28] : [380, 40];
+      let dt = Math.min(0.05, (now - lensMotion.last) / 1000 || 1 / 60);
+      lensMotion.last = now;
       while (dt > 1e-6) {
         const h = Math.min(1 / 120, dt);
-        lens.v += (-700 * (lens.x - lens.target) - 48 * lens.v) * h;
-        lens.x += lens.v * h;
-        lens.sv += (-sk * (lens.s - lens.sTarget) - sc * lens.sv) * h;
-        lens.s += lens.sv * h;
+        const accel = -700 * (lensMotion.x - lensMotion.target) - 48 * lensMotion.v;
+        lensMotion.v += accel * h;
+        lensMotion.x += lensMotion.v * h;
         dt -= h;
       }
-      const settled = Math.abs(lens.v) < 4 && Math.abs(lens.x - lens.target) < 0.3
-        && Math.abs(lens.sv) < 0.02 && Math.abs(lens.s - lens.sTarget) < 0.002 && lens.o === lens.oTarget;
-      if (settled) {
-        lens.x = lens.target;
-        lens.v = 0;
-        lens.s = lens.sTarget;
-        lens.sv = 0;
-      }
-      applyLens();
-      if (!settled) {
-        lens.frame = requestAnimationFrame(stepLens);
+      if (Math.abs(lensMotion.v) < 4 && Math.abs(lensMotion.x - lensMotion.target) < 0.3) {
+        lensMotion.x = lensMotion.target;
+        lensMotion.v = 0;
+        lensMotion.frame = 0;
+        applyLens();
         return;
       }
-      lens.frame = 0;
-      // 完全收起來：藏起鏡片、拿掉洞，灰色膠囊淡入
-      if (lens.o === 0) {
-        tabLens.style.visibility = 'hidden';
-        tabBar.classList.remove('is-dragging');
-        drawHole(0, 0, 0);
-      }
-    }
-
-    function runLens() {
-      if (lens.frame) return;
-      lens.last = performance.now();
-      lens.frame = requestAnimationFrame(stepLens);
+      applyLens();
+      lensMotion.frame = requestAnimationFrame(stepLens);
     }
 
     // 鏡片中心移到 x（螢幕座標），限制在第一個和最後一個分頁中間
     function lensTo(clientX, immediate = false) {
       const [minX, maxX] = lensLimits();
-      lens.target = Math.max(minX, Math.min(maxX, clientX));
+      lensMotion.target = Math.max(minX, Math.min(maxX, clientX));
       if (immediate) {
-        lens.x = lens.target;
-        lens.v = 0;
+        cancelAnimationFrame(lensMotion.frame);
+        lensMotion.frame = 0;
+        lensMotion.x = lensMotion.target;
+        lensMotion.v = 0;
         applyLens();
+        return;
       }
-      runLens();
+      if (!lensMotion.frame) {
+        lensMotion.last = performance.now();
+        lensMotion.frame = requestAnimationFrame(stepLens);
+      }
     }
 
     // 鏡片寬度用螢幕寬度先算好（分頁列 = 螢幕寬 - 左右各 21px）：一開始就是正確大小，
@@ -3119,32 +3134,31 @@
 
     function showLens(clientX) {
       clearTimeout(lensTimer);
+      clearTimeout(lensDoneTimer);
       ensureLensGlass();
-      const wasHidden = lens.o === 0;
       lensBar = tabBar.getBoundingClientRect();
       sizeLens();
       buildLensRow();
-      // 收起來到一半又按下去：從現在的位置滑過去；本來沒顯示：直接出現在那個分頁上
-      lensTo(tabCenter(indexAt(clientX)), wasHidden);
-      lens.sTarget = 1;
-      lens.oTarget = 1;
+      lensTo(tabCenter(indexAt(clientX)), true);
       tabBar.classList.add('is-dragging');
-      tabLens.style.visibility = 'visible';
-      runLens();
-      if (!wasHidden) return;
+      tabLens.classList.add('is-on');
+      startHole();
       // 鏡片剛從隱藏變成看得到：iPhone（WebKit）要換一次濾鏡 id 才會畫出裡面的藍色圖示，
       // 不然一開始鏡片是空的（底下的圖示又被挖掉，看起來像不見了）。跟引擎載完折射圖後的做法一樣，多補兩次
       requestAnimationFrame(() => lensGlass?.flush());
       [90, 250].forEach((ms) => setTimeout(() => lensGlass?.flush(), ms));
     }
 
-    // 收起鏡片：縮小淡出，底下圖示的洞同一幀一起縮回去；全部收完才恢復分頁列（灰色膠囊淡入）
+    // 收起鏡片：鏡片縮小淡出的同時，底下圖示的洞也一起縮回去；全部收完才恢復分頁列（灰色膠囊淡入）
+    let lensDoneTimer = 0;
     function hideLens(delay) {
       clearTimeout(lensTimer);
+      clearTimeout(lensDoneTimer);
       lensTimer = setTimeout(() => {
-        lens.sTarget = 0.6;
-        lens.oTarget = 0;
-        runLens();
+        tabLens.classList.remove('is-on');
+        lensDoneTimer = setTimeout(() => {
+          if (!tabLens.classList.contains('is-on')) tabBar.classList.remove('is-dragging');
+        }, 340);
       }, delay);
     }
 
