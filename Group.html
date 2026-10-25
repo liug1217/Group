@@ -791,6 +791,19 @@
         inset 0 -2px 2px rgba(255, 255, 255, 0.35);
     }
     /* 出現：從 0.6 倍彈出來，稍微超過一點再回到原本大小 */
+    /* 放開時：鏡片縮小成灰色膠囊的大小（寬高分開算，--shrink-x / --shrink-y 由 JS 設定），不淡出 */
+    .tab-lens.is-shrink {
+      opacity: 1;
+      visibility: visible;
+      scale: var(--shrink-x, 0.8) var(--shrink-y, 0.73);
+      transition: scale 0.22s cubic-bezier(0.3, 0, 0.2, 1);
+    }
+    /* 縮好的那一刻直接換成灰色膠囊：鏡片不淡出，膠囊也不滑過去、不淡入 */
+    .tab-lens.is-snap,
+    .tab-bar.is-snap .tab-pill,
+    .tab-bar.is-snap .tab {
+      transition: none;
+    }
     .tab-lens.is-on {
       opacity: 1;
       scale: 1;
@@ -2331,7 +2344,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.10.5</div>
+    <div class="abs version-label t12 nowrap">ESN v1.10.7</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -3119,16 +3132,18 @@
         return;
       }
       const cs = getComputedStyle(tabLens);
-      const scale = parseFloat(cs.scale) || 1;
-      const k = scale * (parseFloat(cs.opacity) || 0);
+      // 縮小成膠囊時寬高的縮放不一樣（scale 會是「寬 高」兩個數字）
+      const [sx, sy = sx] = cs.scale.split(' ').map((n) => parseFloat(n) || 1);
+      const op = parseFloat(cs.opacity) || 0;
+      const k = Math.max(sx, sy) * op;
       if (k < 0.03) {
         body.style.clipPath = '';
         body.style.webkitClipPath = '';
       } else {
         const W = body.clientWidth;
         const H = body.clientHeight;
-        const w = LENS_W * k;
-        const h = LENS_H * k;
+        const w = LENS_W * sx * op;
+        const h = LENS_H * sy * op;
         const r = h / 2;
         const x = holePos.x + (LENS_W - w) / 2;
         const y = holePos.y + (LENS_H - h) / 2;
@@ -3206,6 +3221,8 @@
     function showLens(clientX) {
       clearTimeout(lensTimer);
       clearTimeout(lensDoneTimer);
+      tabLens.classList.remove('is-shrink', 'is-snap'); // 縮到一半又按下去：從現在的大小再彈出來
+      tabBar.classList.remove('is-snap');
       ensureLensGlass();
       lensBar = tabBar.getBoundingClientRect();
       sizeLens();
@@ -3226,10 +3243,25 @@
       clearTimeout(lensTimer);
       clearTimeout(lensDoneTimer);
       lensTimer = setTimeout(() => {
+        // 1. 鏡片縮小成灰色膠囊的大小（不淡出、不縮成一個點）
+        const slot = (lensBar.width - TAB_PAD * 2) / tabs.length;
+        tabLens.style.setProperty('--shrink-x', String((slot + 12.4) / LENS_W));
+        tabLens.style.setProperty('--shrink-y', String(54 / LENS_H));
+        tabLens.classList.add('is-shrink');
         tabLens.classList.remove('is-on');
         lensDoneTimer = setTimeout(() => {
-          if (!tabLens.classList.contains('is-on')) tabBar.classList.remove('is-dragging');
-        }, 340);
+          // 2. 縮到跟膠囊一樣大的那一刻，直接換成灰色膠囊：鏡片馬上消失、洞馬上補回、膠囊直接出現（不淡入、不滑過去）
+          tabLens.classList.add('is-snap');
+          tabBar.classList.add('is-snap');
+          tabLens.classList.remove('is-shrink');
+          tabBar.classList.remove('is-dragging');
+          tabBar.style.clipPath = '';
+          tabBar.style.webkitClipPath = '';
+          lensDoneTimer = setTimeout(() => {
+            tabLens.classList.remove('is-snap');
+            tabBar.classList.remove('is-snap');
+          }, 50);
+        }, 220);
       }, delay);
     }
 
@@ -3250,12 +3282,13 @@
     function endDrag(event) {
       if (dragStartX === null) return;
       const index = indexAt(event.clientX);
+      const slid = dragging;
       dragStartX = null;
       dragging = false;
-      // 放開：馬上切過去，鏡片彈到那個分頁，然後縮小變回灰色膠囊
+      // 放開：馬上切過去。滑動的話鏡片先彈到那個分頁（0.26 秒）；點一下就很快收掉。收的時候直接變回灰色膠囊
       lensTo(tabCenter(index));
       selectTab(index);
-      hideLens(260);
+      hideLens(slid ? 260 : 120);
     }
 
     tabBar.addEventListener('pointerup', endDrag);
