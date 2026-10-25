@@ -749,12 +749,9 @@
       transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.28s ease;
       pointer-events: none;
     }
-    /* 按住滑動時：灰色膠囊藏起來，換玻璃鏡片；原本選的分頁也先變回黑色，只有鏡片底下是藍的 */
+    /* 按住滑動時：灰色膠囊藏起來，換玻璃鏡片（原本選的分頁維持藍色，不會先變黑再變藍） */
     .tab-bar.is-dragging .tab-pill {
       opacity: 0;
-    }
-    .tab-bar.is-dragging .tab.is-active {
-      color: #1A1A1A;
     }
 
     /* ---------- 滑動時的玻璃鏡片（iOS 26 / Threads 那種） ----------
@@ -779,8 +776,7 @@
       visibility: hidden;
       transition: opacity 0.28s ease, scale 0.32s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.32s;
       will-change: translate, scale, opacity;
-      /* 外面的陰影放在沒有濾鏡的外框，才不會被鏡片裁掉 */
-      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+      /* 不要外陰影：鏡片底下的分頁列整段挖掉了，陰影會直接落在深色背景上，滑動時後面出現一塊黑黑的 */
     }
     /* 鏡片本體（有折射濾鏡）：幾乎透明，只有一圈亮邊，上緣比較亮 */
     /* 圓角裁切交給 createGlass 的 clip-path（clip: true），不用 overflow: hidden */
@@ -804,25 +800,27 @@
     /* 鏡片出現時，真的分頁圖示在鏡片底下挖一個洞（鏡片形狀），鏡片裡只看到藍色那一份。
        洞用 JS 算的 clip-path（path，奇偶填色）畫，不用 SVG 圖片當遮罩：
        遮罩圖片每一幀換大小 / 位置時 iPhone 要重新畫那張圖，畫好之前整排圖示會閃一下不見 */
-    .tab-lens__row {
+    /* 鏡片裡藍色的分頁列：用一張跟鏡片一樣大的 canvas 畫（見 drawLensCanvas）。
+       不用複製一整排分頁再移動：那樣整排會超出鏡片很多，要嘛 iPhone（WebKit）照超出的大小算折射圖（滑到兩端多一條弧線），
+       要嘛得用 overflow: hidden 裁掉，而 WebKit 的 SVG 濾鏡碰到裁切容器會畫錯。canvas 剛好鏡片大小，兩個問題都沒有 */
+    .tab-lens__canvas {
       position: absolute;
       left: 0;
       top: 0;
-      border-radius: 1000px;
-      /* 透明：鏡片裡看到的是底下真正的分頁列顏色（每一頁背景不同，分頁列顏色也不同），
-         底下真的圖示在鏡片範圍會被挖掉（見 .tab-bar.is-dragging），不會出現兩份 */
-      background: transparent;
+      width: 100%;
+      height: 100%;
+      display: block;
     }
-    .tab-lens__row .tab-lens__tabs {
+    /* 鏡片裡的分頁列底色：整個鏡片都是跟分頁列一樣的灰。鏡片底下整條分頁列（含圓弧的兩端）都被挖掉，
+       滑到最左最右時鏡片裡不會看到分頁列的圓弧。
+       上下也要蓋滿：鏡片（74）比分頁列（62）高，上下各 6px 如果透明，會看到後面深色的背景，滑動時像一圈黑黑的陰影。
+       放在玻璃（有折射濾鏡）的外面、下面：不會被折射，鏡片的亮邊和折射都跟原本一樣。
+       不透明：分頁列的玻璃折射的是主頁底部的深色背景，看起來就是這個灰（截圖量的 144） */
+    .tab-lens__band {
       position: absolute;
       inset: 0;
-      padding: 0 10px;
-      box-sizing: border-box;
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-    }
-    .tab-lens__row .tab {
-      color: rgb(0, 74, 193);
+      border-radius: inherit;
+      background: rgb(144, 144, 144);
     }
 
     /* 其他按鈕：按下去放大、放開彈回來（iOS 26 玻璃按鈕的感覺）。用獨立的 scale，不會蓋掉原本的 transform；
@@ -1956,21 +1954,154 @@
     .screen-chat.is-thread .chat-threads {
       display: none;
     }
-    /* 聊天室裡往右滑回聊天列表：對話跟著手指往右移、慢慢變淡（左右滑交給 JS，上下還是捲訊息） */
+    /* 聊天室裡往右滑回聊天列表：對話跟著手指往右移、慢慢變淡，底下的聊天列表從左邊淡入（左右滑交給 JS，上下還是捲訊息）。
+       位置直接設在對話和輸入框上（不用整個聊天畫面的 CSS 變數：那樣每一幀所有玻璃氣泡都要重算樣式，很卡）；
+       滑動時它們各自一個圖層，手指移動只是 GPU 搬圖層，不重畫玻璃 */
     .screen-chat.is-thread .chat-list {
       touch-action: pan-y;
+      /* 左右滑（返回、回覆）的時候不要選到字 */
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
     }
     .screen-chat .chat-list,
-    .screen-chat .chat-input {
-      translate: var(--swipe-x, 0px) 0;
-      opacity: var(--swipe-o, 1);
-      transition: translate 0.22s ease, opacity 0.22s ease;
+    .screen-chat .chat-input,
+    .screen-chat.is-peek .chat-threads {
+      transition: translate 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease;
     }
     .screen-chat.is-swiping .chat-list,
     .screen-chat.is-swiping .chat-input,
-    .screen-chat.no-swipe-anim .chat-list,
-    .screen-chat.no-swipe-anim .chat-input {
+    .screen-chat.is-swiping .chat-threads {
       transition: none;
+      will-change: translate, opacity;
+    }
+    .screen-chat.no-swipe-anim .chat-list,
+    .screen-chat.no-swipe-anim .chat-input,
+    .screen-chat.no-swipe-anim .chat-threads {
+      transition: none;
+    }
+    /* 滑動中：聊天列表在對話底下露出來（不能點，放開才真的回去） */
+    .screen-chat.is-thread.is-peek .chat-threads {
+      display: block;
+      pointer-events: none;
+    }
+
+    /* ---------- 回覆訊息：對方的訊息往左滑 ---------- */
+    .msg {
+      position: relative;
+      transition: translate 0.3s cubic-bezier(0.3, 1.3, 0.5, 1);
+    }
+    .msg.is-dragging {
+      transition: none;
+    }
+    /* 往左滑時，訊息右邊出現的回覆箭頭 */
+    .msg-reply-icon {
+      position: absolute;
+      left: calc(100% + 14px);
+      top: 50%;
+      width: 30px;
+      height: 30px;
+      margin-top: -15px;
+      border-radius: 15px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.14);
+      color: #FFFFFF;
+      opacity: 0;
+      scale: 0.6;
+      pointer-events: none;
+    }
+    /* 訊息上面的引用（回覆的是哪一則）：點了跳到那一則 */
+    .msg-reply {
+      display: block;
+      max-width: 240px;
+      margin: 0 0 4px 4px;
+      padding: 3px 9px;
+      border-left: 3px solid #6FA0FF;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.07);
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 12px;
+      line-height: 17px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+    .msg-reply b {
+      color: #9DBBFF;
+      font-weight: 600;
+    }
+    .msg.is-me .msg-reply {
+      margin: 0 4px 4px auto;
+    }
+    .msg.is-flash .msg-bubble {
+      animation: msg-flash 0.9s ease;
+    }
+    @keyframes msg-flash {
+      0%, 100% { filter: none; }
+      30% { filter: brightness(1.6); }
+    }
+    /* 輸入框上面的「回覆 xxx」條 */
+    .reply-bar {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: calc(max(16px, var(--safe-bottom)) + 50px + 8px);
+      height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 6px 0 14px;
+      border-radius: 18px;
+      background: rgba(40, 40, 40, 0.92);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), inset 0 0 0 0.5px rgba(255, 255, 255, 0.18);
+      color: #FFFFFF;
+      animation: screen-in 0.18s ease;
+    }
+    .reply-bar[hidden] {
+      display: none;
+    }
+    .reply-bar-text {
+      flex: 1;
+      min-width: 0;
+      border-left: 3px solid #6FA0FF;
+      padding-left: 9px;
+      font-size: 12px;
+      line-height: 16px;
+    }
+    .reply-bar-text b {
+      display: block;
+      color: #9DBBFF;
+      font-weight: 600;
+    }
+    .reply-bar-text span {
+      display: block;
+      color: rgba(255, 255, 255, 0.7);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .reply-bar-close {
+      flex: none;
+      width: 32px;
+      height: 32px;
+      border: 0;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #FFFFFF;
+      font-size: 16px;
+      line-height: 32px;
+      cursor: pointer;
+    }
+    /* 有回覆條時，對話往上讓出位置 */
+    .screen-chat.is-thread.has-reply .chat-list {
+      bottom: calc(max(16px, var(--safe-bottom)) + 50px + 14px + 52px);
+    }
+    .screen-chat:not(.is-thread) .reply-bar {
+      display: none;
     }
     .page-back {
       top: calc(30px + var(--safe-top));
@@ -2333,7 +2464,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.11.0</div>
+    <div class="abs version-label t12 nowrap">ESN v1.12.0</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -2587,6 +2718,11 @@
     </div>
     <!-- 對話 -->
     <div class="chat-list" id="chatList" aria-live="polite"></div>
+    <!-- 回覆某一則訊息時，輸入框上面顯示要回覆誰、哪一句 -->
+    <div class="reply-bar" id="replyBar" hidden>
+      <div class="reply-bar-text"><b id="replyBarName"></b><span id="replyBarSnippet"></span></div>
+      <button class="reply-bar-close" id="replyBarClose" type="button" aria-label="取消回覆">✕</button>
+    </div>
     <lg-panel class="chat-input glass" radius="25">
       <form id="chatForm" autocomplete="off">
         <button class="chat-attach" id="chatAttach" type="button" aria-label="貼圖、照片、GIF、塗鴉">
@@ -2707,7 +2843,7 @@
   </lg-panel>
   <!-- 按住分頁列滑動時的玻璃鏡片（像 iOS 26 / Threads）：比選取膠囊大、很透明，會折射底下的分頁；
        鏡片裡面是一份分頁列的複本（圖示是藍色），所以鏡片滑到的地方變藍、沒滑到的地方不變 -->
-  <div class="tab-lens" id="tabLens" aria-hidden="true"><div class="tab-lens__glass" id="tabLensGlass"><div class="tab-lens__row" id="tabLensRow"></div></div></div>
+  <div class="tab-lens" id="tabLens" aria-hidden="true"><div class="tab-lens__band"></div><div class="tab-lens__glass" id="tabLensGlass"><canvas class="tab-lens__canvas" id="tabLensCanvas"></canvas></div></div>
 
   <!-- Liquid Glass：liquidglass.dev v1.0.0（MIT，gentpan），檔案放在 assets/lib -->
   <script type="module" src="assets/lib/components.js"></script>
@@ -2953,7 +3089,10 @@
     // 所以只有鏡片底下的圖示文字變藍，其他分頁不變；放開才真的切過去。
     const tabLens = document.getElementById('tabLens');
     const tabLensGlass = document.getElementById('tabLensGlass');
-    const tabLensRow = document.getElementById('tabLensRow');
+    const tabLensCanvas = document.getElementById('tabLensCanvas');
+    const lensCtx = tabLensCanvas.getContext('2d');
+    const LENS_BLUE = 'rgb(0, 74, 193)';
+    let lensSprite = null; // 整條分頁列的藍色版本（開始滑的時候畫一次），每一幀只把鏡片底下那一塊貼到 canvas
     // 鏡片寬度 = 一格分頁 + 16px（402 寬的手機約 84、440 寬約 92），滑到最左最右剛好在分頁列裡面；
     // 太寬的話兩端會超出分頁列，折射會拉到外面的空白，頭像被拉得很大、邊緣破掉
     let LENS_W = 106;
@@ -2969,32 +3108,127 @@
         fit: true,
         clip: true,
         radius: LENS_H / 2,
-        // 鏡片只比一格分頁大一點：彎曲的邊要窄、折射要輕，圖示和字才不會被扭歪
-        refraction: 4,
-        bezel: 0.28,
-        curvature: 3,
-        chroma: 0,
+        // 數值跟第一版滑動玻璃（v1.5.0）一樣：折射、彎曲、色散、反光都照那時候
+        refraction: 12,
+        bezel: 0.5,
+        curvature: 4,
+        chroma: 0.15,
         specular: 0.9,
         specularWidth: 2.5,
       });
     }
 
-    // 鏡片裡的分頁列複本：大小、排法跟真的一樣（頭像會換人，所以每次滑都重做）
-    function buildLensRow() {
+    // 分頁圖示（遮罩用的 SVG）先載好，開始滑的時候才畫得出來
+    const lensIcons = new Map();
+    function lensIcon(node) {
+      const url = node.style.getPropertyValue('--icon').match(/url\((.*)\)/)?.[1];
+      if (!url) return null;
+      if (!lensIcons.has(url)) {
+        const img = new Image();
+        img.src = url;
+        lensIcons.set(url, img);
+      }
+      return lensIcons.get(url);
+    }
+    tabs.forEach((tab) => { const icon = tab.querySelector('.tab-icon'); if (icon) lensIcon(icon); });
+
+    // 把整條分頁列畫成藍色的一張圖：圖示、文字、頭像、紅點都照真的分頁現在的位置量（頭像會換人、紅點會變，所以每次滑都重畫）
+    function buildLensSprite() {
       const bar = tabBar.getBoundingClientRect();
-      const row = el('div', 'tab-lens__tabs');
+      const dpr = Math.min(3, window.devicePixelRatio || 1);
+      const sprite = document.createElement('canvas');
+      sprite.width = Math.round(bar.width * dpr);
+      sprite.height = Math.round(bar.height * dpr);
+      const g = sprite.getContext('2d');
+      g.scale(dpr, dpr);
+      const box = (node) => {
+        const r = node.getBoundingClientRect();
+        return { x: r.left - bar.left, y: r.top - bar.top, w: r.width, h: r.height };
+      };
+      const paint = document.createElement('canvas');
+      const pg = paint.getContext('2d');
       tabs.forEach((tab) => {
-        const copy = tab.cloneNode(true);
-        copy.classList.remove('is-active');
-        copy.removeAttribute('data-target');
-        copy.tabIndex = -1;
-        copy.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'));
+        const icon = tab.querySelector('.tab-icon');
+        const img = icon && lensIcon(icon);
+        if (img && img.complete) {
+          // 圖示：畫進小 canvas 再整個塗成藍色（source-in），跟遮罩 + 藍底色一樣
+          const b = box(icon);
+          paint.width = Math.max(1, Math.round(b.w * dpr));
+          paint.height = Math.max(1, Math.round(b.h * dpr));
+          pg.globalCompositeOperation = 'source-over';
+          pg.drawImage(img, 0, 0, paint.width, paint.height);
+          pg.globalCompositeOperation = 'source-in';
+          pg.fillStyle = LENS_BLUE;
+          pg.fillRect(0, 0, paint.width, paint.height);
+          g.drawImage(paint, b.x, b.y, b.w, b.h);
+        }
+        const avatar = tab.querySelector('.tab-avatar');
+        if (avatar && avatar.complete && avatar.naturalWidth) {
+          // 頭像：圓形、object-fit: cover
+          const b = box(avatar);
+          const k = Math.max(b.w / avatar.naturalWidth, b.h / avatar.naturalHeight);
+          const sw = b.w / k;
+          const sh = b.h / k;
+          g.save();
+          g.beginPath();
+          g.arc(b.x + b.w / 2, b.y + b.h / 2, Math.min(b.w, b.h) / 2, 0, Math.PI * 2);
+          g.clip();
+          g.drawImage(avatar, (avatar.naturalWidth - sw) / 2, (avatar.naturalHeight - sh) / 2, sw, sh, b.x, b.y, b.w, b.h);
+          g.restore();
+        }
+        const label = tab.querySelector('span');
+        if (label) {
+          const b = box(label);
+          const cs = getComputedStyle(label);
+          g.font = `${cs.fontWeight} ${cs.fontSize} ${lensFont(cs.fontFamily)}`;
+          g.fillStyle = LENS_BLUE;
+          g.textAlign = 'center';
+          g.textBaseline = 'middle';
+          g.fillText(label.textContent, b.x + b.w / 2, b.y + b.h / 2);
+        }
         // 紅點要留著：鏡片滑過「通知」「聊天」時，紅點才不會不見
-        row.append(copy);
+        const badge = tab.querySelector('.tab-badge');
+        if (badge && !badge.hidden && badge.offsetWidth) {
+          const b = box(badge);
+          g.fillStyle = '#E5484D';
+          g.beginPath();
+          g.roundRect(b.x, b.y, b.w, b.h, b.h / 2);
+          g.fill();
+          const cs = getComputedStyle(badge);
+          g.font = `${cs.fontWeight} ${cs.fontSize} ${lensFont(cs.fontFamily)}`;
+          g.fillStyle = '#FFFFFF';
+          g.textAlign = 'center';
+          g.textBaseline = 'middle';
+          g.fillText(badge.textContent, b.x + b.w / 2, b.y + b.h / 2 + 0.5);
+        }
       });
-      tabLensRow.replaceChildren(row);
-      tabLensRow.style.width = `${bar.width}px`;
-      tabLensRow.style.height = `${bar.height}px`;
+      lensSprite = { canvas: sprite, dpr };
+    }
+
+    // canvas 的字型：iPhone 的 canvas 不一定認得 -apple-system，認不得就會換成別的字型（看起來比較小），前面先放 system-ui
+    function lensFont(family) {
+      return `system-ui, ${family}`;
+    }
+
+    // 鏡片放大一點（以鏡片中心為準）：真的玻璃泡泡會把底下的東西放大，藍色圖示才不會看起來比外面的小
+    const LENS_ZOOM = 1.08;
+
+    // 每一幀：把藍色分頁列在鏡片底下的那一塊貼到鏡片的 canvas（跟底下真的分頁列對齊，再以鏡片中心放大 LENS_ZOOM 倍）
+    function drawLensCanvas(lx, ly) {
+      if (!lensSprite) return;
+      const { canvas, dpr } = lensSprite;
+      const w = Math.round(LENS_W * dpr);
+      const h = Math.round(LENS_H * dpr);
+      if (tabLensCanvas.width !== w || tabLensCanvas.height !== h) {
+        tabLensCanvas.width = w;
+        tabLensCanvas.height = h;
+      }
+      lensCtx.setTransform(1, 0, 0, 1, 0, 0);
+      lensCtx.clearRect(0, 0, w, h);
+      lensCtx.translate(w / 2, h / 2);
+      lensCtx.scale(LENS_ZOOM, LENS_ZOOM);
+      lensCtx.translate(-w / 2, -h / 2);
+      lensCtx.drawImage(canvas, (lensBar.left - lx) * dpr, (lensBar.top - ly) * dpr);
     }
 
     // 鏡片位置用彈簧動畫：手指只改目標，每一幀往目標靠近，看起來順、不會一格一格跳。
@@ -3013,9 +3247,8 @@
       // 用 translate（不是 transform）：scale 才會以鏡片自己的中心縮放。
       // 用 transform 的話縮放中心在螢幕左上角，鏡片縮小時會往上飄
       tabLens.style.translate = `${lx}px ${ly}px`;
-      // 複本反方向移，跟底下真的分頁列對齊
-      // 鏡片裡面用一般 2D 移動（不要 translate3d / will-change 另開圖層，WebKit 的濾鏡碰到會畫錯）
-      tabLensRow.style.transform = `translate(${lensBar.left - lx}px, ${lensBar.top - ly}px)`;
+      // 鏡片裡的藍色分頁列：跟底下真的分頁列對齊
+      drawLensCanvas(lx, ly);
       // 底下真的分頁圖示挖洞的位置（相對分頁列）
       holePos.x = lx - lensBar.left;
       holePos.y = ly - lensBar.top;
@@ -3025,6 +3258,9 @@
     // 用 clip-path: path(evenodd, 外框 + 膠囊) 把底下的圖示挖掉。純幾何，當下就畫好，不會閃
     const holePos = { x: 0, y: 0 };
     let holeFrame = 0;
+    // 只挖圖示那一層：鏡片底下永遠還是灰色的分頁列。不能挖整條分頁列，鏡片出現 / 消失時灰色底還是半透明，
+    // 會透出後面深色的背景，滑動時看起來一塊黑黑的陰影。分頁列兩端的圓弧由鏡片裡不透明的灰色（.tab-lens__band）蓋住。
+    // 洞的大小永遠跟鏡片現在的大小一樣（不乘透明度），不會有一圈黑色圖示露出來
     function drawHole() {
       holeFrame = 0;
       const body = tabBar.querySelector('.lg-panel__body');
@@ -3035,8 +3271,7 @@
         return;
       }
       const cs = getComputedStyle(tabLens);
-      const scale = parseFloat(cs.scale) || 1;
-      const k = scale * (parseFloat(cs.opacity) || 0);
+      const k = (parseFloat(cs.opacity) || 0) > 0.03 ? parseFloat(cs.scale) || 1 : 0;
       if (k < 0.03) {
         body.style.clipPath = '';
         body.style.webkitClipPath = '';
@@ -3125,7 +3360,7 @@
       ensureLensGlass();
       lensBar = tabBar.getBoundingClientRect();
       sizeLens();
-      buildLensRow();
+      buildLensSprite();
       lensTo(tabCenter(indexAt(clientX)), true);
       tabBar.classList.add('is-dragging');
       tabLens.classList.add('is-on');
@@ -3494,8 +3729,8 @@
         store.set(`chat.${room}`, list);
         onChatUpdate(room);
       },
-      async send(room, text) {
-        return this.post(room, { kind: 'text', text });
+      async send(room, text, reply) {
+        return this.post(room, reply ? { kind: 'text', text, reply } : { kind: 'text', text });
       },
       // 上傳圖片（照片 / 塗鴉），回傳伺服器存好的檔名
       async upload(blob) {
@@ -3617,6 +3852,7 @@
 
     function showThreadList() {
       currentThread = null;
+      setReply(null);
       chatScreen.classList.remove('is-thread');
       if (!chatScreen.classList.contains('is-hidden')) tabBar.hidden = false;
       chatTitle.textContent = '聊天';
@@ -3628,6 +3864,7 @@
 
     function openThread(thread) {
       currentThread = thread;
+      setReply(null);
       chatMessages = chat.get(thread.room, thread.defaults);
       markSeen(thread);
       updateChatBadge();
@@ -3644,15 +3881,31 @@
     chatBack.addEventListener('click', showThreadList);
 
     // ----- 聊天室：往右滑回聊天列表（跟 iPhone 的返回手勢一樣） -----
+    // 對話和輸入框跟著手指往右移、變淡；底下的聊天列表從左邊（往左 30%）滑進來、淡入
+    const chatThreadsEl = document.getElementById('chatThreads');
+    const chatInputEl = chatScreen.querySelector('.chat-input');
     let chatSwipe = null;
     function setSwipe(dx) {
-      chatScreen.style.setProperty('--swipe-x', `${dx}px`);
-      chatScreen.style.setProperty('--swipe-o', String(Math.max(0.2, 1 - dx / (window.innerWidth * 1.2))));
+      const w = window.innerWidth;
+      const p = Math.min(1, dx / w);
+      for (const node of [chatList, chatInputEl]) {
+        node.style.translate = `${dx}px 0`;
+        node.style.opacity = String(Math.max(0.05, 1 - p * 1.6));
+      }
+      chatThreadsEl.style.translate = `${-(1 - p) * w * 0.3}px 0`;
+      chatThreadsEl.style.opacity = String(0.15 + Math.min(1, p * 1.5) * 0.85);
+    }
+    function clearSwipe() {
+      for (const node of [chatList, chatInputEl, chatThreadsEl]) {
+        node.style.translate = '';
+        node.style.opacity = '';
+      }
+      chatScreen.classList.remove('is-peek');
     }
     chatScreen.addEventListener('pointerdown', (event) => {
       if (!chatScreen.classList.contains('is-thread')) return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
-      if (event.target.closest('input, textarea, button, .chat-input')) return;
+      if (event.target.closest('input, textarea, button, .chat-input, .reply-bar')) return;
       chatSwipe = { x0: event.clientX, y0: event.clientY, id: event.pointerId, active: false };
     });
     chatScreen.addEventListener('pointermove', (event) => {
@@ -3660,39 +3913,123 @@
       const dx = event.clientX - chatSwipe.x0;
       const dy = event.clientY - chatSwipe.y0;
       if (!chatSwipe.active) {
-        // 先往上下走就是捲訊息，放掉
-        if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) {
+        // 先往上下走就是捲訊息，往左是回覆訊息，都放掉
+        if ((Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) || dx < -12) {
           chatSwipe = null;
           return;
         }
         if (dx < 12 || Math.abs(dx) < Math.abs(dy)) return;
         chatSwipe.active = true;
-        chatScreen.classList.add('is-swiping');
+        chatSwipe.x0 = event.clientX; // 從這裡開始跟手指，不會一開始就跳 12px
+        clearTimeout(swipeDoneTimer);
+        renderThreadList();
+        chatScreen.classList.add('is-swiping', 'is-peek');
+        setSwipe(0);
         try { chatScreen.setPointerCapture(event.pointerId); } catch {}
       }
-      setSwipe(Math.max(0, dx));
+      setSwipe(Math.max(0, event.clientX - chatSwipe.x0));
     });
+    let swipeDoneTimer = 0;
     function endChatSwipe(event, cancelled) {
       const s = chatSwipe;
       chatSwipe = null;
       if (!s?.active) return;
       chatScreen.classList.remove('is-swiping');
       const dx = cancelled ? 0 : Math.max(0, event.clientX - s.x0);
+      clearTimeout(swipeDoneTimer);
       if (dx > Math.min(120, window.innerWidth * 0.3)) {
-        // 滑夠遠：對話滑出去，回到聊天列表
+        // 滑夠遠：對話滑出去、聊天列表滑到定位，回到聊天列表
         setSwipe(window.innerWidth);
-        setTimeout(() => {
+        swipeDoneTimer = setTimeout(() => {
           chatScreen.classList.add('no-swipe-anim');
           showThreadList();
-          setSwipe(0);
+          clearSwipe();
           requestAnimationFrame(() => requestAnimationFrame(() => chatScreen.classList.remove('no-swipe-anim')));
-        }, 220);
+        }, 250);
       } else {
-        setSwipe(0); // 不夠遠就彈回去
+        // 不夠遠就彈回去
+        setSwipe(0);
+        swipeDoneTimer = setTimeout(clearSwipe, 250);
       }
     }
     chatScreen.addEventListener('pointerup', (event) => endChatSwipe(event, false));
     chatScreen.addEventListener('pointercancel', (event) => endChatSwipe(event, true));
+
+    // ----- 回覆訊息：對方的訊息往左滑，放開就回覆它 -----
+    const replyBar = document.getElementById('replyBar');
+    let replyTo = null; // { id, name, text }
+    function replySnippet(m) {
+      if ((m.kind || 'text') === 'text') return m.text || '';
+      return { image: '照片', doodle: '塗鴉', sticker: '貼圖', gif: 'GIF' }[m.kind] || '訊息';
+    }
+    function setReply(m) {
+      replyTo = m ? { id: m.id, name: senderOf(m).name, text: replySnippet(m) } : null;
+      replyBar.hidden = !replyTo;
+      chatScreen.classList.toggle('has-reply', !!replyTo);
+      if (!replyTo) return;
+      document.getElementById('replyBarName').textContent = `回覆 ${replyTo.name}`;
+      document.getElementById('replyBarSnippet').textContent = replyTo.text;
+      chatText.focus({ preventScroll: true });
+    }
+    document.getElementById('replyBarClose').addEventListener('click', () => setReply(null));
+
+    let msgSwipe = null;
+    const REPLY_AT = 55; // 往左滑超過這麼多就回覆
+    chatList.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      const row = event.target.closest('.msg');
+      if (!row || row.classList.contains('is-me') || !row.msg?.id) return;
+      msgSwipe = { row, x0: event.clientX, y0: event.clientY, id: event.pointerId, active: false, dx: 0, buzzed: false };
+    });
+    chatList.addEventListener('pointermove', (event) => {
+      if (!msgSwipe || event.pointerId !== msgSwipe.id) return;
+      const dx = event.clientX - msgSwipe.x0;
+      const dy = event.clientY - msgSwipe.y0;
+      if (!msgSwipe.active) {
+        if ((Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) || dx > 10) {
+          msgSwipe = null; // 上下是捲動，往右是返回
+          return;
+        }
+        if (dx > -10) return;
+        msgSwipe.active = true;
+        msgSwipe.x0 = event.clientX;
+        msgSwipe.row.classList.add('is-dragging');
+        if (!msgSwipe.row.querySelector('.msg-reply-icon')) {
+          const icon = el('span', 'msg-reply-icon');
+          icon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v5"/></svg>';
+          msgSwipe.row.append(icon);
+        }
+        try { chatList.setPointerCapture(event.pointerId); } catch {}
+      }
+      // 超過門檻之後越拉越緊
+      const raw = Math.min(0, event.clientX - msgSwipe.x0);
+      const pull = raw > -REPLY_AT ? raw : -REPLY_AT + (raw + REPLY_AT) * 0.3;
+      msgSwipe.dx = raw;
+      msgSwipe.row.style.translate = `${pull}px 0`;
+      const k = Math.min(1, -raw / REPLY_AT);
+      const icon = msgSwipe.row.querySelector('.msg-reply-icon');
+      icon.style.opacity = String(k);
+      icon.style.scale = String(0.6 + 0.4 * k);
+      if (k >= 1 && !msgSwipe.buzzed) {
+        msgSwipe.buzzed = true;
+        haptic();
+      }
+    });
+    function endMsgSwipe(cancelled) {
+      const s = msgSwipe;
+      msgSwipe = null;
+      if (!s?.active) return;
+      s.row.classList.remove('is-dragging');
+      s.row.style.translate = '';
+      const icon = s.row.querySelector('.msg-reply-icon');
+      if (icon) {
+        icon.style.opacity = '';
+        icon.style.scale = '';
+      }
+      if (!cancelled && s.dx <= -REPLY_AT) setReply(s.row.msg);
+    }
+    chatList.addEventListener('pointerup', () => endMsgSwipe(false));
+    chatList.addEventListener('pointercancel', () => endMsgSwipe(true));
 
     // 有新訊息（自己送的或伺服器推來的）
     function onChatUpdate(room) {
@@ -3742,8 +4079,24 @@
         avatar.src = sender.avatar;
         avatar.alt = '';
         const body = el('div');
-        body.append(el('div', 'msg-name', sender.name), buildMessageContent(m, index), el('div', 'msg-time', m.time));
+        body.append(el('div', 'msg-name', sender.name));
+        if (m.reply) {
+          // 引用的那一則：名字 + 內容，點了跳過去
+          const quote = el('div', 'msg-reply');
+          quote.append(el('b', '', `${memberById(m.reply.from)?.name || '成員'}：`), document.createTextNode(m.reply.text || ''));
+          quote.addEventListener('click', () => {
+            const target = [...chatList.children].find((node) => node.msg?.id === m.reply.id);
+            if (!target) return;
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            target.classList.remove('is-flash');
+            void target.offsetWidth;
+            target.classList.add('is-flash');
+          });
+          body.append(quote);
+        }
+        body.append(buildMessageContent(m, index), el('div', 'msg-time', m.time));
         row.append(avatar, body);
+        row.msg = m;
         return row;
       }));
       chatList.scrollTop = chatList.scrollHeight;
@@ -3758,11 +4111,15 @@
       if (!text || !currentThread || !ME) return;
       chatText.value = '';
       chatSend.disabled = true;
+      const replyMsg = replyTo && chatMessages.find((m) => m.id === replyTo.id);
+      const reply = replyTo?.id;
+      setReply(null);
       try {
-        await chat.send(currentThread.room, text);
+        await chat.send(currentThread.room, text, reply);
       } catch (error) {
         console.warn('訊息送不出去', error);
         chatText.value = text;
+        if (replyMsg) setReply(replyMsg); // 沒送出：要回覆的那一則也留著
         chatSend.disabled = false;
       }
     });
@@ -3807,6 +4164,8 @@
     async function sendMedia(payload) {
       if (!currentThread || !ME) return;
       closeMediaPanel();
+      if (replyTo) payload = { ...payload, reply: replyTo.id };
+      setReply(null);
       try {
         await chat.post(currentThread.room, payload);
       } catch (error) {
@@ -5355,16 +5714,39 @@
       });
     }
     // 底色不要跟著圓鈕慢慢變：圓鈕到最右邊才變綠、到最左邊才變灰（中間維持原本的顏色）
+    // 切換的時候（點一下或滑完放開）圓鈕要變成玻璃滑過去：原本手指一放開玻璃就收起來，點一下時圓鈕是不帶玻璃滑過去的。
+    // 這裡自己撐住「按住」的程度（hold）：0.12 秒變成玻璃，圓鈕滑到底再 0.2 秒收回
     function snapSwitchColor(sw) {
       const base = sw.render;
       let on = sw.checked ? 1 : 0;
+      let hold = 0;
+      let holdFrame = 0;
       sw.render = function render() {
+        const real = this.p;
+        this.p = Math.max(real, hold);
         base.call(this);
+        this.p = real;
         if (this.x >= 0.99) on = 1;
         else if (this.x <= 0.01) on = 0;
         this.firstChild.lastChild.style.setProperty('--p', String(on));
       };
       sw.render();
+      sw.querySelector('input').addEventListener('change', () => {
+        cancelAnimationFrame(holdFrame);
+        const target = sw.checked ? 1 : 0;
+        let last = performance.now();
+        let arrived = false;
+        const step = (now) => {
+          const dt = (now - last) / 1000;
+          last = now;
+          if (!arrived && Math.abs(sw.x - target) < 0.02 && hold >= 1) arrived = true;
+          hold = arrived ? Math.max(0, hold - dt / 0.2) : Math.min(1, hold + dt / 0.12);
+          sw.render();
+          if (arrived && hold === 0) return;
+          holdFrame = requestAnimationFrame(step);
+        };
+        holdFrame = requestAnimationFrame(step);
+      });
     }
     customElements.whenDefined('lg-switch').then(() => {
       for (const sw of [settingNotify, settingLevel]) {

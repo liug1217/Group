@@ -399,6 +399,22 @@ class Handler(SimpleHTTPRequestHandler):
             msg['ref'] = ref
             preview = '傳了一張貼圖' if kind == 'sticker' else '傳了一個 GIF'
 
+        # 回覆某一則訊息：只收對方給的訊息 id，引用的內容（誰、前 60 個字）由伺服器自己從這個聊天室找出來
+        reply_id = str(data.get('reply', ''))
+        if reply_id:
+            import re
+            if not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', reply_id):
+                return self.send_json(400, {'error': 'invalid reply'})
+            with lock:
+                original = next((m for m in rooms.get(room, []) if m.get('id') == reply_id), None)
+            if original:
+                if original.get('kind', 'text') == 'text':
+                    snippet = str(original.get('text', ''))
+                    snippet = snippet if len(snippet) <= 60 else snippet[:58] + '…'
+                else:
+                    snippet = {'image': '照片', 'doodle': '塗鴉', 'sticker': '貼圖', 'gif': 'GIF'}.get(original.get('kind'), '訊息')
+                msg['reply'] = {'id': reply_id, 'from': original.get('from', ''), 'text': snippet}
+
         with lock:
             rooms.setdefault(room, []).append(msg)
             rooms[room] = rooms[room][-MAX_PER_ROOM:]
