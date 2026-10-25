@@ -1983,10 +1983,35 @@
     .msg.is-dragging {
       transition: none;
     }
-    /* 往左滑時，訊息右邊出現的回覆箭頭 */
+    /* 往左滑看時間（像 iMessage）：所有訊息一起往左移，右邊露出每一則的時間；放開彈回去 */
+    .chat-list {
+      overflow-x: hidden;
+    }
+    .chat-list .msg {
+      translate: var(--time-x, 0px) 0;
+    }
+    .chat-list.is-time-drag .msg {
+      transition: none;
+    }
+    .msg-side-time {
+      display: none;
+      position: absolute;
+      top: 50%;
+      translate: 0 -50%;
+      width: 66px;
+      font-size: 11px;
+      line-height: 14px;
+      color: rgba(255, 255, 255, 0.55);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .chat-list.is-time-peek .msg-side-time {
+      display: block;
+    }
+    /* 往右滑時，訊息左邊出現的回覆箭頭 */
     .msg-reply-icon {
       position: absolute;
-      left: calc(100% + 14px);
+      right: calc(100% + 14px);
       top: 50%;
       width: 30px;
       height: 30px;
@@ -2662,7 +2687,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.13.1</div>
+    <div class="abs version-label t12 nowrap">ESN v1.13.2</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -3733,6 +3758,14 @@
     let ME = memberById(store.get('me', '')) || null;
     let pickedMember = ME;
     const nowTime = () => new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+    // 「15:20」→「下午 3:20」：凌晨 0–5、清晨 5–7、上午 7–11、中午 11–13、下午 13–18、晚上 18–24（不是時:分的字照原樣）
+    function periodTime(hhmm) {
+      const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || '');
+      if (!m) return hhmm || '';
+      const h = Number(m[1]);
+      const label = h < 5 ? '凌晨' : h < 7 ? '清晨' : h < 11 ? '上午' : h < 13 ? '中午' : h < 18 ? '下午' : '晚上';
+      return `${label} ${h % 12 === 0 ? 12 : h % 12}:${m[2]}`;
+    }
 
     function el(tag, className, text) {
       const node = document.createElement(tag);
@@ -4244,7 +4277,7 @@
           const sender = senderOf(last);
           preview = `${sender.isMe ? '我' : sender.name}：${replySnippet(last)}`;
         }
-        row.append(avatar, name, el('span', 'thread-preview', preview), el('span', 'thread-time', last ? last.time : ''));
+        row.append(avatar, name, el('span', 'thread-preview', preview), el('span', 'thread-time', last ? periodTime(last.time) : ''));
         const unread = unreadIn(thread);
         if (unread) row.append(el('span', 'thread-unread', unread > 99 ? '99+' : String(unread)));
         row.addEventListener('click', () => openThread(thread));
@@ -4317,9 +4350,11 @@
       tabBar.style.transition = '';
       if (chatScreen.classList.contains('is-thread')) tabBar.hidden = true; // 彈回聊天室：分頁列收起來
     }
+    const EDGE = 32; // 從螢幕最左邊這麼寬的範圍開始往右滑，才是返回
     chatScreen.addEventListener('pointerdown', (event) => {
       if (!chatScreen.classList.contains('is-thread')) return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
+      if (event.clientX > EDGE) return;
       if (event.target.closest('input, textarea, button, .chat-input, .reply-bar')) return;
       chatSwipe = { x0: event.clientX, y0: event.clientY, id: event.pointerId, active: false };
     });
@@ -4328,7 +4363,7 @@
       const dx = event.clientX - chatSwipe.x0;
       const dy = event.clientY - chatSwipe.y0;
       if (!chatSwipe.active) {
-        // 先往上下走就是捲訊息，往左是回覆訊息，都放掉
+        // 先往上下走就是捲訊息，往左不是返回，都放掉
         if ((Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) || dx < -12) {
           chatSwipe = null;
           return;
@@ -4389,63 +4424,97 @@
     }
     document.getElementById('replyBarClose').addEventListener('click', () => setReply(null));
 
-    let msgSwipe = null;
-    const REPLY_AT = 55; // 往左滑超過這麼多就回覆
+    // 訊息上的手勢（從最左邊開始的是返回，不在這裡）：
+    //   對方的訊息往右滑 → 回覆它；往左滑（任何地方）→ 所有訊息往左移，右邊露出時間
+    let listSwipe = null;
+    const REPLY_AT = 55; // 往右滑超過這麼多就回覆
+    const TIME_SHIFT = 72; // 往左最多移這麼多，剛好露出時間
+    let timePeekTimer = 0;
+    function placeTimes() {
+      // 每一則的時間放在對話框右邊外面一點；整排往左移 TIME_SHIFT 之後剛好露出來
+      const right = chatList.getBoundingClientRect().right;
+      chatList.querySelectorAll('.msg').forEach((row) => {
+        const time = row.querySelector('.msg-side-time');
+        if (time) time.style.left = `${right + 6 - row.getBoundingClientRect().left}px`;
+      });
+    }
     chatList.addEventListener('pointerdown', (event) => {
       if (event.pointerType === 'mouse' && event.button !== 0) return;
-      const row = event.target.closest('.msg');
-      if (!row || row.classList.contains('is-me') || !row.msg?.id) return;
-      msgSwipe = { row, x0: event.clientX, y0: event.clientY, id: event.pointerId, active: false, dx: 0, buzzed: false };
+      if (event.clientX <= EDGE) return;
+      listSwipe = { row: event.target.closest('.msg'), x0: event.clientX, y0: event.clientY, id: event.pointerId, mode: null, dx: 0, buzzed: false };
     });
     chatList.addEventListener('pointermove', (event) => {
-      if (!msgSwipe || event.pointerId !== msgSwipe.id) return;
-      const dx = event.clientX - msgSwipe.x0;
-      const dy = event.clientY - msgSwipe.y0;
-      if (!msgSwipe.active) {
-        if ((Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) || dx > 10) {
-          msgSwipe = null; // 上下是捲動，往右是返回
+      const s = listSwipe;
+      if (!s || event.pointerId !== s.id) return;
+      const dx = event.clientX - s.x0;
+      const dy = event.clientY - s.y0;
+      if (!s.mode) {
+        if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) {
+          listSwipe = null; // 上下是捲動
           return;
         }
-        if (dx > -10) return;
-        msgSwipe.active = true;
-        msgSwipe.x0 = event.clientX;
-        msgSwipe.row.classList.add('is-dragging');
-        if (!msgSwipe.row.querySelector('.msg-reply-icon')) {
-          const icon = el('span', 'msg-reply-icon');
-          icon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v5"/></svg>';
-          msgSwipe.row.append(icon);
+        if (dx > 10 && s.row && !s.row.classList.contains('is-me') && s.row.msg?.id) {
+          s.mode = 'reply';
+          s.row.classList.add('is-dragging');
+          if (!s.row.querySelector('.msg-reply-icon')) {
+            const icon = el('span', 'msg-reply-icon');
+            icon.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 6 6v5"/></svg>';
+            s.row.append(icon);
+          }
+        } else if (dx < -10) {
+          s.mode = 'time';
+          clearTimeout(timePeekTimer);
+          placeTimes();
+          chatList.classList.add('is-time-peek', 'is-time-drag');
+        } else {
+          return;
         }
+        s.x0 = event.clientX;
         try { chatList.setPointerCapture(event.pointerId); } catch {}
       }
-      // 超過門檻之後越拉越緊
-      const raw = Math.min(0, event.clientX - msgSwipe.x0);
-      const pull = raw > -REPLY_AT ? raw : -REPLY_AT + (raw + REPLY_AT) * 0.3;
-      msgSwipe.dx = raw;
-      msgSwipe.row.style.translate = `${pull}px 0`;
-      const k = Math.min(1, -raw / REPLY_AT);
-      const icon = msgSwipe.row.querySelector('.msg-reply-icon');
-      icon.style.opacity = String(k);
-      icon.style.scale = String(0.6 + 0.4 * k);
-      if (k >= 1 && !msgSwipe.buzzed) {
-        msgSwipe.buzzed = true;
-        haptic();
+      const move = event.clientX - s.x0;
+      if (s.mode === 'reply') {
+        // 超過門檻之後越拉越緊
+        const raw = Math.max(0, move);
+        const pull = raw < REPLY_AT ? raw : REPLY_AT + (raw - REPLY_AT) * 0.3;
+        s.dx = raw;
+        s.row.style.translate = `${pull}px 0`;
+        const k = Math.min(1, raw / REPLY_AT);
+        const icon = s.row.querySelector('.msg-reply-icon');
+        icon.style.opacity = String(k);
+        icon.style.scale = String(0.6 + 0.4 * k);
+        if (k >= 1 && !s.buzzed) {
+          s.buzzed = true;
+          haptic();
+        }
+      } else {
+        const raw = Math.min(0, move);
+        const shift = raw > -TIME_SHIFT ? raw : -TIME_SHIFT + (raw + TIME_SHIFT) * 0.2;
+        chatList.style.setProperty('--time-x', `${shift}px`);
       }
     });
-    function endMsgSwipe(cancelled) {
-      const s = msgSwipe;
-      msgSwipe = null;
-      if (!s?.active) return;
-      s.row.classList.remove('is-dragging');
-      s.row.style.translate = '';
-      const icon = s.row.querySelector('.msg-reply-icon');
-      if (icon) {
-        icon.style.opacity = '';
-        icon.style.scale = '';
+    function endListSwipe(cancelled) {
+      const s = listSwipe;
+      listSwipe = null;
+      if (!s?.mode) return;
+      if (s.mode === 'reply') {
+        s.row.classList.remove('is-dragging');
+        s.row.style.translate = '';
+        const icon = s.row.querySelector('.msg-reply-icon');
+        if (icon) {
+          icon.style.opacity = '';
+          icon.style.scale = '';
+        }
+        if (!cancelled && s.dx >= REPLY_AT) setReply(s.row.msg);
+        return;
       }
-      if (!cancelled && s.dx <= -REPLY_AT) setReply(s.row.msg);
+      // 放開：時間收回去
+      chatList.classList.remove('is-time-drag');
+      chatList.style.removeProperty('--time-x');
+      timePeekTimer = setTimeout(() => chatList.classList.remove('is-time-peek'), 320);
     }
-    chatList.addEventListener('pointerup', () => endMsgSwipe(false));
-    chatList.addEventListener('pointercancel', () => endMsgSwipe(true));
+    chatList.addEventListener('pointerup', () => endListSwipe(false));
+    chatList.addEventListener('pointercancel', () => endListSwipe(true));
 
     // 有新訊息（自己送的或伺服器推來的）
     function onChatUpdate(room) {
@@ -4510,8 +4579,9 @@
           });
           body.append(quote);
         }
-        body.append(buildMessageContent(m, index), el('div', 'msg-time', m.time));
-        row.append(avatar, body);
+        body.append(buildMessageContent(m, index));
+        // 時間平常不顯示，往左滑才在右邊露出來
+        row.append(avatar, body, el('span', 'msg-side-time', periodTime(m.time)));
         row.msg = m;
         return row;
       }));
@@ -5759,7 +5829,7 @@
         const row = el('button', `abs notify-row${readIds.has(n.id) ? ' is-read' : ''}`);
         row.type = 'button';
         row.style.top = `${i * ROW_HEIGHT}px`;
-        row.append(el('span', 'dot'), el('span', 'notify-title', n.title), el('span', 'notify-desc', n.desc), el('span', 'notify-time', n.time));
+        row.append(el('span', 'dot'), el('span', 'notify-title', n.title), el('span', 'notify-desc', n.desc), el('span', 'notify-time', periodTime(n.time)));
         row.addEventListener('click', () => markRead([n.id]));
         nodes.push(row);
       });
