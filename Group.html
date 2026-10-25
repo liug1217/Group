@@ -776,8 +776,7 @@
       visibility: hidden;
       transition: opacity 0.28s ease, scale 0.32s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.32s;
       will-change: translate, scale, opacity;
-      /* 外面的陰影放在沒有濾鏡的外框，才不會被鏡片裁掉 */
-      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+      /* 不要外陰影：鏡片底下的分頁列整段挖掉了，陰影會直接落在深色背景上，滑動時後面出現一塊黑黑的 */
     }
     /* 鏡片本體（有折射濾鏡）：幾乎透明，只有一圈亮邊，上緣比較亮 */
     /* 圓角裁切交給 createGlass 的 clip-path（clip: true），不用 overflow: hidden */
@@ -2332,7 +2331,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.10.4</div>
+    <div class="abs version-label t12 nowrap">ESN v1.10.5</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -2971,11 +2970,11 @@
         fit: true,
         clip: true,
         radius: LENS_H / 2,
-        // 鏡片只比一格分頁大一點：彎曲的邊要窄、折射要輕，圖示和字才不會被扭歪
-        refraction: 4,
-        bezel: 0.28,
-        curvature: 3,
-        chroma: 0,
+        // 數值跟第一版滑動玻璃（v1.5.0）一樣：折射、彎曲、色散、反光都照那時候
+        refraction: 12,
+        bezel: 0.5,
+        curvature: 4,
+        chroma: 0.15,
         specular: 0.9,
         specularWidth: 2.5,
       });
