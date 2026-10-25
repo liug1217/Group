@@ -2331,7 +2331,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.10.8</div>
+    <div class="abs version-label t12 nowrap">ESN v1.10.9</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -3042,7 +3042,7 @@
         if (label) {
           const b = box(label);
           const cs = getComputedStyle(label);
-          g.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+          g.font = `${cs.fontWeight} ${cs.fontSize} ${lensFont(cs.fontFamily)}`;
           g.fillStyle = LENS_BLUE;
           g.textAlign = 'center';
           g.textBaseline = 'middle';
@@ -3057,7 +3057,7 @@
           g.roundRect(b.x, b.y, b.w, b.h, b.h / 2);
           g.fill();
           const cs = getComputedStyle(badge);
-          g.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+          g.font = `${cs.fontWeight} ${cs.fontSize} ${lensFont(cs.fontFamily)}`;
           g.fillStyle = '#FFFFFF';
           g.textAlign = 'center';
           g.textBaseline = 'middle';
@@ -3067,7 +3067,15 @@
       lensSprite = { canvas: sprite, dpr };
     }
 
-    // 每一幀：把藍色分頁列在鏡片底下的那一塊貼到鏡片的 canvas（跟底下真的分頁列對齊）
+    // canvas 的字型：iPhone 的 canvas 不一定認得 -apple-system，認不得就會換成別的字型（看起來比較小），前面先放 system-ui
+    function lensFont(family) {
+      return `system-ui, ${family}`;
+    }
+
+    // 鏡片放大一點（以鏡片中心為準）：真的玻璃泡泡會把底下的東西放大，藍色圖示才不會看起來比外面的小
+    const LENS_ZOOM = 1.08;
+
+    // 每一幀：把藍色分頁列在鏡片底下的那一塊貼到鏡片的 canvas（跟底下真的分頁列對齊，再以鏡片中心放大 LENS_ZOOM 倍）
     function drawLensCanvas(lx, ly) {
       if (!lensSprite) return;
       const { canvas, dpr } = lensSprite;
@@ -3077,8 +3085,12 @@
         tabLensCanvas.width = w;
         tabLensCanvas.height = h;
       }
+      lensCtx.setTransform(1, 0, 0, 1, 0, 0);
       lensCtx.clearRect(0, 0, w, h);
-      lensCtx.drawImage(canvas, Math.round((lensBar.left - lx) * dpr), Math.round((lensBar.top - ly) * dpr));
+      lensCtx.translate(w / 2, h / 2);
+      lensCtx.scale(LENS_ZOOM, LENS_ZOOM);
+      lensCtx.translate(-w / 2, -h / 2);
+      lensCtx.drawImage(canvas, (lensBar.left - lx) * dpr, (lensBar.top - ly) * dpr);
     }
 
     // 鏡片位置用彈簧動畫：手指只改目標，每一幀往目標靠近，看起來順、不會一格一格跳。
@@ -3108,19 +3120,20 @@
     // 用 clip-path: path(evenodd, 外框 + 膠囊) 把底下的圖示挖掉。純幾何，當下就畫好，不會閃
     const holePos = { x: 0, y: 0 };
     let holeFrame = 0;
-    // 挖的是整條分頁列（玻璃、圓弧兩端、圖示都挖掉），鏡片裡用自己的直條底色補上（.tab-lens__band），
-    // 滑到最左最右時鏡片裡才不會看到分頁列的圓弧。外框多留 40px，分頁列外面的陰影不會被裁掉
+    // 只挖圖示那一層：鏡片底下永遠還是灰色的分頁列。不能挖整條分頁列，鏡片出現 / 消失時灰色底還是半透明，
+    // 會透出後面深色的背景，滑動時看起來一塊黑黑的陰影。分頁列兩端的圓弧由鏡片裡不透明的灰色（.tab-lens__band）蓋住。
+    // 洞的大小永遠跟鏡片現在的大小一樣（不乘透明度），不會有一圈黑色圖示露出來
     function drawHole() {
       holeFrame = 0;
-      const body = tabBar;
+      const body = tabBar.querySelector('.lg-panel__body');
+      if (!body) return;
       if (!tabBar.classList.contains('is-dragging')) {
         body.style.clipPath = '';
         body.style.webkitClipPath = '';
         return;
       }
       const cs = getComputedStyle(tabLens);
-      const scale = parseFloat(cs.scale) || 1;
-      const k = scale * (parseFloat(cs.opacity) || 0);
+      const k = (parseFloat(cs.opacity) || 0) > 0.03 ? parseFloat(cs.scale) || 1 : 0;
       if (k < 0.03) {
         body.style.clipPath = '';
         body.style.webkitClipPath = '';
@@ -3133,7 +3146,7 @@
         const x = holePos.x + (LENS_W - w) / 2;
         const y = holePos.y + (LENS_H - h) / 2;
         const f = (n) => n.toFixed(1);
-        const path = `path(evenodd, 'M-40 -40H${f(W + 40)}V${f(H + 40)}H-40Z M${f(x + r)} ${f(y)}H${f(x + w - r)}A${f(r)} ${f(r)} 0 0 1 ${f(x + w - r)} ${f(y + h)}H${f(x + r)}A${f(r)} ${f(r)} 0 0 1 ${f(x + r)} ${f(y)}Z')`;
+        const path = `path(evenodd, 'M0 0H${f(W)}V${f(H)}H0Z M${f(x + r)} ${f(y)}H${f(x + w - r)}A${f(r)} ${f(r)} 0 0 1 ${f(x + w - r)} ${f(y + h)}H${f(x + r)}A${f(r)} ${f(r)} 0 0 1 ${f(x + r)} ${f(y)}Z')`;
         body.style.clipPath = path;
         body.style.webkitClipPath = path;
       }
