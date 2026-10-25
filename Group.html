@@ -801,27 +801,16 @@
     /* 鏡片出現時，真的分頁圖示在鏡片底下挖一個洞（鏡片形狀），鏡片裡只看到藍色那一份。
        洞用 JS 算的 clip-path（path，奇偶填色）畫，不用 SVG 圖片當遮罩：
        遮罩圖片每一幀換大小 / 位置時 iPhone 要重新畫那張圖，畫好之前整排圖示會閃一下不見 */
-    /* 複本的外框跟鏡片一樣大、超出的裁掉，裡面整排分頁再用 transform 對齊底下的分頁列。
-       不能讓整排（比鏡片寬很多）露在鏡片外：iPhone（WebKit）的折射圖會照「含超出部分」的大小算，
-       滑到最左最右時超出的一邊特別長，折射圖跑掉，鏡片裡就多出一條弧線 */
-    .tab-lens__row {
-      position: absolute;
-      inset: 0;
-      overflow: hidden;
-      border-radius: inherit;
-      background: transparent;
-    }
-    .tab-lens__row .tab-lens__tabs {
+    /* 鏡片裡藍色的分頁列：用一張跟鏡片一樣大的 canvas 畫（見 drawLensCanvas）。
+       不用複製一整排分頁再移動：那樣整排會超出鏡片很多，要嘛 iPhone（WebKit）照超出的大小算折射圖（滑到兩端多一條弧線），
+       要嘛得用 overflow: hidden 裁掉，而 WebKit 的 SVG 濾鏡碰到裁切容器會畫錯。canvas 剛好鏡片大小，兩個問題都沒有 */
+    .tab-lens__canvas {
       position: absolute;
       left: 0;
       top: 0;
-      padding: 0 10px;
-      box-sizing: border-box;
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-    }
-    .tab-lens__row .tab {
-      color: rgb(0, 74, 193);
+      width: 100%;
+      height: 100%;
+      display: block;
     }
     /* 鏡片裡的分頁列底色：鏡片底下整條分頁列（含圓弧的兩端）都被挖掉，這裡補一條跟分頁列一樣的灰，
        左右跟著鏡片的圓邊、上下跟分頁列一樣高（鏡片 74、分頁列 62，上下各少 6px），滑到最左最右也不會看到圓弧。
@@ -2343,7 +2332,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.10.3</div>
+    <div class="abs version-label t12 nowrap">ESN v1.10.4</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -2717,7 +2706,7 @@
   </lg-panel>
   <!-- 按住分頁列滑動時的玻璃鏡片（像 iOS 26 / Threads）：比選取膠囊大、很透明，會折射底下的分頁；
        鏡片裡面是一份分頁列的複本（圖示是藍色），所以鏡片滑到的地方變藍、沒滑到的地方不變 -->
-  <div class="tab-lens" id="tabLens" aria-hidden="true"><div class="tab-lens__band"></div><div class="tab-lens__glass" id="tabLensGlass"><div class="tab-lens__row" id="tabLensRow"></div></div></div>
+  <div class="tab-lens" id="tabLens" aria-hidden="true"><div class="tab-lens__band"></div><div class="tab-lens__glass" id="tabLensGlass"><canvas class="tab-lens__canvas" id="tabLensCanvas"></canvas></div></div>
 
   <!-- Liquid Glass：liquidglass.dev v1.0.0（MIT，gentpan），檔案放在 assets/lib -->
   <script type="module" src="assets/lib/components.js"></script>
@@ -2963,8 +2952,10 @@
     // 所以只有鏡片底下的圖示文字變藍，其他分頁不變；放開才真的切過去。
     const tabLens = document.getElementById('tabLens');
     const tabLensGlass = document.getElementById('tabLensGlass');
-    const tabLensRow = document.getElementById('tabLensRow');
-    let lensTabs = null; // 鏡片裡那一整排分頁的複本（buildLensRow 建的）
+    const tabLensCanvas = document.getElementById('tabLensCanvas');
+    const lensCtx = tabLensCanvas.getContext('2d');
+    const LENS_BLUE = 'rgb(0, 74, 193)';
+    let lensSprite = null; // 整條分頁列的藍色版本（開始滑的時候畫一次），每一幀只把鏡片底下那一塊貼到 canvas
     // 鏡片寬度 = 一格分頁 + 16px（402 寬的手機約 84、440 寬約 92），滑到最左最右剛好在分頁列裡面；
     // 太寬的話兩端會超出分頁列，折射會拉到外面的空白，頭像被拉得很大、邊緣破掉
     let LENS_W = 106;
@@ -2990,23 +2981,105 @@
       });
     }
 
-    // 鏡片裡的分頁列複本：大小、排法跟真的一樣（頭像會換人，所以每次滑都重做）
-    function buildLensRow() {
+    // 分頁圖示（遮罩用的 SVG）先載好，開始滑的時候才畫得出來
+    const lensIcons = new Map();
+    function lensIcon(node) {
+      const url = node.style.getPropertyValue('--icon').match(/url\((.*)\)/)?.[1];
+      if (!url) return null;
+      if (!lensIcons.has(url)) {
+        const img = new Image();
+        img.src = url;
+        lensIcons.set(url, img);
+      }
+      return lensIcons.get(url);
+    }
+    tabs.forEach((tab) => { const icon = tab.querySelector('.tab-icon'); if (icon) lensIcon(icon); });
+
+    // 把整條分頁列畫成藍色的一張圖：圖示、文字、頭像、紅點都照真的分頁現在的位置量（頭像會換人、紅點會變，所以每次滑都重畫）
+    function buildLensSprite() {
       const bar = tabBar.getBoundingClientRect();
-      const row = el('div', 'tab-lens__tabs');
+      const dpr = Math.min(3, window.devicePixelRatio || 1);
+      const sprite = document.createElement('canvas');
+      sprite.width = Math.round(bar.width * dpr);
+      sprite.height = Math.round(bar.height * dpr);
+      const g = sprite.getContext('2d');
+      g.scale(dpr, dpr);
+      const box = (node) => {
+        const r = node.getBoundingClientRect();
+        return { x: r.left - bar.left, y: r.top - bar.top, w: r.width, h: r.height };
+      };
+      const paint = document.createElement('canvas');
+      const pg = paint.getContext('2d');
       tabs.forEach((tab) => {
-        const copy = tab.cloneNode(true);
-        copy.classList.remove('is-active');
-        copy.removeAttribute('data-target');
-        copy.tabIndex = -1;
-        copy.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'));
+        const icon = tab.querySelector('.tab-icon');
+        const img = icon && lensIcon(icon);
+        if (img && img.complete) {
+          // 圖示：畫進小 canvas 再整個塗成藍色（source-in），跟遮罩 + 藍底色一樣
+          const b = box(icon);
+          paint.width = Math.max(1, Math.round(b.w * dpr));
+          paint.height = Math.max(1, Math.round(b.h * dpr));
+          pg.globalCompositeOperation = 'source-over';
+          pg.drawImage(img, 0, 0, paint.width, paint.height);
+          pg.globalCompositeOperation = 'source-in';
+          pg.fillStyle = LENS_BLUE;
+          pg.fillRect(0, 0, paint.width, paint.height);
+          g.drawImage(paint, b.x, b.y, b.w, b.h);
+        }
+        const avatar = tab.querySelector('.tab-avatar');
+        if (avatar && avatar.complete && avatar.naturalWidth) {
+          // 頭像：圓形、object-fit: cover
+          const b = box(avatar);
+          const k = Math.max(b.w / avatar.naturalWidth, b.h / avatar.naturalHeight);
+          const sw = b.w / k;
+          const sh = b.h / k;
+          g.save();
+          g.beginPath();
+          g.arc(b.x + b.w / 2, b.y + b.h / 2, Math.min(b.w, b.h) / 2, 0, Math.PI * 2);
+          g.clip();
+          g.drawImage(avatar, (avatar.naturalWidth - sw) / 2, (avatar.naturalHeight - sh) / 2, sw, sh, b.x, b.y, b.w, b.h);
+          g.restore();
+        }
+        const label = tab.querySelector('span');
+        if (label) {
+          const b = box(label);
+          const cs = getComputedStyle(label);
+          g.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+          g.fillStyle = LENS_BLUE;
+          g.textAlign = 'center';
+          g.textBaseline = 'middle';
+          g.fillText(label.textContent, b.x + b.w / 2, b.y + b.h / 2);
+        }
         // 紅點要留著：鏡片滑過「通知」「聊天」時，紅點才不會不見
-        row.append(copy);
+        const badge = tab.querySelector('.tab-badge');
+        if (badge && !badge.hidden && badge.offsetWidth) {
+          const b = box(badge);
+          g.fillStyle = '#E5484D';
+          g.beginPath();
+          g.roundRect(b.x, b.y, b.w, b.h, b.h / 2);
+          g.fill();
+          const cs = getComputedStyle(badge);
+          g.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+          g.fillStyle = '#FFFFFF';
+          g.textAlign = 'center';
+          g.textBaseline = 'middle';
+          g.fillText(badge.textContent, b.x + b.w / 2, b.y + b.h / 2 + 0.5);
+        }
       });
-      row.style.width = `${bar.width}px`;
-      row.style.height = `${bar.height}px`;
-      tabLensRow.replaceChildren(row);
-      lensTabs = row;
+      lensSprite = { canvas: sprite, dpr };
+    }
+
+    // 每一幀：把藍色分頁列在鏡片底下的那一塊貼到鏡片的 canvas（跟底下真的分頁列對齊）
+    function drawLensCanvas(lx, ly) {
+      if (!lensSprite) return;
+      const { canvas, dpr } = lensSprite;
+      const w = Math.round(LENS_W * dpr);
+      const h = Math.round(LENS_H * dpr);
+      if (tabLensCanvas.width !== w || tabLensCanvas.height !== h) {
+        tabLensCanvas.width = w;
+        tabLensCanvas.height = h;
+      }
+      lensCtx.clearRect(0, 0, w, h);
+      lensCtx.drawImage(canvas, Math.round((lensBar.left - lx) * dpr), Math.round((lensBar.top - ly) * dpr));
     }
 
     // 鏡片位置用彈簧動畫：手指只改目標，每一幀往目標靠近，看起來順、不會一格一格跳。
@@ -3025,9 +3098,8 @@
       // 用 translate（不是 transform）：scale 才會以鏡片自己的中心縮放。
       // 用 transform 的話縮放中心在螢幕左上角，鏡片縮小時會往上飄
       tabLens.style.translate = `${lx}px ${ly}px`;
-      // 複本反方向移，跟底下真的分頁列對齊
-      // 鏡片裡面用一般 2D 移動（不要 translate3d / will-change 另開圖層，WebKit 的濾鏡碰到會畫錯）
-      if (lensTabs) lensTabs.style.transform = `translate(${lensBar.left - lx}px, ${lensBar.top - ly}px)`;
+      // 鏡片裡的藍色分頁列：跟底下真的分頁列對齊
+      drawLensCanvas(lx, ly);
       // 底下真的分頁圖示挖洞的位置（相對分頁列）
       holePos.x = lx - lensBar.left;
       holePos.y = ly - lensBar.top;
@@ -3138,7 +3210,7 @@
       ensureLensGlass();
       lensBar = tabBar.getBoundingClientRect();
       sizeLens();
-      buildLensRow();
+      buildLensSprite();
       lensTo(tabCenter(indexAt(clientX)), true);
       tabBar.classList.add('is-dragging');
       tabLens.classList.add('is-on');
