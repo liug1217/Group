@@ -811,17 +811,6 @@
       height: 100%;
       display: block;
     }
-    /* 鏡片裡的分頁列底色：整個鏡片都是跟分頁列一樣的灰。鏡片底下整條分頁列（含圓弧的兩端）都被挖掉，
-       滑到最左最右時鏡片裡不會看到分頁列的圓弧。
-       上下也要蓋滿：鏡片（74）比分頁列（62）高，上下各 6px 如果透明，會看到後面深色的背景，滑動時像一圈黑黑的陰影。
-       放在玻璃（有折射濾鏡）的外面、下面：不會被折射，鏡片的亮邊和折射都跟原本一樣。
-       不透明：分頁列的玻璃折射的是主頁底部的深色背景，看起來就是這個灰（截圖量的 144） */
-    .tab-lens__band {
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      background: rgb(144, 144, 144);
-    }
 
     /* 其他按鈕：按下去放大、放開彈回來（iOS 26 玻璃按鈕的感覺）。用獨立的 scale，不會蓋掉原本的 transform；
        整排的列表（聊天室、通知、選成員）放大少一點 */
@@ -2346,6 +2335,21 @@
     .tab-badge[hidden] {
       display: none;
     }
+    /* 滑動玻璃的時候，紅點一律在玻璃上面、原本的大小（不被放大、不被圖示或玻璃擋到）：
+       真的紅點先藏起來，在玻璃上面那一層放一份一樣位置的 */
+    .tab-badge-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 12;
+      pointer-events: none;
+    }
+    .tab-badge-layer .tab-badge {
+      position: fixed;
+      margin: 0;
+    }
+    .tab-bar.is-dragging .tab-badge {
+      visibility: hidden;
+    }
 
     /* ---------- 我的 ---------- */
     .me-card {
@@ -2464,7 +2468,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.12.0</div>
+    <div class="abs version-label t12 nowrap">ESN v1.12.1</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -2843,7 +2847,8 @@
   </lg-panel>
   <!-- 按住分頁列滑動時的玻璃鏡片（像 iOS 26 / Threads）：比選取膠囊大、很透明，會折射底下的分頁；
        鏡片裡面是一份分頁列的複本（圖示是藍色），所以鏡片滑到的地方變藍、沒滑到的地方不變 -->
-  <div class="tab-lens" id="tabLens" aria-hidden="true"><div class="tab-lens__band"></div><div class="tab-lens__glass" id="tabLensGlass"><canvas class="tab-lens__canvas" id="tabLensCanvas"></canvas></div></div>
+  <div class="tab-badge-layer" id="tabBadgeLayer" aria-hidden="true"></div>
+  <div class="tab-lens" id="tabLens" aria-hidden="true"><div class="tab-lens__glass" id="tabLensGlass"><canvas class="tab-lens__canvas" id="tabLensCanvas"></canvas></div></div>
 
   <!-- Liquid Glass：liquidglass.dev v1.0.0（MIT，gentpan），檔案放在 assets/lib -->
   <script type="module" src="assets/lib/components.js"></script>
@@ -3112,7 +3117,7 @@
         refraction: 12,
         bezel: 0.5,
         curvature: 4,
-        chroma: 0.15,
+        chroma: 0, // 不要色散：色散會把藍色圖示拆成三份錯開，紅色那份變黑，滑動時看起來藍黑疊在一起
         specular: 0.9,
         specularWidth: 2.5,
       });
@@ -3186,21 +3191,7 @@
           g.textBaseline = 'middle';
           g.fillText(label.textContent, b.x + b.w / 2, b.y + b.h / 2);
         }
-        // 紅點要留著：鏡片滑過「通知」「聊天」時，紅點才不會不見
-        const badge = tab.querySelector('.tab-badge');
-        if (badge && !badge.hidden && badge.offsetWidth) {
-          const b = box(badge);
-          g.fillStyle = '#E5484D';
-          g.beginPath();
-          g.roundRect(b.x, b.y, b.w, b.h, b.h / 2);
-          g.fill();
-          const cs = getComputedStyle(badge);
-          g.font = `${cs.fontWeight} ${cs.fontSize} ${lensFont(cs.fontFamily)}`;
-          g.fillStyle = '#FFFFFF';
-          g.textAlign = 'center';
-          g.textBaseline = 'middle';
-          g.fillText(badge.textContent, b.x + b.w / 2, b.y + b.h / 2 + 0.5);
-        }
+        // 紅點不畫進鏡片（不放大），另外放在鏡片上面一層（見 showBadgeLayer）
       });
       lensSprite = { canvas: sprite, dpr };
     }
@@ -3259,7 +3250,7 @@
     const holePos = { x: 0, y: 0 };
     let holeFrame = 0;
     // 只挖圖示那一層：鏡片底下永遠還是灰色的分頁列。不能挖整條分頁列，鏡片出現 / 消失時灰色底還是半透明，
-    // 會透出後面深色的背景，滑動時看起來一塊黑黑的陰影。分頁列兩端的圓弧由鏡片裡不透明的灰色（.tab-lens__band）蓋住。
+    // 會透出後面深色的背景，滑動時看起來一塊黑黑的陰影。鏡片本身是透明的，上下看得到背景。
     // 洞的大小永遠跟鏡片現在的大小一樣（不乘透明度），不會有一圈黑色圖示露出來
     function drawHole() {
       holeFrame = 0;
@@ -3354,6 +3345,21 @@
     let dragging = false;
     let lensTimer = 0;
 
+    // 紅點放到玻璃上面那一層：照真的紅點現在的位置、大小各放一份
+    const tabBadgeLayer = document.getElementById('tabBadgeLayer');
+    function showBadgeLayer() {
+      tabBadgeLayer.replaceChildren(...[...tabBar.querySelectorAll('.tab-badge')]
+        .filter((badge) => !badge.hidden && badge.offsetWidth)
+        .map((badge) => {
+          const r = badge.getBoundingClientRect();
+          const copy = badge.cloneNode(true);
+          copy.removeAttribute('id');
+          copy.style.left = `${r.left}px`;
+          copy.style.top = `${r.top}px`;
+          return copy;
+        }));
+    }
+
     function showLens(clientX) {
       clearTimeout(lensTimer);
       clearTimeout(lensDoneTimer);
@@ -3361,6 +3367,7 @@
       lensBar = tabBar.getBoundingClientRect();
       sizeLens();
       buildLensSprite();
+      showBadgeLayer();
       lensTo(tabCenter(indexAt(clientX)), true);
       tabBar.classList.add('is-dragging');
       tabLens.classList.add('is-on');
@@ -3379,7 +3386,9 @@
       lensTimer = setTimeout(() => {
         tabLens.classList.remove('is-on');
         lensDoneTimer = setTimeout(() => {
-          if (!tabLens.classList.contains('is-on')) tabBar.classList.remove('is-dragging');
+          if (tabLens.classList.contains('is-on')) return;
+          tabBar.classList.remove('is-dragging');
+          tabBadgeLayer.replaceChildren();
         }, 340);
       }, delay);
     }
