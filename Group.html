@@ -2383,6 +2383,200 @@
       top: calc(477px + var(--safe-top));
       height: 152px;
     }
+    .setting-link {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 15px;
+      text-align: left;
+      cursor: pointer;
+      padding: 0;
+    }
+    .setting-chevron {
+      font-size: 22px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .chat-add {
+      top: calc(30px + var(--safe-top));
+      right: 8px;
+    }
+    .chat-add[hidden] {
+      display: none;
+    }
+    .reg-at {
+      left: 22px;
+      top: 50%;
+      translate: 0 -50%;
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    /* ---------- 底部彈出的面板（加好友、建群組、帳號設定） ---------- */
+    .esn-sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .esn-sheet-backdrop.is-open {
+      opacity: 1;
+    }
+    .esn-sheet {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 501;
+      max-height: 86vh;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 10px 20px calc(24px + var(--safe-bottom));
+      border-radius: 28px 28px 0 0;
+      background: rgba(34, 34, 34, 0.97);
+      -webkit-backdrop-filter: blur(24px);
+      backdrop-filter: blur(24px);
+      box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.45), inset 0 0.5px 0 rgba(255, 255, 255, 0.2);
+      color: #FFFFFF;
+      translate: 0 100%;
+      transition: translate 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .esn-sheet.is-open {
+      translate: 0 0;
+    }
+    .esn-sheet-grip {
+      width: 40px;
+      height: 5px;
+      margin: 0 auto 10px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.3);
+    }
+    .esn-sheet h3 {
+      margin: 0 0 6px;
+      font-size: 17px;
+      font-weight: 600;
+      text-align: center;
+    }
+    .esn-sec {
+      margin: 18px 4px 6px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .esn-input {
+      width: 100%;
+      height: 44px;
+      box-sizing: border-box;
+      padding: 0 16px;
+      border: 0;
+      border-radius: 22px;
+      outline: none;
+      background: rgba(255, 255, 255, 0.1);
+      color: #FFFFFF;
+      font: inherit;
+      font-size: 15px;
+    }
+    .esn-input::placeholder {
+      color: rgba(255, 255, 255, 0.45);
+    }
+    .esn-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+    }
+    .esn-btn {
+      flex: none;
+      height: 44px;
+      padding: 0 20px;
+      border: 0;
+      border-radius: 999px;
+      background: #2949CB;
+      color: #FFFFFF;
+      font: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .esn-btn:disabled {
+      opacity: 0.5;
+    }
+    .esn-btn.is-ghost {
+      background: rgba(255, 255, 255, 0.12);
+    }
+    .esn-btn.is-wide {
+      width: 100%;
+    }
+    .esn-myid {
+      margin: 6px 0 0;
+      text-align: center;
+      font-size: 15px;
+    }
+    .esn-myid b {
+      color: #9DBBFF;
+    }
+    .esn-qr {
+      width: 184px;
+      height: 184px;
+      margin: 10px auto 4px;
+      padding: 12px;
+      box-sizing: border-box;
+      border-radius: 20px;
+      background: #FFFFFF;
+    }
+    .esn-qr img {
+      display: block;
+      width: 160px;
+      height: 160px;
+      image-rendering: pixelated;
+    }
+    .esn-hint {
+      text-align: center;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.55);
+    }
+    .esn-scan video {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 18px;
+      background: #000000;
+    }
+    .esn-check {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 4px;
+      font-size: 15px;
+    }
+    .esn-check img {
+      width: 34px;
+      height: 34px;
+      border-radius: 17px;
+      object-fit: cover;
+    }
+    .esn-check span {
+      flex: 1;
+    }
+    .esn-check input {
+      width: 22px;
+      height: 22px;
+      accent-color: #2949CB;
+    }
+    .esn-avatar {
+      display: block;
+      width: 84px;
+      height: 84px;
+      margin: 6px auto 2px;
+      border: 0;
+      border-radius: 42px;
+      padding: 0;
+      background: center / cover no-repeat;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+      cursor: pointer;
+    }
     .setting-row {
       left: 20px;
       right: 20px;
@@ -2459,7 +2653,7 @@
     <!-- 原本的帳號 / 密碼（打成員名字或 Roblox 帳號，上面會自動選好那個人） -->
     <lg-panel class="field field-account glass" radius="25">
       <img class="abs icon-user" src="assets/icon-user.svg" alt="">
-      <input type="text" id="accountInput" placeholder="帳號" aria-label="帳號" autocomplete="username">
+      <input type="text" id="accountInput" placeholder="ID" aria-label="ID" autocomplete="username" autocapitalize="off" spellcheck="false">
     </lg-panel>
     <lg-panel class="field field-password glass" radius="25">
       <img class="abs icon-lock" src="assets/icon-lock.svg" alt="">
@@ -2468,7 +2662,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.12.1</div>
+    <div class="abs version-label t12 nowrap">ESN v1.13.0</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -2500,8 +2694,12 @@
         <input type="text" id="regName" placeholder="名稱" aria-label="名稱" maxlength="20" autocomplete="off">
       </lg-panel>
       <lg-panel class="reg-field glass" radius="25">
+        <span class="abs reg-at">@</span>
+        <input type="text" id="regHandle" placeholder="ID（可不填，不填會自動產生）" aria-label="ID" maxlength="20" autocomplete="off" autocapitalize="off" spellcheck="false">
+      </lg-panel>
+      <lg-panel class="reg-field glass" radius="25">
         <img class="abs icon-lock" src="assets/icon-lock.svg" alt="">
-        <input type="password" id="regPassword" placeholder="密碼" aria-label="密碼" autocomplete="new-password">
+        <input type="password" id="regPassword" placeholder="密碼（至少 4 個字）" aria-label="密碼" autocomplete="new-password">
         <button class="eye-button" id="regEye" type="button" aria-label="顯示密碼">
           <img src="assets/icon-eye.svg" alt="">
         </button>
@@ -2509,7 +2707,7 @@
       <lg-panel class="reg-submit glass" radius="25">
         <button id="regSubmit" type="button">建立帳號</button>
       </lg-panel>
-      <div class="reg-note">目前先做介面，之後才會開放註冊</div>
+      <div class="reg-note">註冊後在別的裝置也能用 ID + 密碼登入</div>
     </div>
     <input type="file" id="regAvatarInput" accept="image/*" hidden>
   </section>
@@ -2706,6 +2904,10 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
       <div class="abs page-title center-x t20 nowrap text-shadow" id="chatTitle">聊天</div>
+      <!-- 聊天列表右上角：加好友（ID / QR Code）、建立群組 -->
+      <button class="abs page-action chat-add" id="chatAddBtn" type="button" aria-label="加好友或建立群組">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+      </button>
       <!-- 聊天室右上角：語音通話、視訊通話 -->
       <div class="abs page-actions" id="chatActions" hidden>
         <button class="page-action" id="voiceCallBtn" type="button" aria-label="語音通話">
@@ -2786,6 +2988,10 @@
   <section class="screen screen-me is-hidden" id="meScreen" data-lg-backdrop="">
     <lg-panel class="page-header glass shadow" radius="0">
       <div class="abs page-title center-x t20 nowrap text-shadow">我的</div>
+      <!-- 帳號設定：名稱、ID、密碼、頭像 -->
+      <button class="abs page-action chat-add" id="accountBtn" type="button" aria-label="帳號設定">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
     </lg-panel>
     <!-- 跟主頁的團長卡片一樣：頭像、名字、帳號、等級，右邊個人簡介，右上角身分標籤 -->
     <lg-panel class="card glass me-card" radius="35">
@@ -3059,11 +3265,32 @@
 
     }
 
-    document.getElementById('loginButton').addEventListener('click', () => {
-      if (!pickedMember) return;
-      setMe(pickedMember);
+    function enterApp() {
       showScreen('homeScreen');
       placePill(activeIndex);
+    }
+    document.getElementById('loginButton').addEventListener('click', async () => {
+      const handle = accountInput.value.trim();
+      const password = passwordInput.value;
+      if (!pickedMember && !(handle && password)) return;
+      // 沒有伺服器（直接開檔案）：照舊選人就進去
+      if (chatBase() === null) {
+        if (!pickedMember) return;
+        setMe(pickedMember);
+        enterApp();
+        return;
+      }
+      loginButtonEl.disabled = true;
+      try {
+        // 原本的成員：點頭像登入（還沒設密碼不用打密碼）；其他人：ID + 密碼
+        const data = await accountApi('login', pickedMember ? { legacy: pickedMember.id, password } : { handle, password });
+        passwordInput.value = '';
+        onLoggedIn(data);
+      } catch (error) {
+        toast(error.message || '登入失敗', 3000);
+      } finally {
+        updateLoginButton();
+      }
     });
 
     // ---------- 底部分頁：點擊或左右滑動 ----------
@@ -3484,12 +3711,25 @@
     };
     // 成員（跟主頁排名表一樣）；登入時選自己是哪一個
     const MEMBERS = [
-      { id: 'fan', name: '帆～', roblox: 'Bi_wuda0823', level: 180, avatar: 'assets/member-5.jpg', tag: '群主' },
+      { id: 'fan', name: '帆～', roblox: 'Bi_wuda0823', level: 180, avatar: 'assets/member-5.jpg' },
       { id: 'zhang', name: '張 O 寧', roblox: 'Bi_VIP1124', level: 159, avatar: 'assets/member-2.jpg' },
       { id: 'liu', name: '劉 O 佑', roblox: 'Bi_liug1217', level: 87, avatar: 'assets/member-3.jpg' },
       { id: 'si', name: '劉思妤', roblox: 'Bi_Robbyg309bbb', level: 128, avatar: 'assets/member-4.jpg' },
     ];
-    const memberById = (id) => MEMBERS.find((m) => m.id === id);
+    const LEGACY_IDS = new Set(MEMBERS.map((m) => m.id));
+    // 伺服器給的名單（自己、好友、群組成員；原本的 4 個人互相看得到）：id → { id, name, roblox（ID）, avatar, level }
+    const USERS = new Map();
+    let MY_FRIENDS = [];
+    let MY_GROUPS = []; // [{ room: 'g:xxx', name, members, owner }]
+    let MY_ACCOUNT = null; // { legacy, hasPassword }
+    let TOKEN = store.get('token', ''); // 登入碼：每個請求都帶著，伺服器才知道是誰
+    const memberById = (id) => {
+      if (USERS.has(id)) return USERS.get(id);
+      const legacy = MEMBERS.find((m) => m.id === id);
+      if (legacy) return legacy;
+      const saved = store.get('meProfile', null);
+      return saved && saved.id === id ? saved : undefined;
+    };
     let ME = memberById(store.get('me', '')) || null;
     let pickedMember = ME;
     const nowTime = () => new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -3521,7 +3761,12 @@
         });
         return item;
       }));
-      loginButtonEl.disabled = !pickedMember;
+      updateLoginButton();
+    }
+    // 登入鈕：點了原本成員的頭像，或打了 ID + 密碼才能按
+    function updateLoginButton() {
+      const typed = document.getElementById('accountInput').value.trim();
+      loginButtonEl.disabled = !(pickedMember || (typed && document.getElementById('passwordInput').value));
     }
     renderPicker();
 
@@ -3535,15 +3780,21 @@
       if (match && match !== pickedMember) {
         pickedMember = match;
         renderPicker();
+      } else if (!match && pickedMember) {
+        pickedMember = null; // 打的是別的 ID（註冊的帳號）：不選原本的成員
+        renderPicker();
       }
+      updateLoginButton();
     });
     const passwordInput = document.getElementById('passwordInput');
+    passwordInput.addEventListener('input', updateLoginButton);
     document.getElementById('eyeButton').addEventListener('click', () => {
       passwordInput.type = passwordInput.type === 'password' ? 'text' : 'password';
     });
 
-    // ----- 註冊畫面（目前只做介面，不存任何東西；密碼不管有沒有打都不會被存起來） -----
+    // ----- 註冊：名稱、ID（可不填）、密碼、頭像 → 伺服器建立帳號，直接登入 -----
     const regName = document.getElementById('regName');
+    const regHandle = document.getElementById('regHandle');
     const regPassword = document.getElementById('regPassword');
     const regAvatarBtn = document.getElementById('regAvatarBtn');
     const regAvatarImg = document.getElementById('regAvatarImg');
@@ -3551,6 +3802,7 @@
     let regAvatarUrl = '';
     function resetRegister() {
       regName.value = '';
+      regHandle.value = '';
       regPassword.value = '';
       regPassword.type = 'password';
       regAvatarInput.value = '';
@@ -3574,15 +3826,32 @@
       const file = regAvatarInput.files && regAvatarInput.files[0];
       if (!file) return;
       if (regAvatarUrl) URL.revokeObjectURL(regAvatarUrl);
-      regAvatarUrl = URL.createObjectURL(file); // 只在畫面上預覽，不會上傳也不會存
+      regAvatarUrl = URL.createObjectURL(file); // 先預覽，按「建立帳號」才上傳
       regAvatarImg.src = regAvatarUrl;
       regAvatarBtn.classList.add('has-img');
     });
-    document.getElementById('regSubmit').addEventListener('click', () => {
-      // 之後才會真的建立帳號；現在只是回到登入畫面，什麼都不存
-      resetRegister();
-      showScreen('loginScreen');
-      toast('註冊功能即將開放，敬請期待～');
+    document.getElementById('regSubmit').addEventListener('click', async () => {
+      const name = regName.value.trim();
+      const handle = regHandle.value.trim();
+      const password = regPassword.value;
+      if (!name) { toast('請輸入名稱'); return; }
+      if (handle && !/^[A-Za-z0-9_.]{3,20}$/.test(handle)) { toast('ID 只能用英文、數字、底線、點，3～20 個字', 3000); return; }
+      if (password.length < 4) { toast('密碼至少 4 個字'); return; }
+      if (chatBase() === null) { toast('要連到聊天伺服器才能註冊'); return; }
+      const btn = document.getElementById('regSubmit');
+      btn.disabled = true;
+      try {
+        const file = regAvatarInput.files && regAvatarInput.files[0];
+        const avatar = file ? await uploadImage(file) : '';
+        const data = await accountApi('register', { name, handle, password, avatar });
+        resetRegister();
+        onLoggedIn(data);
+        toast(`註冊成功！你的 ID 是 ${data.user.handle}`, 3500);
+      } catch (error) {
+        toast(error.message || '註冊失敗', 3000);
+      } finally {
+        btn.disabled = false;
+      }
     });
 
     // 登入後：「我的」頁、分頁列頭像、聊天都換成這個人
@@ -3592,12 +3861,12 @@
       document.getElementById('meAvatar').src = member.avatar;
       document.getElementById('meName').textContent = member.name;
       document.getElementById('meRoblox').textContent = member.roblox;
-      document.getElementById('meLevel').textContent = String(member.level);
-      document.getElementById('meRole').textContent = member.tag === '群主' ? '團長' : '成員';
+      document.getElementById('meLevel').textContent = member.level != null ? String(member.level) : '—';
+      document.getElementById('meRole').textContent = '成員';
       document.getElementById('tabAvatar').src = member.avatar;
       renderThreadList();
       // 換人登入：即時通道用新的身分重連；推播訂閱也換成這個人
-      if (chat.online && chat.eventsMe !== member.id) chat.init();
+      if (chat.online && chat.eventsMe !== member.id && !chat.initing) chat.init();
       setTimeout(() => pushRefresh(), 0); // 等整頁程式都跑完（推播那段在後面）
     }
 
@@ -3620,23 +3889,138 @@
       }
       return '';
     };
-    const GROUP_DEFAULT = [
-      { from: 'fan', text: '歡迎加入 ★Bi_藍冰團★！', time: '20:01' },
-      { from: 'fan', text: '週六團戰練習大家記得上線', time: '20:03' },
-      { from: 'si', text: '收到～', time: '20:05' },
-    ];
+    // 聊天紀錄都在伺服器上（已清空過一次），不再放範例訊息
+    const GROUP_DEFAULT = [];
+    // 帶上「我是誰」：登入碼（新帳號）＋ 成員 id（舊版伺服器 / 原本的成員）
+    const authQuery = () => `token=${encodeURIComponent(TOKEN)}&me=${encodeURIComponent(ME?.id || '')}`;
+    const withAuth = (body) => ({ ...body, token: TOKEN, from: ME?.id });
+
+    // 帳號相關的請求：register / login / logout / account / friends / groups
+    async function accountApi(path, body) {
+      const base = chat.base ?? chatBase();
+      if (base === null) throw new Error('要連到聊天伺服器才能使用');
+      let res;
+      try {
+        res = await fetch(`${base}/api/${path}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(path === 'register' || path === 'login' ? body : withAuth(body)),
+        });
+      } catch {
+        throw new Error('連不到聊天伺服器');
+      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const error = new Error(data.error || '失敗了，請再試一次');
+        error.status = res.status;
+        error.needPassword = data.needPassword;
+        throw error;
+      }
+      return data;
+    }
+    // 上傳圖片（頭像用），回傳伺服器存好的檔名
+    async function uploadImage(file) {
+      const base = chat.base ?? chatBase();
+      const blob = await shrinkImage(file);
+      const res = await fetch(`${base}/api/upload`, { method: 'POST', body: blob });
+      if (!res.ok) throw new Error('頭像上傳失敗');
+      return (await res.json()).src;
+    }
+    function avatarSrc(avatar) {
+      if (!avatar) return 'assets/group-avatar.jpg';
+      return avatar.startsWith('assets/') ? avatar : mediaUrl(avatar);
+    }
+    function toMember(u) {
+      const legacy = MEMBERS.find((m) => m.id === u.id);
+      return { id: u.id, name: u.name, roblox: u.handle, avatar: avatarSrc(u.avatar), level: legacy ? legacy.level : null };
+    }
+    // 伺服器給的「我是誰、認識誰、在哪些群組」
+    function applyDirectory(data) {
+      USERS.clear();
+      (data.users || []).forEach((u) => USERS.set(u.id, toMember(u)));
+      MY_FRIENDS = data.user.friends || [];
+      MY_GROUPS = data.groups || [];
+      MY_ACCOUNT = { legacy: !!data.user.legacy, hasPassword: !!data.user.hasPassword };
+      const me = USERS.get(data.user.id) || toMember(data.user);
+      store.set('meProfile', me);
+      setMe(me);
+      if (pendingAdd) {
+        const handle = pendingAdd;
+        pendingAdd = '';
+        addFriend(handle);
+      }
+    }
+    function onLoggedIn(data) {
+      TOKEN = data.token;
+      store.set('token', TOKEN);
+      applyDirectory(data);
+      enterApp();
+      if (!chat.initing) chat.init(); // 即時通道用新的登入碼重連
+    }
+    // 登出（或登入碼失效）：回到登入畫面，這支手機不再記得是誰
+    function logoutLocal(message) {
+      TOKEN = '';
+      store.set('token', '');
+      store.set('me', '');
+      store.set('meProfile', null);
+      ME = null;
+      pickedMember = null;
+      USERS.clear();
+      MY_FRIENDS = [];
+      MY_GROUPS = [];
+      MY_ACCOUNT = null;
+      accountInput.value = '';
+      renderPicker();
+      chat.events?.close();
+      chat.events = null;
+      selectTab(0);
+      showScreen('loginScreen');
+      if (message) toast(message, 3000);
+    }
+    // QR Code 掃到 / 網址帶 #add=ID：登入後自動加好友
+    let pendingAdd = '';
+    {
+      const match = location.hash.match(/^#add=([^&]+)/);
+      if (match) {
+        pendingAdd = decodeURIComponent(match[1]);
+        history.replaceState(null, '', location.pathname + location.search);
+      }
+    }
     const dmRoom = (a, b) => `dm:${[a, b].sort().join('-')}`;
     const chat = {
       online: false,
       rooms: {},
       retrying: false,
       async loadRooms() {
-        this.rooms = await (await fetch(`${this.base}/api/messages`, { cache: 'no-store' })).json();
+        this.rooms = await (await fetch(`${this.base}/api/messages?${authQuery()}`, { cache: 'no-store' })).json();
+      },
+      // 原本的成員還沒有登入碼（舊版網頁登入的）：自動換一個；設了密碼的就要重新登入
+      async ensureLogin() {
+        if (!ME || TOKEN || !LEGACY_IDS.has(ME.id)) return;
+        try {
+          const data = await accountApi('login', { legacy: ME.id });
+          TOKEN = data.token;
+          store.set('token', TOKEN);
+        } catch (error) {
+          if (error.status === 401) logoutLocal('這個帳號設了密碼，請輸入密碼登入');
+        }
+      },
+      // 名單：自己、好友、群組
+      async loadMe() {
+        if (!ME) return;
+        const res = await fetch(`${this.base}/api/me?${authQuery()}`, { cache: 'no-store' });
+        if (res.status === 401) {
+          logoutLocal('登入已失效，請重新登入');
+          return;
+        }
+        if (res.ok) applyDirectory(await res.json());
       },
       async init() {
+        this.initing = true; // 登入時 setMe 和 onLoggedIn 都會叫，同時只跑一次
         const base = chatBase();
         if (base === null) {
           updateChatStatus('local');
+          this.initing = false;
           this.ready = true;
           renderThreadList();
           return;
@@ -3645,12 +4029,14 @@
         try {
           const ping = await fetch(`${base}/api/ping`, { cache: 'no-store' });
           if (!ping.ok) throw new Error(`ping ${ping.status}`);
+          await this.ensureLogin();
+          await this.loadMe();
           await this.loadRooms();
           this.online = true;
           this.retrying = false;
           // 連線時告訴伺服器「我是誰」：開著網頁的人，伺服器就不再推播通知給他
           this.events?.close();
-          const events = new EventSource(`${base}/api/events${ME ? `?me=${encodeURIComponent(ME.id)}` : ''}`);
+          const events = new EventSource(`${base}/api/events?${authQuery()}`);
           this.events = events;
           this.eventsMe = ME?.id || '';
           this.paused = false;
@@ -3660,6 +4046,11 @@
             // 通話訊號（響鈴、接聽、連線資料）交給通話
             if (payload.signal) {
               onCallSignal(payload.signal);
+              return;
+            }
+            // 有人加我好友、拉我進群組、改了名字頭像：重新抓名單
+            if (payload.directory) {
+              this.loadMe().catch(() => {});
               return;
             }
             const { room, msg } = payload;
@@ -3698,6 +4089,7 @@
             }, 10000);
           }
         }
+        this.initing = false;
         this.ready = true; // 訊息載好了，才開始算未讀（不然第一次載入會把舊訊息全算成未讀）
         renderThreadList();
       },
@@ -3711,7 +4103,7 @@
         const res = await fetch(`${this.base}/api/signal`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ from: ME.id, to, type, call: callId, data: data ?? null }),
+          body: JSON.stringify(withAuth({ to, type, call: callId, data: data ?? null })),
         });
         if (!res.ok) throw new Error(`signal failed: ${res.status}`);
       },
@@ -3721,7 +4113,7 @@
           const res = await fetch(`${this.base}/api/messages`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ room, from: ME.id, ...payload }),
+            body: JSON.stringify(withAuth({ room, ...payload })),
           });
           if (!res.ok) throw new Error(`send failed: ${res.status}`);
           const msg = await res.json();
@@ -3783,19 +4175,23 @@
     // 連線狀態不顯示文字（背景照樣會自動重連；連不到時訊息不會偷偷只存在手機，打的字會留著）
     function updateChatStatus() {}
 
+    // 聊天列表：原本的 4 個成員有藍冰團群組和彼此；每個人都有自己建的群組和加的好友（新帳號不會自動有這些人）
     function threads() {
-      const list = [{ room: 'group', name: '★Bi_藍冰團★《Roblox》', avatar: 'assets/group-avatar.jpg', defaults: GROUP_DEFAULT }];
-      MEMBERS.filter((m) => m.id !== ME?.id).forEach((m) => {
-        list.push({
-          room: dmRoom(ME?.id || 'guest', m.id),
-          name: m.name,
-          tag: m.tag,
-          avatar: m.avatar,
-          defaults: m.id === 'fan' ? [{ from: 'fan', text: '有任何問題都可以問我～', time: '19:40' }] : [],
-        });
+      if (!ME) return [];
+      const legacy = LEGACY_IDS.has(ME.id);
+      const list = [];
+      if (legacy) list.push({ room: 'group', name: '★Bi_藍冰團★《Roblox》', avatar: 'assets/group-avatar.jpg', defaults: GROUP_DEFAULT });
+      MY_GROUPS.forEach((g) => list.push({ room: g.room, name: g.name, avatar: 'assets/group-avatar.jpg', defaults: [], group: g }));
+      const people = new Set([...(legacy ? MEMBERS.map((m) => m.id) : []), ...MY_FRIENDS]);
+      people.delete(ME.id);
+      people.forEach((id) => {
+        const m = memberById(id);
+        if (!m) return;
+        list.push({ room: dmRoom(ME.id, id), name: m.name, avatar: m.avatar, defaults: [] });
       });
       return list;
     }
+    const isGroupRoom = (room) => room === 'group' || room.startsWith('g:');
 
     // ----- 聊天未讀：每個聊天室記住「看過幾則」，之後別人傳的新訊息就是未讀 -----
     const chatSeen = store.get('chatSeen', {});
@@ -3804,8 +4200,8 @@
       if (!chat.ready || !ME) return 0;
       const messages = chat.get(thread.room, thread.defaults);
       const key = seenKey(thread.room);
-      if (chatSeen[key] === undefined) {
-        // 第一次看到這個聊天室：現有的訊息都當作看過了
+      if (chatSeen[key] === undefined || chatSeen[key] > messages.length) {
+        // 第一次看到這個聊天室（或聊天紀錄被清空過）：現有的訊息都當作看過了
         chatSeen[key] = messages.length;
         store.set('chatSeen', chatSeen);
       }
@@ -3846,7 +4242,7 @@
         let preview = '還沒有訊息，打聲招呼吧！';
         if (last) {
           const sender = senderOf(last);
-          preview = `${sender.isMe ? '我' : sender.name}：${last.text}`;
+          preview = `${sender.isMe ? '我' : sender.name}：${replySnippet(last)}`;
         }
         row.append(avatar, name, el('span', 'thread-preview', preview), el('span', 'thread-time', last ? last.time : ''));
         const unread = unreadIn(thread);
@@ -3866,6 +4262,7 @@
       if (!chatScreen.classList.contains('is-hidden')) tabBar.hidden = false;
       chatTitle.textContent = '聊天';
       chatBack.hidden = true;
+      document.getElementById('chatAddBtn').hidden = false;
       document.getElementById('chatActions').hidden = true;
       renderThreadList();
       requestAnimationFrame(alignGlassBackdrop);
@@ -3881,6 +4278,7 @@
       tabBar.hidden = true; // 聊天室裡不顯示底部分頁列
       chatTitle.textContent = thread.name;
       chatBack.hidden = false;
+      document.getElementById('chatAddBtn').hidden = true;
       document.getElementById('chatActions').hidden = false;
       chatText.value = '';
       chatSend.disabled = true;
@@ -3903,6 +4301,10 @@
       }
       chatThreadsEl.style.translate = `${-(1 - p) * w * 0.3}px 0`;
       chatThreadsEl.style.opacity = String(0.15 + Math.min(1, p * 1.5) * 0.85);
+      // 底部分頁列跟著慢慢淡入（不是放開後才突然出現）
+      tabBar.hidden = false;
+      tabBar.style.opacity = String(Math.min(1, p * 1.5));
+      tabBar.style.pointerEvents = 'none';
     }
     function clearSwipe() {
       for (const node of [chatList, chatInputEl, chatThreadsEl]) {
@@ -3910,6 +4312,10 @@
         node.style.opacity = '';
       }
       chatScreen.classList.remove('is-peek');
+      tabBar.style.opacity = '';
+      tabBar.style.pointerEvents = '';
+      tabBar.style.transition = '';
+      if (chatScreen.classList.contains('is-thread')) tabBar.hidden = true; // 彈回聊天室：分頁列收起來
     }
     chatScreen.addEventListener('pointerdown', (event) => {
       if (!chatScreen.classList.contains('is-thread')) return;
@@ -3946,6 +4352,7 @@
       chatScreen.classList.remove('is-swiping');
       const dx = cancelled ? 0 : Math.max(0, event.clientX - s.x0);
       clearTimeout(swipeDoneTimer);
+      tabBar.style.transition = 'opacity 0.25s ease';
       if (dx > Math.min(120, window.innerWidth * 0.3)) {
         // 滑夠遠：對話滑出去、聊天列表滑到定位，回到聊天列表
         setSwipe(window.innerWidth);
@@ -4631,8 +5038,8 @@
     // ---------- 撥出 ----------
     async function startCall(thread, mode) {
       // 群組聊天室：改成發起全組通話
-      if (thread?.room === 'group') {
-        startGroupCall(mode);
+      if (thread && isGroupRoom(thread.room)) {
+        startGroupCall(mode, thread.room);
         return;
       }
       const peer = peerOf(thread);
@@ -4743,7 +5150,7 @@
     // ---------- 收到訊號 ----------
     async function onCallSignal(sig) {
       if (!ME || sig.from === ME.id) return; // 自己廣播出去的不理
-      if (sig.to !== 'group' && sig.to !== ME.id) return;
+      if (sig.to !== ME.id && !(isGroupRoom(sig.to) && threads().some((t) => t.room === sig.to))) return;
       const from = memberById(sig.from);
       if (!from) return;
       // g 開頭的、或屬於正在進行的全組通話 → 交給全組通話處理
@@ -4847,7 +5254,9 @@
     }
 
     // ================= 全組通話 =================
+    // 'group' = 這場通話所在的群組（藍冰團或自己建的群組）
     function gSignal(to, type, data) {
+      if (to === 'group') to = gcall.room || 'group';
       return chat.signal(to, type, data ?? null, gcall.id).catch(() => {});
     }
     function gTimer(fn, ms) {
@@ -4995,10 +5404,10 @@
     }
 
     // ---------- 發起全組通話 ----------
-    async function startGroupCall(mode) {
+    async function startGroupCall(mode, room = 'group') {
       if (!chat.online) { toast('要連到聊天伺服器才能通話'); return; }
       if (call.state !== 'idle' || gcall.active || gcall.ringing) return;
-      Object.assign(gcall, { active: true, id: `g-${Date.now()}-${ME.id}`, mode, facing: 'user' });
+      Object.assign(gcall, { active: true, id: `g-${Date.now()}-${ME.id}`, mode, facing: 'user', room });
       gcall.peers.clear();
       openGroupScreen();
       setStatus('等待其他人加入…', true);
@@ -5029,6 +5438,7 @@
       gcall.incomingSig = sig;
       gcall.incomingFrom = from;
       gcall.id = sig.call;
+      gcall.room = sig.to; // 哪一個群組的通話
       const mode = sig.data?.mode === 'voice' ? 'voice' : 'video';
       document.getElementById('incomingAvatar').src = from.avatar;
       document.getElementById('incomingGlow').src = from.avatar;
@@ -5093,9 +5503,11 @@
       Object.assign(gcall, { active: false, ringing: false, id: '', local: null, camTrack: null, screenTrack: null, seconds: 0, incomingSig: null, incomingFrom: null });
       setStatus('');
       updateButtons();
+      const room = gcall.room || 'group';
+      gcall.room = '';
       if (wasOpen) {
         showScreen('chatScreen');
-        const gt = groupThread();
+        const gt = threads().find((t) => t.room === room);
         if (gt) openThread(gt);
       }
     }
@@ -5796,7 +6208,7 @@
       const res = await fetch(`${chat.base}/api/push`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ member: ME.id, subscription: sub.toJSON() }),
+        body: JSON.stringify(withAuth({ member: ME.id, subscription: sub.toJSON() })),
       });
       return res.ok;
     }
@@ -5885,7 +6297,7 @@
       if (document.hidden) {
         if (call.state !== 'idle' || gcall.active || gcall.ringing || !chat.events) return;
         // 告訴伺服器「我離開了」，馬上開始推播通知（sendBeacon 在 App 切到背景時也送得出去）
-        if (ME) navigator.sendBeacon?.(`${chat.base}/api/away`, JSON.stringify({ me: ME.id }));
+        if (ME) navigator.sendBeacon?.(`${chat.base}/api/away`, JSON.stringify(withAuth({ me: ME.id })));
         chat.events.close();
         chat.events = null;
         chat.paused = true;
@@ -5896,9 +6308,258 @@
     });
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
-      selectTab(0);
-      showScreen('loginScreen');
+      if (TOKEN) accountApi('logout', {}).catch(() => {});
+      logoutLocal();
     });
+
+    // ---------- 底部彈出的面板 ----------
+    function openSheet(title) {
+      const backdrop = el('div', 'esn-sheet-backdrop');
+      const sheet = el('div', 'esn-sheet');
+      sheet.setAttribute('role', 'dialog');
+      sheet.append(el('div', 'esn-sheet-grip'), el('h3', '', title));
+      document.body.append(backdrop, sheet);
+      const cleanups = [];
+      const close = () => {
+        cleanups.forEach((fn) => fn());
+        backdrop.classList.remove('is-open');
+        sheet.classList.remove('is-open');
+        setTimeout(() => { backdrop.remove(); sheet.remove(); }, 320);
+      };
+      backdrop.addEventListener('click', close);
+      requestAnimationFrame(() => { backdrop.classList.add('is-open'); sheet.classList.add('is-open'); });
+      return { sheet, close, onClose: (fn) => cleanups.push(fn) };
+    }
+    function sec(text) {
+      return el('div', 'esn-sec', text);
+    }
+    function input(placeholder, value = '', type = 'text') {
+      const node = el('input', 'esn-input');
+      node.type = type;
+      node.placeholder = placeholder;
+      node.value = value;
+      node.autocomplete = 'off';
+      node.setAttribute('autocapitalize', 'off');
+      node.spellcheck = false;
+      return node;
+    }
+    function button(text, onClick, extra = '') {
+      const node = el('button', `esn-btn ${extra}`.trim(), text);
+      node.type = 'button';
+      node.addEventListener('click', onClick);
+      return node;
+    }
+    // 外部套件：要用到才載（QR Code 產生、掃描）
+    const scripts = {};
+    function loadScript(src) {
+      scripts[src] ||= new Promise((resolve, reject) => {
+        const node = document.createElement('script');
+        node.src = src;
+        node.onload = resolve;
+        node.onerror = () => { delete scripts[src]; reject(new Error('載入失敗，請確認有網路')); };
+        document.head.append(node);
+      });
+      return scripts[src];
+    }
+    const SITE_URL = 'https://liug1217.github.io/Group/Group.html';
+    const addLink = (handle) => `${SITE_URL}#add=${encodeURIComponent(handle)}`;
+
+    async function addFriend(handle) {
+      handle = handle.trim().replace(/^@/, '');
+      if (!handle) return false;
+      try {
+        const data = await accountApi('friends', { handle });
+        applyDirectory(data);
+        toast(`已加入好友：${data.added.name}`);
+        return true;
+      } catch (error) {
+        toast(error.message || '加好友失敗', 3000);
+        return false;
+      }
+    }
+
+    // 掃 QR Code：用相機，每一幀交給 jsQR 找
+    async function scanQr(container) {
+      await loadScript('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      const box = el('div', 'esn-scan');
+      const video = el('video');
+      video.playsInline = true;
+      video.muted = true;
+      video.srcObject = stream;
+      box.append(video);
+      container.replaceChildren(box);
+      await video.play();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      return new Promise((resolve) => {
+        let done = false;
+        const stop = (value) => {
+          if (done) return;
+          done = true;
+          stream.getTracks().forEach((t) => t.stop());
+          container.replaceChildren();
+          resolve(value);
+        };
+        container.stopScan = () => stop('');
+        const tick = () => {
+          if (done) return;
+          if (video.videoWidth) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            const code = window.jsQR(ctx.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height);
+            if (code?.data) { stop(code.data); return; }
+          }
+          requestAnimationFrame(tick);
+        };
+        tick();
+      });
+    }
+
+    // 聊天列表右上角「＋」：我的 ID / QR Code、輸入 ID 加好友、掃 QR Code、建立群組
+    async function openAddSheet() {
+      if (!TOKEN) { toast('要先登入（連到聊天伺服器）'); return; }
+      const { sheet, close, onClose } = openSheet('加好友 / 建立群組');
+      const handle = ME?.roblox || '';
+      const myId = el('div', 'esn-myid');
+      myId.append('我的 ID：', el('b', '', handle));
+      const qr = el('div', 'esn-qr');
+      sheet.append(myId, qr, el('div', 'esn-hint', '讓朋友用相機掃這個 QR Code，就會加你好友'));
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js').then(() => {
+        const code = window.qrcode(0, 'M');
+        code.addData(addLink(handle));
+        code.make();
+        const img = el('img');
+        img.alt = '我的 QR Code';
+        img.src = code.createDataURL(6, 0);
+        qr.replaceChildren(img);
+      }).catch(() => qr.replaceChildren(el('div', 'esn-hint', '沒網路，QR Code 載不出來')));
+
+      sheet.append(sec('用 ID 加好友'));
+      const idInput = input('輸入對方的 ID');
+      const addBtn = button('加入', async () => {
+        addBtn.disabled = true;
+        if (await addFriend(idInput.value)) { idInput.value = ''; renderPeople(); }
+        addBtn.disabled = false;
+      });
+      const row = el('div', 'esn-row');
+      row.append(idInput, addBtn);
+      const scanArea = el('div');
+      const scanBtn = button('掃描 QR Code', async () => {
+        try {
+          scanBtn.hidden = true;
+          const text = await scanQr(scanArea);
+          scanBtn.hidden = false;
+          if (!text) return;
+          const match = text.match(/#add=([^&]+)/);
+          if (await addFriend(match ? decodeURIComponent(match[1]) : text)) renderPeople();
+        } catch (error) {
+          scanBtn.hidden = false;
+          toast(error.name === 'NotAllowedError' ? '請允許使用相機' : error.message || '沒辦法開相機', 3000);
+        }
+      }, 'is-ghost is-wide');
+      onClose(() => scanArea.stopScan?.());
+      sheet.append(row, scanBtn, scanArea);
+
+      sheet.append(sec('建立群組（選好友）'));
+      const groupName = input('群組名稱');
+      const people = el('div');
+      const picked = new Set();
+      function renderPeople() {
+        const friends = MY_FRIENDS.map(memberById).filter(Boolean);
+        if (!friends.length) {
+          people.replaceChildren(el('div', 'esn-hint', '先加好友，才能拉他們進群組'));
+          return;
+        }
+        people.replaceChildren(...friends.map((m) => {
+          const label = el('label', 'esn-check');
+          const img = el('img');
+          img.src = m.avatar;
+          img.alt = '';
+          const box = el('input');
+          box.type = 'checkbox';
+          box.checked = picked.has(m.id);
+          box.addEventListener('change', () => (box.checked ? picked.add(m.id) : picked.delete(m.id)));
+          label.append(img, el('span', '', `${m.name}（${m.roblox}）`), box);
+          return label;
+        }));
+      }
+      renderPeople();
+      const createBtn = button('建立群組', async () => {
+        const name = groupName.value.trim();
+        if (!name) { toast('請輸入群組名稱'); return; }
+        createBtn.disabled = true;
+        try {
+          const data = await accountApi('groups', { name, members: [...picked] });
+          applyDirectory(data);
+          close();
+          toast(`已建立群組「${name}」`);
+          const thread = threads().find((t) => t.room === data.room);
+          if (thread) openThread(thread);
+        } catch (error) {
+          toast(error.message || '建立失敗', 3000);
+        } finally {
+          createBtn.disabled = false;
+        }
+      }, 'is-wide');
+      sheet.append(groupName, people, createBtn);
+    }
+    document.getElementById('chatAddBtn').addEventListener('click', openAddSheet);
+
+    // 「我的」→ 帳號設定：頭像、名稱、ID、密碼
+    function openAccountSheet() {
+      if (!TOKEN) { toast('要先登入（連到聊天伺服器）'); return; }
+      const { sheet, close } = openSheet('帳號設定');
+      let newAvatar = null;
+      const avatarBtn = el('button', 'esn-avatar');
+      avatarBtn.type = 'button';
+      avatarBtn.style.backgroundImage = `url("${ME.avatar}")`;
+      const file = el('input');
+      file.type = 'file';
+      file.accept = 'image/*';
+      file.hidden = true;
+      avatarBtn.addEventListener('click', () => file.click());
+      file.addEventListener('change', () => {
+        const f = file.files && file.files[0];
+        if (!f) return;
+        newAvatar = f;
+        avatarBtn.style.backgroundImage = `url("${URL.createObjectURL(f)}")`;
+      });
+      sheet.append(avatarBtn, file, el('div', 'esn-hint', '點頭像換照片'));
+      const name = input('名稱', ME.name);
+      const handle = input('ID', ME.roblox);
+      sheet.append(sec('名稱'), name, sec('ID（別人用它加你好友、你用它登入）'), handle);
+      const oldPw = input('舊密碼', '', 'password');
+      const newPw = input(MY_ACCOUNT?.hasPassword ? '新密碼（不改就留空）' : '設定密碼（設了之後別的裝置也能用 ID + 密碼登入）', '', 'password');
+      sheet.append(sec('密碼'));
+      if (MY_ACCOUNT?.hasPassword) sheet.append(oldPw, el('div', 'esn-row'));
+      sheet.append(newPw);
+      const save = button('儲存', async () => {
+        const body = {};
+        if (name.value.trim() !== ME.name) body.name = name.value.trim();
+        if (handle.value.trim() !== ME.roblox) body.handle = handle.value.trim();
+        if (newPw.value) {
+          body.password = newPw.value;
+          body.oldPassword = oldPw.value;
+        }
+        save.disabled = true;
+        try {
+          if (newAvatar) body.avatar = await uploadImage(newAvatar);
+          if (!Object.keys(body).length) { close(); return; }
+          applyDirectory(await accountApi('account', body));
+          close();
+          toast('已儲存');
+        } catch (error) {
+          toast(error.message || '儲存失敗', 3000);
+        } finally {
+          save.disabled = false;
+        }
+      }, 'is-wide');
+      const row = el('div', 'esn-row');
+      sheet.append(row, save);
+    }
+    document.getElementById('accountBtn').addEventListener('click', openAccountSheet);
 
     // 之前登入過：直接進主畫面。要放在最後，切頁面會用到上面所有的功能（短影音、推播…），太早切會出錯、卡在載入畫面
     if (ME) showScreen('homeScreen');

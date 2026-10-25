@@ -11,14 +11,19 @@
     - 同一個 Wi-Fi 的手機：打開畫面上印出來的 http://<這台電腦的 IP>:8800/
     - 不在同一個網路的人：需要另外開「通道」（例如 Cloudflare Tunnel），把網址給他們
 
-訊息存在 C:\ESNData\chat-data.json（可用 ESN_DATA_DIR 改）；關掉伺服器再開，訊息還在。
+訊息存在 C:\ESNData\chat-data.json，帳號在 accounts.json、群組在 groups.json（可用 ESN_DATA_DIR 改）；
+每次都先寫到暫存檔再換過去，關掉伺服器再開，訊息、帳號都還在。
 平常用「啟動聊天伺服器.bat」雙擊啟動就好（只開給這台電腦 + Tailscale Funnel）。
-注意：目前沒有帳號密碼，任何連得到這台電腦的人都能選任何身分、看所有聊天室。
+帳號：註冊時設密碼，登入後拿到一組登入碼（token），之後每個請求都帶著它；別的裝置用 ID + 密碼登入。
+原本的 4 個成員是內建帳號，還沒設密碼前照舊點頭像就能登入（設了密碼就要輸入密碼）。
+每個人只收得到自己所在聊天室的訊息、通話和即時更新。
 """
 
+import hashlib
 import json
 import os
 import queue
+import secrets
 import re
 import shutil
 import socket
@@ -42,9 +47,20 @@ DATA_FILE = os.path.join(DATA_DIR, 'chat-data.json')
 UPLOADS_DIR = os.path.join(DATA_DIR, 'uploads')
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
-# 跟 Group.html 的 MEMBERS 一樣（名字給推播通知用）
-MEMBER_NAMES = {'fan': '帆～', 'zhang': '張 O 寧', 'liu': '劉 O 佑', 'si': '劉思妤'}
-MEMBER_IDS = set(MEMBER_NAMES)
+# 原本的 4 個成員（跟 Group.html 的 MEMBERS 一樣）：內建帳號，id 不變，群組聊天室 'group' 就是他們 4 個
+LEGACY = {
+    'fan': ('帆～', 'Bi_wuda0823', 'assets/member-5.jpg'),
+    'zhang': ('張 O 寧', 'Bi_VIP1124', 'assets/member-2.jpg'),
+    'liu': ('劉 O 佑', 'Bi_liug1217', 'assets/member-3.jpg'),
+    'si': ('劉思妤', 'Bi_Robbyg309bbb', 'assets/member-4.jpg'),
+}
+LEGACY_IDS = set(LEGACY)
+ACCOUNTS_FILE = os.path.join(DATA_DIR, 'accounts.json')
+GROUPS_FILE = os.path.join(DATA_DIR, 'groups.json')
+# 使用者看得到、可以改的 ID（登入、加好友用）；內部編號（uid）永遠不變，改 ID 不影響聊天紀錄
+HANDLE_RE = re.compile(r'[A-Za-z0-9_.]{3,20}')
+UPLOAD_RE = re.compile(r'[0-9a-f]{32}\.(png|jpg|gif|webp)')
+MAX_GROUP = 50
 MAX_TEXT = 300
 MAX_PER_ROOM = 500
 # 訊息種類：純文字，或圖片 / 塗鴉（上傳的檔）、貼圖 / GIF（網頁內建的，只存 id）
@@ -85,56 +101,151 @@ ALLOWED_ORIGINS = {
     'http://127.0.0.1:8765',
 } | {o.strip() for o in os.environ.get('ESN_ORIGINS', '').split(',') if o.strip()}
 
+ACCOUNT_ROUTES = {'/api/register', '/api/login', '/api/logout', '/api/account', '/api/friends', '/api/groups'}
+
 # 只開放網站本身的檔案，不讓別人讀到 server.py、聊天資料或 .git
 PUBLIC_FILES = {'/Group.html', '/sw.js', '/manifest.json'}
 PUBLIC_DIRS = ('/assets/',)
 
 lock = threading.Lock()
-listeners = set()
+listeners = {}  # 每條即時通道 → 是誰（uid）
 # 誰現在開著網頁（連著即時通道）：開著的人看得到畫面，就不用再推播通知
 online = Counter()
 # App 切到背景時網頁會送「我離開了」（/api/away）：連線還沒斷乾淨也算不在線上，照樣推播
 away = set()
 
 
-def load_rooms():
+def load_json(path, default):
     try:
-        with open(DATA_FILE, encoding='utf-8') as f:
+        with open(path, encoding='utf-8') as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        # 第一次啟動：群組聊天室放幾則歡迎訊息（跟網頁上的範例一樣）
-        return {
-            'group': [
-                {'id': 'seed-1', 'from': 'fan', 'text': '歡迎加入 ★Bi_藍冰團★！', 'time': '20:01', 'ts': 0},
-                {'id': 'seed-2', 'from': 'fan', 'text': '週六團戰練習大家記得上線', 'time': '20:03', 'ts': 0},
-                {'id': 'seed-3', 'from': 'si', 'text': '收到～', 'time': '20:05', 'ts': 0},
-            ],
-        }
+        return default
 
 
-rooms = load_rooms()
+def save_json(path, data):
+    """先寫暫存檔、確定寫進硬碟，再換掉原本的檔：寫到一半當機或關掉，原本的資料也不會壞"""
+    tmp = path + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
+
+
+rooms = load_json(DATA_FILE, {})
 
 
 def save_rooms():
-    tmp = DATA_FILE + '.tmp'
-    with open(tmp, 'w', encoding='utf-8') as f:
-        json.dump(rooms, f, ensure_ascii=False)
-    os.replace(tmp, DATA_FILE)
+    save_json(DATA_FILE, rooms)
 
 
-def valid_room(room):
+# ---------- 帳號 ----------
+accounts = load_json(ACCOUNTS_FILE, {})
+for _uid, (_name, _handle, _avatar) in LEGACY.items():
+    accounts.setdefault(_uid, {'uid': _uid, 'handle': _handle, 'name': _name, 'avatar': _avatar, 'legacy': True,
+                               'salt': '', 'hash': '', 'tokens': [], 'friends': [], 'created': 0})
+groups = load_json(GROUPS_FILE, {})
+
+
+def save_accounts():
+    save_json(ACCOUNTS_FILE, accounts)
+
+
+def save_groups():
+    save_json(GROUPS_FILE, groups)
+
+
+def sha(text):
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
+
+
+def hash_password(password, salt):
+    return hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), bytes.fromhex(salt), 120000).hex()
+
+
+def set_password(acc, password):
+    acc['salt'] = secrets.token_hex(16)
+    acc['hash'] = hash_password(password, acc['salt'])
+
+
+def check_password(acc, password):
+    return bool(acc.get('hash')) and secrets.compare_digest(hash_password(password, acc['salt']), acc['hash'])
+
+
+def new_token(uid):
+    token = secrets.token_urlsafe(24)
+    acc = accounts[uid]
+    acc['tokens'] = (acc.get('tokens', []) + [sha(token)])[-10:]  # 最多 10 個裝置同時登入
+    save_accounts()
+    return token
+
+
+def uid_by_token(token):
+    if not token:
+        return None
+    h = sha(token)
+    for uid, acc in accounts.items():
+        if h in acc.get('tokens', []):
+            return uid
+    return None
+
+
+def uid_by_handle(handle):
+    handle = handle.strip().lower()
+    for uid, acc in accounts.items():
+        if acc['handle'].lower() == handle:
+            return uid
+    return None
+
+
+def identify(data):
+    """這個請求是誰：先看登入碼；沒帶登入碼的話，只有還沒設密碼的原本 4 個成員可以直接報名字（舊版網頁）"""
+    uid = uid_by_token(str(data.get('token') or ''))
+    if uid:
+        return uid
+    claimed = str(data.get('from') or data.get('me') or data.get('member') or '')
+    if claimed in LEGACY_IDS and not accounts[claimed].get('hash'):
+        return claimed
+    return None
+
+
+def public_user(uid):
+    acc = accounts[uid]
+    return {'id': uid, 'handle': acc['handle'], 'name': acc['name'], 'avatar': acc.get('avatar', '')}
+
+
+def name_of(uid):
+    return accounts.get(uid, {}).get('name', '成員')
+
+
+def room_members(room):
     if room == 'group':
-        return True
-    if not room.startswith('dm:'):
-        return False
-    pair = room[3:].split('-')
-    return len(pair) == 2 and pair[0] != pair[1] and set(pair) <= MEMBER_IDS and pair == sorted(pair)
+        return set(LEGACY_IDS)
+    if room.startswith('dm:'):
+        pair = room[3:].split('-')
+        if len(pair) == 2 and pair[0] != pair[1] and pair == sorted(pair) and all(p in accounts for p in pair):
+            return set(pair)
+        return set()
+    if room.startswith('g:') and room[2:] in groups:
+        return set(groups[room[2:]]['members'])
+    return set()
 
 
-def broadcast(payload):
+def room_title(room):
+    if room == 'group':
+        return '★Bi_藍冰團★'
+    if room.startswith('g:') and room[2:] in groups:
+        return groups[room[2:]]['name']
+    return ''
+
+
+def broadcast(payload, to=None):
+    """即時推給連著的人；to 是一組 uid（只推給這些人），None = 全部"""
     data = json.dumps(payload, ensure_ascii=False)
-    for q in list(listeners):
-        q.put(data)
+    for q, uid in list(listeners.items()):
+        if to is None or uid in to:
+            q.put(data)
 
 
 # ---------- 推播通知（Web Push，App 關著也收得到） ----------
@@ -288,9 +399,18 @@ class Handler(SimpleHTTPRequestHandler):
         path = urlparse(self.path).path
         if path == '/api/ping':
             return self.send_json(200, {'ok': True, 'server': 'esn'})
+        query = {k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}
         if path == '/api/messages':
+            # 只給這個人所在的聊天室
+            uid = identify(query)
             with lock:
-                return self.send_json(200, rooms)
+                mine = {r: msgs for r, msgs in rooms.items() if uid and uid in room_members(r)}
+            return self.send_json(200, mine)
+        if path == '/api/me':
+            uid = identify(query)
+            if not uid:
+                return self.send_json(401, {'error': 'login required'})
+            return self.send_json(200, self.me_payload(uid))
         if path == '/api/events':
             return self.stream_events()
         if path == '/api/push':
@@ -350,6 +470,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self.handle_away()
         if path == '/api/upload':
             return self.handle_upload()
+        if path in ACCOUNT_ROUTES:
+            return self.handle_account(path)
         if path != '/api/messages':
             return self.send_error(404)
         try:
@@ -361,11 +483,13 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json(400, {'error': 'bad json'})
 
         room = str(data.get('room', ''))
-        sender = str(data.get('from', ''))
+        sender = identify(data)
         kind = str(data.get('kind', 'text')) or 'text'
-        if not valid_room(room) or sender not in MEMBER_IDS or kind not in MSG_KINDS:
+        if not sender:
+            return self.send_json(401, {'error': 'login required'})
+        if kind not in MSG_KINDS:
             return self.send_json(400, {'error': 'invalid message'})
-        if room.startswith('dm:') and sender not in room[3:].split('-'):
+        if sender not in room_members(room):
             return self.send_json(403, {'error': 'not in this room'})
 
         now = time.time()
@@ -419,16 +543,178 @@ class Handler(SimpleHTTPRequestHandler):
             rooms.setdefault(room, []).append(msg)
             rooms[room] = rooms[room][-MAX_PER_ROOM:]
             save_rooms()
-        broadcast({'room': room, 'msg': msg})
-        # 推播：上面是誰傳的，下面是訊息；群組的話名字後面加「（群組）」
-        if room == 'group':
-            receivers = MEMBER_IDS - {sender}
-            title = f'{MEMBER_NAMES[sender]}（★Bi_藍冰團★）'
-        else:
-            receivers = set(room[3:].split('-')) - {sender}
-            title = MEMBER_NAMES[sender]
+        broadcast({'room': room, 'msg': msg}, to=room_members(room))
+        # 推播：上面是誰傳的，下面是訊息；群組的話名字後面加「（群組名稱）」
+        receivers = room_members(room) - {sender}
+        title = f'{name_of(sender)}（{room_title(room)}）' if room_title(room) else name_of(sender)
         push_to(receivers, {'title': title, 'body': preview, 'tag': room, 'url': PUSH_SUBJECT})
         return self.send_json(200, msg)
+
+    # ---------- 帳號：註冊、登入、改資料、加好友、建群組 ----------
+    def me_payload(self, uid):
+        """自己的資料 + 會用到的人（好友、群組成員；原本 4 個成員互相看得到）+ 自己的群組"""
+        acc = accounts[uid]
+        my_groups = [{'room': f'g:{gid}', 'name': g['name'], 'members': g['members'], 'owner': g['owner']}
+                     for gid, g in groups.items() if uid in g['members']]
+        people = {uid} | set(acc.get('friends', [])) | {m for g in my_groups for m in g['members']}
+        if uid in LEGACY_IDS:
+            people |= LEGACY_IDS
+        return {
+            'user': {**public_user(uid), 'legacy': uid in LEGACY_IDS, 'hasPassword': bool(acc.get('hash')),
+                     'friends': [f for f in acc.get('friends', []) if f in accounts]},
+            'users': [public_user(p) for p in sorted(people) if p in accounts],
+            'groups': my_groups,
+        }
+
+    def handle_account(self, path):
+        try:
+            length = int(self.headers.get('Content-Length', '0'))
+            if length > 8192:
+                return self.send_json(413, {'error': 'too large'})
+            data = json.loads(self.rfile.read(length) or b'{}')
+        except (ValueError, json.JSONDecodeError):
+            return self.send_json(400, {'error': 'bad json'})
+
+        if path == '/api/register':
+            name = str(data.get('name', '')).strip()
+            password = str(data.get('password', ''))
+            handle = str(data.get('handle', '')).strip()
+            avatar = str(data.get('avatar', ''))
+            if not 1 <= len(name) <= 20:
+                return self.send_json(400, {'error': '名稱要 1～20 個字'})
+            if len(password) < 4:
+                return self.send_json(400, {'error': '密碼至少 4 個字'})
+            if avatar and not UPLOAD_RE.fullmatch(avatar):
+                return self.send_json(400, {'error': 'bad avatar'})
+            with lock:
+                if handle:
+                    if not HANDLE_RE.fullmatch(handle):
+                        return self.send_json(400, {'error': 'ID 只能用英文、數字、底線、點，3～20 個字'})
+                    if uid_by_handle(handle):
+                        return self.send_json(409, {'error': '這個 ID 已經有人用了'})
+                else:
+                    # ID 沒填：自動給一個 user + 6 位數字
+                    while True:
+                        handle = f'user{secrets.randbelow(900000) + 100000}'
+                        if not uid_by_handle(handle):
+                            break
+                uid = 'u' + secrets.token_hex(5)
+                while uid in accounts:
+                    uid = 'u' + secrets.token_hex(5)
+                acc = {'uid': uid, 'handle': handle, 'name': name, 'avatar': avatar, 'legacy': False,
+                       'tokens': [], 'friends': [], 'created': int(time.time())}
+                set_password(acc, password)
+                accounts[uid] = acc
+                token = new_token(uid)
+                return self.send_json(200, {'token': token, **self.me_payload(uid)})
+
+        if path == '/api/login':
+            with lock:
+                legacy = str(data.get('legacy', ''))
+                if legacy:
+                    # 原本 4 個成員點頭像登入：還沒設密碼才可以不用密碼
+                    if legacy not in LEGACY_IDS:
+                        return self.send_json(400, {'error': 'bad member'})
+                    if accounts[legacy].get('hash') and not check_password(accounts[legacy], str(data.get('password', ''))):
+                        return self.send_json(401, {'error': '密碼錯誤', 'needPassword': True})
+                    uid = legacy
+                else:
+                    uid = uid_by_handle(str(data.get('handle', '')))
+                    if not uid or not check_password(accounts[uid], str(data.get('password', ''))):
+                        if uid and uid in LEGACY_IDS and not accounts[uid].get('hash'):
+                            pass  # 原本的成員還沒設密碼：打 ID 也能登入
+                        else:
+                            return self.send_json(401, {'error': 'ID 或密碼錯誤'})
+                token = new_token(uid)
+                return self.send_json(200, {'token': token, **self.me_payload(uid)})
+
+        uid = identify(data)
+        if not uid:
+            return self.send_json(401, {'error': 'login required'})
+
+        if path == '/api/logout':
+            with lock:
+                h = sha(str(data.get('token', '')))
+                accounts[uid]['tokens'] = [t for t in accounts[uid].get('tokens', []) if t != h]
+                save_accounts()
+            return self.send_json(200, {'ok': True})
+
+        if path == '/api/account':
+            with lock:
+                acc = accounts[uid]
+                if 'name' in data:
+                    name = str(data['name']).strip()
+                    if not 1 <= len(name) <= 20:
+                        return self.send_json(400, {'error': '名稱要 1～20 個字'})
+                    acc['name'] = name
+                if 'handle' in data:
+                    handle = str(data['handle']).strip()
+                    if not HANDLE_RE.fullmatch(handle):
+                        return self.send_json(400, {'error': 'ID 只能用英文、數字、底線、點，3～20 個字'})
+                    other = uid_by_handle(handle)
+                    if other and other != uid:
+                        return self.send_json(409, {'error': '這個 ID 已經有人用了'})
+                    acc['handle'] = handle
+                if data.get('password'):
+                    password = str(data['password'])
+                    if len(password) < 4:
+                        return self.send_json(400, {'error': '密碼至少 4 個字'})
+                    # 已經有密碼：要先輸入舊密碼
+                    if acc.get('hash') and not check_password(acc, str(data.get('oldPassword', ''))):
+                        return self.send_json(401, {'error': '舊密碼不對'})
+                    set_password(acc, password)
+                if 'avatar' in data:
+                    avatar = str(data['avatar'])
+                    if avatar and not UPLOAD_RE.fullmatch(avatar):
+                        return self.send_json(400, {'error': 'bad avatar'})
+                    acc['avatar'] = avatar or (LEGACY[uid][2] if uid in LEGACY else '')
+                save_accounts()
+                payload = self.me_payload(uid)
+                watchers = set(acc.get('friends', [])) | {m for g in payload['groups'] for m in g['members']}
+            broadcast({'directory': True}, to=watchers | {uid})  # 好友那邊的名字、頭像也要更新
+            return self.send_json(200, payload)
+
+        if path == '/api/friends':
+            with lock:
+                other = uid_by_handle(str(data.get('handle', '')))
+                if not other:
+                    return self.send_json(404, {'error': '找不到這個 ID'})
+                if other == uid:
+                    return self.send_json(400, {'error': '不能加自己'})
+                for a, b in ((uid, other), (other, uid)):
+                    friends = accounts[a].setdefault('friends', [])
+                    if b not in friends:
+                        friends.append(b)
+                save_accounts()
+                payload = self.me_payload(uid)
+            broadcast({'directory': True}, to={other})
+            return self.send_json(200, {**payload, 'added': public_user(other)})
+
+        if path == '/api/groups':
+            name = str(data.get('name', '')).strip()
+            with lock:
+                gid = str(data.get('group', ''))
+                if gid:
+                    # 把好友加進已經有的群組
+                    group = groups.get(gid)
+                    if not group or uid not in group['members']:
+                        return self.send_json(404, {'error': '找不到群組'})
+                    add = [m for m in data.get('members', []) if m in accounts.get(uid, {}).get('friends', [])]
+                    group['members'] = (group['members'] + [m for m in add if m not in group['members']])[:MAX_GROUP]
+                else:
+                    if not 1 <= len(name) <= 30:
+                        return self.send_json(400, {'error': '群組名稱要 1～30 個字'})
+                    friends = accounts[uid].get('friends', [])
+                    members = [uid] + [m for m in dict.fromkeys(data.get('members', [])) if m in friends]
+                    gid = secrets.token_hex(5)
+                    group = {'name': name, 'members': members[:MAX_GROUP], 'owner': uid, 'created': int(time.time())}
+                    groups[gid] = group
+                save_groups()
+                payload = self.me_payload(uid)
+            broadcast({'directory': True}, to=set(group['members']))
+            return self.send_json(200, {**payload, 'room': f'g:{gid}'})
+
+        return self.send_error(404)
 
     # 上傳圖片（照片 / 塗鴉）：body 直接是圖片的位元組，存成亂碼檔名，回 {src}
     def handle_upload(self):
@@ -456,8 +742,8 @@ class Handler(SimpleHTTPRequestHandler):
             data = json.loads(self.rfile.read(min(length, 1024)) or b'{}')
         except (ValueError, json.JSONDecodeError):
             return self.send_json(400, {'error': 'bad json'})
-        me = str(data.get('me', ''))
-        if me in MEMBER_IDS:
+        me = identify(data)
+        if me:
             with lock:
                 away.add(me)
         return self.send_json(200, {'ok': True})
@@ -474,9 +760,9 @@ class Handler(SimpleHTTPRequestHandler):
         if data.get('unsubscribe'):
             remove_subscription(str(data['unsubscribe']))
             return self.send_json(200, {'removed': True})
-        member = str(data.get('member', ''))
+        member = identify(data)
         sub = data.get('subscription')
-        if member not in MEMBER_IDS or not valid_subscription(sub):
+        if not member or not valid_subscription(sub):
             return self.send_json(400, {'error': 'bad subscription'})
         add_subscription(member, sub)
         return self.send_json(200, {'subscribed': True})
@@ -491,24 +777,27 @@ class Handler(SimpleHTTPRequestHandler):
             data = json.loads(self.rfile.read(length) or b'{}')
         except (ValueError, json.JSONDecodeError):
             return self.send_json(400, {'error': 'bad json'})
-        sender = str(data.get('from', ''))
+        sender = identify(data)
         target = str(data.get('to', ''))
         kind = str(data.get('type', ''))
-        is_group = target == 'group' and kind in GROUP_SIGNALS
-        if sender not in MEMBER_IDS or kind not in SIGNAL_TYPES:
+        # 全組通話的對象是聊天室（'group' 或自己建的群組 g:xxx），其他一律是某個人
+        is_group = kind in GROUP_SIGNALS and (target == 'group' or target.startswith('g:'))
+        if not sender or kind not in SIGNAL_TYPES:
             return self.send_json(400, {'error': 'invalid signal'})
-        if not is_group and (target not in MEMBER_IDS or sender == target):
+        if is_group and sender not in room_members(target):
+            return self.send_json(403, {'error': 'not in this room'})
+        if not is_group and (target not in accounts or sender == target):
             return self.send_json(400, {'error': 'invalid signal'})
         signal = {'from': sender, 'to': target, 'type': kind, 'call': str(data.get('call', ''))[:40], 'data': data.get('data')}
-        broadcast({'signal': signal})
-        others = MEMBER_IDS - {sender}
+        others = (room_members(target) if is_group else {target}) - {sender}
+        broadcast({'signal': signal}, to=others)
         if kind == 'ring':
             # 對方沒開網頁：推播「來電」，對方 30 秒內打開網頁就補送響鈴
             with lock:
                 pending_rings[target] = (time.time(), signal)
             mode = (data.get('data') or {}).get('mode')
             push_to([target], {
-                'title': MEMBER_NAMES[sender],
+                'title': name_of(sender),
                 'body': '語音來電' if mode == 'voice' else '視訊來電',
                 'tag': 'call',
                 'url': PUSH_SUBJECT,
@@ -520,7 +809,7 @@ class Handler(SimpleHTTPRequestHandler):
                     pending_rings[member] = (time.time(), signal)
             mode = (data.get('data') or {}).get('mode')
             push_to(list(others), {
-                'title': f'{MEMBER_NAMES[sender]}（★Bi_藍冰團★）',
+                'title': f'{name_of(sender)}（{room_title(target)}）',
                 'body': '邀請全組語音通話' if mode == 'voice' else '邀請全組視訊通話',
                 'tag': 'call',
                 'url': PUSH_SUBJECT,
@@ -546,9 +835,8 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header('Connection', 'keep-alive')
         self.end_headers()
         q = queue.Queue()
-        listeners.add(q)
-        me = (parse_qs(urlparse(self.path).query).get('me') or [''])[0]
-        me = me if me in MEMBER_IDS else ''
+        me = identify({k: v[0] for k, v in parse_qs(urlparse(self.path).query).items()}) or ''
+        listeners[q] = me
         if me:
             with lock:
                 online[me] += 1
@@ -570,7 +858,7 @@ class Handler(SimpleHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError):
             pass
         finally:
-            listeners.discard(q)
+            listeners.pop(q, None)
             if me:
                 with lock:
                     online[me] -= 1
