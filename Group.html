@@ -2234,6 +2234,12 @@
       font-size: 15px;
     }
     /* 「群主」標籤，跟主頁的「團長」標籤同色 */
+    .thread-pin {
+      background: rgba(41, 73, 203, 0.75);
+    }
+    .thread-row.is-held {
+      background: rgba(255, 255, 255, 0.08);
+    }
     .thread-tag {
       display: inline-block;
       margin-left: 6px;
@@ -2697,7 +2703,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.13.3</div>
+    <div class="abs version-label t12 nowrap">ESN v1.13.4</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -4244,11 +4250,29 @@
     const isGroupRoom = (room) => room === 'group' || room.startsWith('g:');
 
     // ----- 聊天未讀：每個聊天室記住「看過幾則」，之後別人傳的新訊息就是未讀 -----
+    // ----- 聊天列表長按：釘選、隱藏、刪除（都只在這支手機、跟著登入的人存） -----
+    //   pinned：釘在最上面（照釘的順序）
+    //   hidden：{ room: 當時最後一則的時間 }，有更新的訊息進來就自動再出現
+    //   cleared：{ room: 刪除的時間 }，這之前的訊息都不顯示（也算隱藏，直到有新訊息）
+    const prefsKey = () => `threadPrefs.${ME?.id || 'guest'}`;
+    function threadPrefs() {
+      const p = store.get(prefsKey(), {});
+      return { pinned: p.pinned || [], hidden: p.hidden || {}, cleared: p.cleared || {} };
+    }
+    function saveThreadPrefs(p) {
+      store.set(prefsKey(), p);
+    }
+    const msgTime = (m) => m.ts || 0;
+    // 這個聊天室在這支手機上看得到的訊息（扣掉刪除聊天紀錄之前的、長按刪掉的）
+    function visibleMessages(room, defaults = []) {
+      const cut = threadPrefs().cleared[room] || 0;
+      return chat.get(room, defaults).filter((m) => (!cut || msgTime(m) > cut) && !(m.id && hiddenMsgs.has(m.id)));
+    }
     const chatSeen = store.get('chatSeen', {});
     const seenKey = (room) => `${ME?.id || 'guest'}|${room}`;
     function unreadIn(thread) {
       if (!chat.ready || !ME) return 0;
-      const messages = chat.get(thread.room, thread.defaults);
+      const messages = visibleMessages(thread.room, thread.defaults);
       const key = seenKey(thread.room);
       if (chatSeen[key] === undefined || chatSeen[key] > messages.length) {
         // 第一次看到這個聊天室（或聊天紀錄被清空過）：現有的訊息都當作看過了
@@ -4258,7 +4282,7 @@
       return messages.slice(chatSeen[key]).filter((m) => !senderOf(m).isMe).length;
     }
     function markSeen(thread) {
-      chatSeen[seenKey(thread.room)] = chat.get(thread.room, thread.defaults).length;
+      chatSeen[seenKey(thread.room)] = visibleMessages(thread.room, thread.defaults).length;
       store.set('chatSeen', chatSeen);
     }
     // 分頁列「聊天」上的紅點：所有聊天室的未讀加起來（跟通知一樣，關掉通知提醒就不顯示）
@@ -4270,16 +4294,39 @@
       badge.hidden = !settings.notify || total === 0;
     }
 
+    // 列表順序：釘選的在最上面；隱藏的不顯示（有新訊息就回來）
+    function listedThreads() {
+      const prefs = threadPrefs();
+      let changed = false;
+      const list = threads().filter((t) => {
+        const since = prefs.hidden[t.room];
+        if (since === undefined) return true;
+        const last = chat.get(t.room, t.defaults).slice(-1)[0];
+        if (last && msgTime(last) > since) {
+          delete prefs.hidden[t.room]; // 有新訊息：再出現
+          changed = true;
+          return true;
+        }
+        return false;
+      });
+      if (changed) saveThreadPrefs(prefs);
+      const rank = (t) => {
+        const i = prefs.pinned.indexOf(t.room);
+        return i < 0 ? Infinity : i;
+      };
+      return list.map((t, i) => ({ t, i })).sort((a, b) => rank(a.t) - rank(b.t) || a.i - b.i).map((x) => x.t);
+    }
     function renderThreadList() {
       const nodes = [];
-      const list = threads();
+      const list = listedThreads();
+      const pinned = threadPrefs().pinned;
       list.forEach((thread, i) => {
         if (i > 0) {
           const line = el('div', 'abs divider shadow');
           line.style.top = `${i * THREAD_ROW}px`;
           nodes.push(line);
         }
-        const messages = chat.get(thread.room, thread.defaults);
+        const messages = visibleMessages(thread.room, thread.defaults);
         const last = messages[messages.length - 1];
         const row = el('button', 'abs thread-row');
         row.type = 'button';
@@ -4288,7 +4335,7 @@
         avatar.src = thread.avatar;
         avatar.alt = '';
         const name = el('span', 'thread-name', thread.name);
-        if (thread.tag) name.append(el('span', 'thread-tag', thread.tag));
+        if (pinned.includes(thread.room)) name.append(el('span', 'thread-tag thread-pin', '釘選'));
         let preview = '還沒有訊息，打聲招呼吧！';
         if (last) {
           const sender = senderOf(last);
@@ -4297,7 +4344,11 @@
         row.append(avatar, name, el('span', 'thread-preview', preview), el('span', 'thread-time', last ? periodTime(last.time) : ''));
         const unread = unreadIn(thread);
         if (unread) row.append(el('span', 'thread-unread', unread > 99 ? '99+' : String(unread)));
-        row.addEventListener('click', () => openThread(thread));
+        row.addEventListener('click', () => {
+          if (row.dataset.held) { delete row.dataset.held; return; } // 長按完放開不要順便點進去
+          openThread(thread);
+        });
+        holdToOpenMenu(row, () => openThreadMenu(thread, row));
         nodes.push(row);
       });
       chatThreadRows.replaceChildren(...nodes);
@@ -4321,7 +4372,7 @@
     function openThread(thread) {
       currentThread = thread;
       setReply(null);
-      chatMessages = chat.get(thread.room, thread.defaults);
+      chatMessages = visibleMessages(thread.room, thread.defaults);
       markSeen(thread);
       updateChatBadge();
       chatScreen.classList.add('is-thread');
@@ -4567,6 +4618,67 @@
       if (event.target.closest('.msg')) event.preventDefault();
     });
 
+    // 長按 0.48 秒（手指沒移動）就叫 onHold；放開後的那一下點擊會被擋掉
+    function holdToOpenMenu(node, onHold) {
+      let timer = 0;
+      let start = null;
+      node.addEventListener('pointerdown', (event) => {
+        start = { x: event.clientX, y: event.clientY };
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          start = null;
+          node.dataset.held = '1';
+          haptic();
+          onHold();
+        }, 480);
+      });
+      node.addEventListener('pointermove', (event) => {
+        if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 8) {
+          clearTimeout(timer);
+          start = null;
+        }
+      });
+      for (const type of ['pointerup', 'pointercancel', 'pointerleave']) {
+        node.addEventListener(type, () => { clearTimeout(timer); start = null; });
+      }
+      node.addEventListener('contextmenu', (event) => event.preventDefault());
+    }
+
+    // 聊天列表長按：釘選 / 取消釘選、隱藏、刪除聊天紀錄（都只在我這邊）
+    function openThreadMenu(thread, row) {
+      row.classList.add('is-held');
+      const { sheet, close, onClose } = openSheet(thread.name);
+      onClose(() => row.classList.remove('is-held'));
+      const prefs = threadPrefs();
+      const isPinned = prefs.pinned.includes(thread.room);
+      const done = (message) => {
+        saveThreadPrefs(prefs);
+        close();
+        renderThreadList();
+        toast(message);
+      };
+      sheet.append(el('div', 'esn-row'), button(isPinned ? '取消釘選' : '釘選在最上面', () => {
+        prefs.pinned = isPinned ? prefs.pinned.filter((r) => r !== thread.room) : [thread.room, ...prefs.pinned];
+        done(isPinned ? '已取消釘選' : '已釘選');
+      }, 'is-ghost is-wide'));
+      sheet.append(el('div', 'esn-row'), button('隱藏（有新訊息會再出現）', () => {
+        const last = chat.get(thread.room, thread.defaults).slice(-1)[0];
+        prefs.hidden[thread.room] = last ? msgTime(last) : 0;
+        prefs.pinned = prefs.pinned.filter((r) => r !== thread.room);
+        done('已隱藏');
+      }, 'is-ghost is-wide'));
+      sheet.append(el('div', 'esn-row'), button('刪除聊天紀錄（只在我這邊）', () => {
+        // 用最後一則訊息的時間（伺服器的時鐘）當分界，手機時間不準也不會把之後的新訊息藏掉
+        const last = chat.get(thread.room, thread.defaults).slice(-1)[0];
+        const cut = last ? msgTime(last) : 0;
+        prefs.cleared[thread.room] = cut || 1;
+        prefs.hidden[thread.room] = cut;
+        prefs.pinned = prefs.pinned.filter((r) => r !== thread.room);
+        done('已刪除');
+      }, 'is-danger is-wide'));
+      sheet.append(el('div', 'esn-row'), button('取消', close, 'is-ghost is-wide'));
+    }
+
     function openMessageMenu(row) {
       const m = row.msg;
       const mine = senderOf(m).isMe;
@@ -4608,7 +4720,7 @@
     // 有新訊息（自己送的或伺服器推來的）
     function onChatUpdate(room) {
       if (currentThread?.room === room) {
-        chatMessages = chat.get(room, currentThread.defaults);
+        chatMessages = visibleMessages(room, currentThread.defaults);
         markSeen(currentThread); // 正在看的聊天室，新訊息直接算看過
         renderChat();
       } else if (!chatScreen.classList.contains('is-thread')) {
