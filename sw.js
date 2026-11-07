@@ -1,12 +1,12 @@
-// NovaCHAT 的 service worker：
-//   1. 離線也能打開：網站自己的檔案（NovaCHAT.html、玻璃引擎、圖片）都存在手機裡
-//      - NovaCHAT.html：先上網抓最新的（3 秒內沒回應或沒網路就用存的），所以一更新大家馬上看得到新版
+// ★Bi_藍冰團★ 的 service worker：
+//   1. 離線也能打開：網站自己的檔案（Group.html、玻璃引擎、圖片）都存在手機裡
+//      - Group.html：先上網抓最新的（3 秒內沒回應或沒網路就用存的），所以一更新大家馬上看得到新版
 //      - 其他檔案：先用存的（秒開），背景再上網更新一份，下次打開就是新的
 //      - 聊天伺服器、短影音影片這些別的網站的東西不存，照常連網（沒網路時聊天會顯示連不上）
 //   2. 推播通知（有人傳訊息、打電話來）：{ title, body, tag, url }；點通知 → 切到 / 打開網頁
 const CACHE = 'esn-offline-v2';
 const PRECACHE = [
-  './NovaCHAT.html',
+  './Group.html',
   './manifest.json',
   './assets/lib/components.js',
   './assets/lib/liquid-glass.js',
@@ -52,7 +52,7 @@ const PRECACHE = [
   './assets/tab-film.svg',
   './assets/tab-house.svg',
 ];
-const PAGE = new URL('./NovaCHAT.html', self.location).href;
+const PAGE = new URL('./Group.html', self.location).href;
 
 self.addEventListener('install', (event) => {
   // cache: 'reload'：跳過瀏覽器自己的快取，存最新的
@@ -111,7 +111,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin || url.pathname.includes('/api/')) return;
   // 影片用 Range 分段抓，不經過快取
   if (request.headers.has('range')) return;
-  if (request.mode === 'navigate' || url.pathname.endsWith('/NovaCHAT.html') || url.pathname.endsWith('/')) {
+  if (request.mode === 'navigate' || url.pathname.endsWith('/Group.html') || url.pathname.endsWith('/')) {
     event.respondWith(pageRequest(request));
     return;
   }
@@ -127,7 +127,7 @@ self.addEventListener('push', (event) => {
     data = { body: event.data ? event.data.text() : '' };
   }
   const isCall = data.tag === 'call';
-  event.waitUntil(self.registration.showNotification(data.title || 'NovaCHAT', {
+  event.waitUntil(self.registration.showNotification(data.title || '★Bi_藍冰團★', {
     body: data.body || '',
     icon: 'assets/group-avatar.jpg',
     badge: 'assets/group-avatar.jpg',
@@ -135,16 +135,16 @@ self.addEventListener('push', (event) => {
     renotify: true,
     requireInteraction: isCall, // 來電要一直顯示到使用者處理
     vibrate: isCall ? [400, 200, 400, 200, 400] : [120],
-    data: { url: data.url || './NovaCHAT.html' },
+    data: { url: data.url || './Group.html' },
   }));
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || './NovaCHAT.html';
+  const url = (event.notification.data && event.notification.data.url) || './Group.html';
   event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
     for (const client of list) {
-      if (/NovaCHAT\.html/.test(client.url) && 'focus' in client) return client.focus();
+      if (/Group\.html/.test(client.url) && 'focus' in client) return client.focus();
     }
     return self.clients.openWindow(url);
   }));

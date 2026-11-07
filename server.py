@@ -47,7 +47,7 @@ DATA_FILE = os.path.join(DATA_DIR, 'chat-data.json')
 UPLOADS_DIR = os.path.join(DATA_DIR, 'uploads')
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
-# 原本的 4 個成員（跟 NovaCHAT.html 的 MEMBERS 一樣）：內建帳號，id 不變，群組聊天室 'group' 就是他們 4 個
+# 原本的 4 個成員（跟 Group.html 的 MEMBERS 一樣）：內建帳號，id 不變，群組聊天室 'group' 就是他們 4 個
 LEGACY = {
     'fan': ('帆～', 'Bi_wuda0823', 'assets/member-5.jpg'),
     'zhang': ('張 O 寧', 'Bi_VIP1124', 'assets/member-2.jpg'),
@@ -104,7 +104,7 @@ ALLOWED_ORIGINS = {
 ACCOUNT_ROUTES = {'/api/register', '/api/login', '/api/logout', '/api/account', '/api/friends', '/api/groups'}
 
 # 只開放網站本身的檔案，不讓別人讀到 server.py、聊天資料或 .git
-PUBLIC_FILES = {'/NovaCHAT.html', '/sw.js', '/manifest.json'}
+PUBLIC_FILES = {'/Group.html', '/sw.js', '/manifest.json'}
 PUBLIC_DIRS = ('/assets/',)
 
 lock = threading.Lock()
@@ -243,7 +243,7 @@ def room_members(room):
 
 def room_title(room):
     if room == 'group':
-        return 'NovaCHAT'
+        return '★Bi_藍冰團★'
     if room.startswith('g:') and room[2:] in groups:
         return groups[room[2:]]['name']
     return ''
@@ -262,7 +262,7 @@ def broadcast(payload, to=None):
 # 跟每個人的訂閱一起存在 DATA_DIR/push.json；換掉金鑰的話所有人的訂閱都會失效。
 PUSH_FILE = os.path.join(DATA_DIR, 'push.json')
 PUSH_SCRIPT = os.path.join(ROOT, 'push.js')
-PUSH_SUBJECT = 'https://liug1217.github.io/Group/NovaCHAT.html'
+PUSH_SUBJECT = 'https://liug1217.github.io/Group/Group.html'
 NODE = shutil.which('node')
 push_lock = threading.Lock()
 # 來電時對方沒開網頁：記住 30 秒，對方點通知打開網頁一連上就補送響鈴
@@ -429,7 +429,7 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json(503, {'error': 'push unavailable'})
         if path in ('/', '/index.html'):
             self.send_response(302)
-            self.send_header('Location', '/NovaCHAT.html')
+            self.send_header('Location', '/Group.html')
             self.end_headers()
             return
         if path.startswith('/uploads/'):
