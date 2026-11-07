@@ -1,8 +1,8 @@
 {
-  "name": "★Bi_藍冰團★《Roblox》",
-  "short_name": "Group",
-  "description": "藍冰團的聊天、通話、短影音",
-  "start_url": "./Group.html",
+  "name": "NovaCHAT",
+  "short_name": "NovaCHAT",
+  "description": "NovaCHAT 的聊天、通話、短影音",
+  "start_url": "./NovaCHAT.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#212121",

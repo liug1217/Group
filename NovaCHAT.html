@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Group">
+  <meta name="apple-mobile-web-app-title" content="NovaCHAT">
   <!-- 加入主畫面的 App 資訊：iPhone 要有這個，加入主畫面的網頁才能收推播通知 -->
   <link rel="manifest" href="manifest.json">
-  <title>Group</title>
+  <title>NovaCHAT</title>
   <script>
     // iOS 舊版的主畫面 App 不一定支援 display-mode 媒體查詢，用 navigator.standalone 補判斷
     if (window.navigator.standalone) document.documentElement.classList.add('is-standalone');
@@ -2679,7 +2679,7 @@
   <!-- 載入畫面 -->
   <div class="splash" id="splash" role="status" aria-label="載入中">
     <img class="splash-logo" src="assets/group-avatar.jpg" alt="">
-    <div class="t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
+    <div class="t12 nowrap text-shadow">NovaCHAT</div>
     <div class="splash-bar"><span id="splashProgress"></span></div>
   </div>
 
@@ -2703,7 +2703,7 @@
         <img src="assets/icon-eye.svg" alt="">
       </button>
     </lg-panel>
-    <div class="abs version-label t12 nowrap">ESN v1.13.4</div>
+    <div class="abs version-label t12 nowrap">NovaCHAT v1.13.4</div>
     <lg-panel class="login-button glass" radius="25">
       <button class="login-button__el" id="loginButton" type="button" disabled>登入</button>
     </lg-panel>
@@ -2760,7 +2760,7 @@
          iPhone Safari 也看得到被折射的卡片，不會變毛玻璃 -->
     <lg-panel class="header glass shadow" radius="0">
       <img class="avatar group-avatar center-x" src="assets/group-avatar.jpg" alt="">
-      <div class="abs group-title center-x t12 nowrap text-shadow">★Bi_藍冰團★《Roblox》</div>
+      <div class="abs group-title center-x t12 nowrap text-shadow">NovaCHAT</div>
       <lg-panel class="abs header-tag glass shadow" radius="5"></lg-panel>
     </lg-panel>
 
@@ -2813,7 +2813,7 @@
     <lg-panel class="card glass notice-card" radius="35">
       <div class="abs rank-header shadow"></div>
       <div class="abs center-x card-title t20 nowrap text-shadow">群組公告</div>
-      <div class="abs t15 nowrap text-shadow" style="left: 25px; top: 66px;">歡迎加入 ★Bi_藍冰團★！</div>
+      <div class="abs t15 nowrap text-shadow" style="left: 25px; top: 66px;">歡迎加入 NovaCHAT！</div>
       <div class="abs t12 nowrap text-shadow" style="left: 25px; top: 92px;">有任何問題請找團長 帆～</div>
     </lg-panel>
 
@@ -4231,12 +4231,12 @@
     // 連線狀態不顯示文字（背景照樣會自動重連；連不到時訊息不會偷偷只存在手機，打的字會留著）
     function updateChatStatus() {}
 
-    // 聊天列表：原本的 4 個成員有藍冰團群組和彼此；每個人都有自己建的群組和加的好友（新帳號不會自動有這些人）
+    // 聊天列表：原本的 4 個成員有NovaCHAT群組和彼此；每個人都有自己建的群組和加的好友（新帳號不會自動有這些人）
     function threads() {
       if (!ME) return [];
       const legacy = LEGACY_IDS.has(ME.id);
       const list = [];
-      if (legacy) list.push({ room: 'group', name: '★Bi_藍冰團★《Roblox》', avatar: 'assets/group-avatar.jpg', defaults: GROUP_DEFAULT });
+      if (legacy) list.push({ room: 'group', name: 'NovaCHAT', avatar: 'assets/group-avatar.jpg', defaults: GROUP_DEFAULT });
       MY_GROUPS.forEach((g) => list.push({ room: g.room, name: g.name, avatar: 'assets/group-avatar.jpg', defaults: [], group: g }));
       const people = new Set([...(legacy ? MEMBERS.map((m) => m.id) : []), ...MY_FRIENDS]);
       people.delete(ME.id);
@@ -5526,7 +5526,7 @@
     }
 
     // ================= 全組通話 =================
-    // 'group' = 這場通話所在的群組（藍冰團或自己建的群組）
+    // 'group' = 這場通話所在的群組（NovaCHAT或自己建的群組）
     function gSignal(to, type, data) {
       if (to === 'group') to = gcall.room || 'group';
       return chat.signal(to, type, data ?? null, gcall.id).catch(() => {});
@@ -5999,7 +5999,7 @@
 
     // ----- 通知：已讀 / 全部已讀、底部未讀數量 -----
     const NOTIFICATIONS = [
-      { id: 'n1', title: '帆～ 發布了新公告', desc: '歡迎加入 ★Bi_藍冰團★！', time: '2 小時前' },
+      { id: 'n1', title: '帆～ 發布了新公告', desc: '歡迎加入 NovaCHAT！', time: '2 小時前' },
       { id: 'n2', title: '本週活動', desc: '週六 20:00 團戰練習', time: '1 天前' },
       { id: 'n4', title: '劉思妤 加入了群組', desc: '跟大家打聲招呼吧！', time: '3 天前' },
     ];
@@ -6074,7 +6074,7 @@
       },
     };
     const SHORTS = [
-      { id: 's1', video: 'bunny', by: 'fan', caption: '週末團戰前先來點可愛的 🐰 #藍冰團', likes: 128 },
+      { id: 's1', video: 'bunny', by: 'fan', caption: '週末團戰前先來點可愛的 🐰 #NovaCHAT', likes: 128 },
       { id: 's2', video: 'sintel', by: 'zhang', caption: '這個畫面太帥了吧 #動畫 #推薦', likes: 342 },
       { id: 's3', video: 'jellyfish', by: 'si', caption: '看水母放鬆一下～', likes: 89 },
       { id: 's4', video: 'flower', by: 'liu', caption: '花開了 🌸', likes: 56 },
@@ -6134,7 +6134,7 @@
     async function shareShort(item) {
       const url = `${location.origin}${location.pathname}#short-${item.id}`;
       const member = memberById(item.by);
-      const data = { title: '★Bi_藍冰團★ 短影音', text: `${member?.name || ''}：${item.caption}`, url };
+      const data = { title: 'NovaCHAT 短影音', text: `${member?.name || ''}：${item.caption}`, url };
       try {
         if (navigator.share) {
           await navigator.share(data);
@@ -6633,7 +6633,7 @@
       });
       return scripts[src];
     }
-    const SITE_URL = 'https://liug1217.github.io/Group/Group.html';
+    const SITE_URL = 'https://liug1217.github.io/Group/NovaCHAT.html';
     const addLink = (handle) => `${SITE_URL}#add=${encodeURIComponent(handle)}`;
 
     async function addFriend(handle) {
